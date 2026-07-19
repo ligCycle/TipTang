@@ -20,7 +20,7 @@ export function LocaleSwitcher() {
   }
 
   return (
-    <div className="flex items-center rounded-full border border-brand-900/15 bg-white/60 p-0.5 text-xs font-semibold">
+    <div className="flex items-center rounded-full border border-brand-900/15 bg-brand-50/60 p-0.5 text-xs font-semibold">
       {routing.locales.map((l) => (
         <button
           key={l}

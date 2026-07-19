@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Manual dark mode via data-theme on <html> (set by an inline no-FOUC script) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --color-brand-50: #fff1f5;
   --color-brand-100: #ffe3ec;
@@ -94,4 +97,45 @@ body {
 .btn-secondary:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* ===== Dark theme ===== */
+/* Invert the brand ramp (low = dark surfaces, high = light text) so every
+   brand color utility adapts at once, keeping mid tones vivid. */
+[data-theme="dark"] {
+  --background: #140b11;
+  --foreground: #f5e3ea;
+  --color-brand-50: #1c1016;
+  --color-brand-100: #2a1420;
+  --color-brand-200: #3d1b2e;
+  --color-brand-300: #5a2942;
+  --color-brand-400: #d13c78;
+  --color-brand-500: #ec4880;
+  --color-brand-600: #f0568c;
+  --color-brand-700: #f77aa7;
+  --color-brand-800: #ffa9c8;
+  --color-brand-900: #ffd6e4;
+}
+
+[data-theme="dark"] body {
+  background:
+    radial-gradient(1100px 500px at 100% -10%, #2a0f1c 0%, transparent 55%),
+    radial-gradient(900px 500px at -10% 0%, #241016 0%, transparent 50%),
+    var(--background);
+}
+
+[data-theme="dark"] .card {
+  background: rgba(38, 22, 31, 0.72);
+  border-color: rgba(255, 150, 190, 0.12);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .input {
+  background: #241019;
+  border-color: rgba(255, 150, 190, 0.22);
+  color: var(--foreground);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
 }

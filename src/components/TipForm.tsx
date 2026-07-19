@@ -168,7 +168,7 @@ export function TipForm({
                   className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                     amount === a
                       ? "bg-brand-600 text-white"
-                      : "border border-brand-200 bg-white text-brand-800 hover:bg-brand-100"
+                      : "border border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
                   }`}
                 >
                   {a}
