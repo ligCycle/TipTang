@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# local file-storage driver (dev uploads)
+/.uploads/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

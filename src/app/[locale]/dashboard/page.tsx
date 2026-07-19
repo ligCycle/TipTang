@@ -1,0 +1,150 @@
+import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { formatBaht } from "@/lib/format";
+import { TipRow } from "@/components/TipRow";
+import { CopyLink } from "@/components/CopyLink";
+
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("dashboard");
+  const currencyLocale = locale === "th" ? "th-TH" : "en-US";
+
+  const session = await auth();
+  const userId = session!.user.id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { displayName: true, username: true, promptpayId: true },
+  });
+  if (!user) {
+    return null;
+  }
+
+  const [tips, confirmedAgg, pendingCount] = await Promise.all([
+    prisma.tip.findMany({
+      where: { creatorId: userId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        supporterName: true,
+        message: true,
+        amount: true,
+        status: true,
+        slipUrl: true,
+        autoVerified: true,
+        createdAt: true,
+      },
+    }),
+    prisma.tip.aggregate({
+      where: { creatorId: userId, status: "CONFIRMED" },
+      _sum: { amount: true },
+    }),
+    prisma.tip.count({ where: { creatorId: userId, status: "PENDING" } }),
+  ]);
+
+  const totalConfirmed = Number(confirmedAgg._sum.amount ?? 0);
+  const hasPromptpay = Boolean(user.promptpayId && user.promptpayId.length > 0);
+  const profilePath = `/${locale}/${user.username}`;
+
+  // Convert Prisma Decimal -> number BEFORE passing to the client component.
+  const clientTips = tips.map((tip) => ({
+    id: tip.id,
+    supporterName: tip.supporterName,
+    message: tip.message,
+    amount: Number(tip.amount),
+    status: tip.status,
+    slipUrl: tip.slipUrl,
+    autoVerified: tip.autoVerified,
+    createdAt: tip.createdAt.toISOString(),
+  }));
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-extrabold text-brand-900">
+          {t("welcome", { name: user.displayName })}
+        </h1>
+      </div>
+
+      {!hasPromptpay && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          {t("setupPromptpayWarning")}{" "}
+          <Link href={`/${locale}/dashboard/settings`} className="font-semibold underline">
+            {t("goSettings")}
+          </Link>
+        </div>
+      )}
+
+      {/* Profile link */}
+      <div className="card rounded-2xl p-5">
+        <p className="text-sm font-medium text-brand-900/70">{t("yourLink")}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <code className="rounded-lg bg-brand-50 px-3 py-1.5 text-sm text-brand-800">
+            {profilePath}
+          </code>
+          <CopyLink path={profilePath} label={t("copyLink")} copiedLabel={t("copied")} />
+          <Link
+            href={profilePath}
+            className="text-sm font-semibold text-brand-700 hover:underline"
+          >
+            {t("viewProfile")} →
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Stat label={t("totalReceived")} value={formatBaht(totalConfirmed, currencyLocale)} highlight />
+        <Stat label={t("pendingCount")} value={String(pendingCount)} />
+        <Stat label={t("tipsCount")} value={String(tips.length)} />
+      </div>
+
+      {/* Tips */}
+      <div>
+        <h2 className="mb-4 text-lg font-bold text-brand-900">{t("tipsTitle")}</h2>
+        {clientTips.length === 0 ? (
+          <p className="card rounded-2xl p-6 text-center text-brand-900/60">
+            {t("noTips")}
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {clientTips.map((tip) => (
+              <TipRow key={tip.id} tip={tip} locale={locale} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="card rounded-2xl p-5">
+      <p className="text-sm font-medium text-brand-900/60">{label}</p>
+      <p
+        className={`mt-1 text-2xl font-extrabold ${
+          highlight ? "text-brand-600" : "text-brand-900"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}

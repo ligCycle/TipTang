@@ -1,0 +1,54 @@
+// Prisma schema — TipMe-like MVP
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TipStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  username     String   @unique
+  displayName  String
+  bio          String?
+  avatarUrl    String?
+  coverUrl     String?
+  // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.
+  promptpayId  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tips Tip[]
+}
+
+model Tip {
+  id              String    @id @default(cuid())
+  creatorId       String
+  creator         User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  supporterName   String
+  message         String?
+  amount          Decimal   @db.Decimal(10, 2)
+  currency        String    @default("THB")
+  slipUrl         String?
+  status          TipStatus @default(PENDING)
+  isMessagePublic Boolean   @default(true)
+  // Bank transaction reference from slip verification — unique to block reuse
+  // of the same slip. NULL when not verified (Postgres allows many NULLs).
+  transRef        String?   @unique
+  autoVerified    Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  confirmedAt     DateTime?
+
+  @@index([creatorId, status])
+}
