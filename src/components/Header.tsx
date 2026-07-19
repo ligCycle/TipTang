@@ -29,6 +29,12 @@ export async function Header() {
               >
                 {t("dashboard")}
               </Link>
+              <Link
+                href="/dashboard/settings"
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-brand-800 hover:bg-brand-100"
+              >
+                {t("settings")}
+              </Link>
               {admin && (
                 <Link
                   href="/admin"
