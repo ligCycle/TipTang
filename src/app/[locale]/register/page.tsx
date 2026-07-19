@@ -85,6 +85,8 @@ export default function RegisterPage() {
               required
               value={form.username}
               onChange={updateUsername}
+              name="username"
+              autoComplete="username"
               minLength={3}
               maxLength={30}
               className="input"
@@ -95,6 +97,8 @@ export default function RegisterPage() {
             <input
               required
               type="email"
+              name="email"
+              autoComplete="email"
               value={form.email}
               onChange={update("email")}
               className="input"
@@ -104,6 +108,8 @@ export default function RegisterPage() {
             <input
               required
               type="password"
+              name="password"
+              autoComplete="new-password"
               minLength={8}
               value={form.password}
               onChange={update("password")}
