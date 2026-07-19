@@ -50,7 +50,7 @@ export default async function LandingPage({
           </Link>
           <Link
             href="/login"
-            className="rounded-full border border-brand-300 bg-white/70 px-7 py-3 text-base font-semibold text-brand-800 transition hover:bg-brand-100"
+            className="rounded-full border border-brand-300 bg-brand-50/70 px-7 py-3 text-base font-semibold text-brand-800 transition hover:bg-brand-100"
           >
             {t("ctaSecondary")}
           </Link>

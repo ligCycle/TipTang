@@ -74,7 +74,7 @@ export default async function DashboardPage({
         </h1>
         <Link
           href={`/${locale}/dashboard/settings`}
-          className="rounded-full border border-brand-300 bg-white/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
+          className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
         >
           ⚙️ {t("goSettings")}
         </Link>
