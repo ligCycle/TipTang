@@ -120,5 +120,37 @@
     "rateLimited": "ส่งบ่อยเกินไป กรุณารอสักครู่",
     "duplicateSlip": "สลิปนี้ถูกใช้ไปแล้ว กรุณาใช้สลิปการโอนใหม่",
     "notFound": "ไม่พบข้อมูล"
+  },
+  "reviews": {
+    "title": "รีวิวจากผู้ใช้",
+    "ratingSummary": "{rating} จาก 5 ({count} รีวิว)",
+    "writeButton": "เขียนรีวิว",
+    "formTitle": "เขียนรีวิว TipTang",
+    "ratingLabel": "ให้คะแนน",
+    "nameLabel": "ชื่อ (ไม่บังคับ)",
+    "namePlaceholder": "ผู้ไม่ประสงค์ออกนาม",
+    "commentLabel": "ความคิดเห็น",
+    "commentPlaceholder": "เว็บเป็นยังไงบ้าง อยากให้ปรับอะไร บอกเราได้เลย...",
+    "submit": "ส่งรีวิว",
+    "submitting": "กำลังส่ง...",
+    "cancel": "ยกเลิก",
+    "successTitle": "ขอบคุณสำหรับรีวิว! 🙏",
+    "successMessage": "รีวิวของคุณจะแสดงบนหน้าเว็บเมื่อได้รับการอนุมัติ",
+    "empty": "ยังไม่มีรีวิว มาเป็นคนแรกที่รีวิวกันเถอะ!",
+    "ratingRequired": "กรุณาให้คะแนนก่อนส่ง",
+    "error": "ส่งรีวิวไม่สำเร็จ ลองใหม่อีกครั้ง"
+  },
+  "admin": {
+    "navLink": "แอดมิน",
+    "title": "จัดการรีวิว",
+    "pendingTab": "รออนุมัติ",
+    "approve": "อนุมัติ",
+    "reject": "ปฏิเสธ",
+    "processing": "กำลังดำเนินการ...",
+    "noPending": "ไม่มีรีวิวรออนุมัติ",
+    "allTitle": "รีวิวทั้งหมด",
+    "statusPending": "รออนุมัติ",
+    "statusApproved": "อนุมัติแล้ว",
+    "statusRejected": "ปฏิเสธแล้ว"
   }
 }

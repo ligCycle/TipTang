@@ -1,5 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { prisma } from "@/lib/prisma";
+import { ReviewsSection } from "@/components/ReviewsSection";
 
 export default async function LandingPage({
   params,
@@ -9,6 +11,18 @@ export default async function LandingPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("landing");
+
+  const approved = await prisma.review.findMany({
+    where: { status: "APPROVED" },
+    orderBy: { createdAt: "desc" },
+    take: 12,
+    select: { id: true, name: true, rating: true, comment: true },
+  });
+  const reviewCount = approved.length;
+  const avgRating =
+    reviewCount > 0
+      ? approved.reduce((s, r) => s + r.rating, 0) / reviewCount
+      : 0;
 
   const steps = [
     { title: t("step1Title"), desc: t("step1Desc"), icon: "🎨" },
@@ -73,6 +87,13 @@ export default async function LandingPage({
           ))}
         </ul>
       </section>
+
+      {/* Reviews / social proof */}
+      <ReviewsSection
+        reviews={approved}
+        average={avgRating}
+        count={reviewCount}
+      />
     </div>
   );
 }

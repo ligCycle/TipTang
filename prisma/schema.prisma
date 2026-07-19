@@ -15,6 +15,24 @@ enum TipStatus {
   REJECTED
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Website/platform reviews left by visitors (social proof + feedback).
+model Review {
+  id        String       @id @default(cuid())
+  name      String       @default("")
+  rating    Int // 1-5
+  comment   String
+  status    ReviewStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+
+  @@index([status, createdAt])
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique

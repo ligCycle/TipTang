@@ -37,6 +37,12 @@ export const tipSchema = z.object({
 // NOTE: do NOT use z.coerce.boolean() for checkbox values — Boolean("false")
 // is true. Parse isMessagePublic manually (=== "true") in the route.
 
+export const reviewSchema = z.object({
+  name: z.string().trim().max(60).default(""),
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: z.string().trim().min(1).max(500),
+});
+
 export const qrSchema = z.object({
   username: usernameSchema,
   amount: z.coerce.number().positive().min(1).max(100000),

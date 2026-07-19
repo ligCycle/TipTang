@@ -120,5 +120,37 @@
     "rateLimited": "Too many requests, please wait a moment",
     "duplicateSlip": "This slip has already been used. Please use a new transfer slip.",
     "notFound": "Not found"
+  },
+  "reviews": {
+    "title": "What users say",
+    "ratingSummary": "{rating} out of 5 ({count} reviews)",
+    "writeButton": "Write a review",
+    "formTitle": "Review TipTang",
+    "ratingLabel": "Your rating",
+    "nameLabel": "Name (optional)",
+    "namePlaceholder": "Anonymous",
+    "commentLabel": "Comment",
+    "commentPlaceholder": "How's the site? What should we improve? Tell us...",
+    "submit": "Submit review",
+    "submitting": "Submitting...",
+    "cancel": "Cancel",
+    "successTitle": "Thanks for your review! 🙏",
+    "successMessage": "Your review will appear on the site once it's approved.",
+    "empty": "No reviews yet — be the first to review!",
+    "ratingRequired": "Please give a rating first",
+    "error": "Couldn't submit the review. Please try again."
+  },
+  "admin": {
+    "navLink": "Admin",
+    "title": "Manage reviews",
+    "pendingTab": "Pending",
+    "approve": "Approve",
+    "reject": "Reject",
+    "processing": "Processing...",
+    "noPending": "No pending reviews",
+    "allTitle": "All reviews",
+    "statusPending": "Pending",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected"
   }
 }
