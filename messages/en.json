@@ -125,6 +125,7 @@
     "obsHint": "OBS → Sources → + → Browser → paste URL → width 800, height 300 (background is transparent automatically)",
     "obsCustomize": "Customize alert (color + sound + image/GIF)",
     "obsColor": "Alert card color",
+    "obsColorCode": "Color code (hex)",
     "obsColorDefault": "default",
     "obsColorReset": "Reset to default",
     "obsPreviewName": "Sample supporter",

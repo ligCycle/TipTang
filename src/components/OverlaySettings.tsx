@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 type Kind = "sound" | "image" | "video";
@@ -27,7 +27,14 @@ export function OverlaySettings() {
   const [copied, setCopied] = useState(false);
   const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hexInput, setHexInput] = useState(DEFAULT_COLOR);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Keep the hex text field in sync when the color changes elsewhere (picker,
+  // reset, or first load).
+  useEffect(() => {
+    setHexInput(config?.color ?? DEFAULT_COLOR);
+  }, [config?.color]);
 
   async function reveal() {
     setLoading(true);
@@ -111,6 +118,16 @@ export function OverlaySettings() {
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
+  // Typed/pasted hex code. Auto-prefix "#", keep partial input in the field,
+  // and only persist once it's a valid 6-digit hex.
+  function onHexChange(raw: string) {
+    let v = raw.trim();
+    if (v && !v.startsWith("#")) v = "#" + v;
+    v = v.slice(0, 7);
+    setHexInput(v);
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) saveColor(v.toLowerCase());
+  }
+
   async function resetColor() {
     setConfig((c) => (c ? { ...c, color: null } : c));
     const fd = new FormData();
@@ -174,9 +191,21 @@ export function OverlaySettings() {
                   className="h-8 w-12 cursor-pointer rounded border border-brand-200 bg-transparent p-0.5"
                   aria-label={t("obsColor")}
                 />
-                <span className="font-mono text-xs text-brand-900/50">
-                  {config.color ?? `${DEFAULT_COLOR} (${t("obsColorDefault")})`}
-                </span>
+                <input
+                  type="text"
+                  value={hexInput}
+                  onChange={(e) => onHexChange(e.target.value)}
+                  placeholder={DEFAULT_COLOR}
+                  spellCheck={false}
+                  maxLength={7}
+                  className="input w-28 font-mono text-sm uppercase"
+                  aria-label={t("obsColorCode")}
+                />
+                {!config.color && (
+                  <span className="text-xs text-brand-900/45">
+                    ({t("obsColorDefault")})
+                  </span>
+                )}
                 {config.color && (
                   <button
                     onClick={resetColor}
