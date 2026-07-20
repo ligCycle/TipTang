@@ -24,14 +24,19 @@ export async function sendPasswordResetEmail(
   const html = `<p>${intro}</p><p><a href="${link}">${link}</a></p>`;
 
   if (process.env.SMTP_HOST) {
+    // Trim env values — a stray tab/space (e.g. from copy-paste) in SMTP_HOST
+    // otherwise causes an EBADNAME DNS failure.
     const transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT ?? 587),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      host: process.env.SMTP_HOST.trim(),
+      port: Number((process.env.SMTP_PORT ?? "587").trim()),
+      secure: (process.env.SMTP_SECURE ?? "").trim() === "true",
+      auth: {
+        user: process.env.SMTP_USER?.trim(),
+        pass: process.env.SMTP_PASS?.trim(),
+      },
     });
     await transport.sendMail({
-      from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
+      from: (process.env.SMTP_FROM ?? process.env.SMTP_USER)?.trim(),
       to,
       subject,
       text,
