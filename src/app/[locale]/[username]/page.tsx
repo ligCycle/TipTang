@@ -58,7 +58,7 @@ export default async function ProfilePage({
 
   const canTip = Boolean(creator.promptpayId && creator.promptpayId.length > 0);
 
-  const [tips, confirmedAgg] = await Promise.all([
+  const [tips, confirmedAgg, topGroups] = await Promise.all([
     prisma.tip.findMany({
       where: {
         creatorId: creator.id,
@@ -79,7 +79,26 @@ export default async function ProfilePage({
       where: { creatorId: creator.id, status: "CONFIRMED" },
       _sum: { amount: true },
     }),
+    // Leaderboard: total per named supporter (opted-in = isMessagePublic).
+    prisma.tip.groupBy({
+      by: ["supporterName"],
+      where: {
+        creatorId: creator.id,
+        status: "CONFIRMED",
+        isMessagePublic: true,
+        supporterName: { not: "" },
+      },
+      _sum: { amount: true },
+      orderBy: { _sum: { amount: "desc" } },
+      take: 5,
+    }),
   ]);
+
+  const topSupporters = topGroups.map((g) => ({
+    name: g.supporterName,
+    total: Number(g._sum.amount ?? 0),
+  }));
+  const medals = ["🥇", "🥈", "🥉"];
 
   const socials = normalizeSocialLinks(creator.socialLinks);
   const goalAmount = creator.goalAmount ? Number(creator.goalAmount) : 0;
@@ -182,6 +201,37 @@ export default async function ProfilePage({
         <div className="card rounded-2xl p-6 text-center text-brand-900/70">
           {t("notConfigured")}
         </div>
+      )}
+
+      {/* Top supporters leaderboard */}
+      {topSupporters.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-lg font-bold text-brand-900">
+            🏆 {t("topSupporters")}
+          </h2>
+          <ul className="space-y-2">
+            {topSupporters.map((s, i) => (
+              <li
+                key={s.name}
+                className={`card flex items-center justify-between gap-3 rounded-2xl p-4 ${
+                  i === 0 ? "ring-1 ring-brand-300" : ""
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="w-7 shrink-0 text-center text-lg font-black text-brand-500">
+                    {medals[i] ?? i + 1}
+                  </span>
+                  <span className="truncate font-semibold text-brand-800">
+                    {s.name}
+                  </span>
+                </div>
+                <span className="shrink-0 rounded-full bg-brand-100 px-3 py-0.5 text-sm font-bold text-brand-700">
+                  {formatBaht(s.total, currencyLocale)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Message wall */}

@@ -85,6 +85,7 @@
     "submitting": "Sending...",
     "goalDefaultTitle": "Fundraising goal",
     "goalProgress": "Raised {raised} of {goal}",
+    "topSupporters": "Top supporters",
     "recentSupporters": "Recent supporters",
     "noSupporters": "No supporters yet — be the first!",
     "notConfigured": "This creator hasn't set up PromptPay yet",

@@ -85,6 +85,7 @@
     "submitting": "กำลังส่ง...",
     "goalDefaultTitle": "เป้าหมายระดมทุน",
     "goalProgress": "ได้รับแล้ว {raised} จาก {goal}",
+    "topSupporters": "อันดับผู้สนับสนุน",
     "recentSupporters": "ผู้สนับสนุนล่าสุด",
     "noSupporters": "ยังไม่มีผู้สนับสนุน มาเป็นคนแรกกันเถอะ!",
     "notConfigured": "ครีเอเตอร์ยังไม่ได้ตั้งค่า PromptPay",
