@@ -194,16 +194,7 @@ export default async function ProfilePage({
         </section>
       )}
 
-      {/* Tip form */}
-      {canTip ? (
-        <TipForm username={creator.username} creatorName={creator.displayName} />
-      ) : (
-        <div className="card rounded-2xl p-6 text-center text-brand-900/70">
-          {t("notConfigured")}
-        </div>
-      )}
-
-      {/* Top supporters leaderboard */}
+      {/* Top supporters leaderboard — above the form so it's visible */}
       {topSupporters.length > 0 && (
         <section>
           <h2 className="mb-4 text-lg font-bold text-brand-900">
@@ -232,6 +223,15 @@ export default async function ProfilePage({
             ))}
           </ul>
         </section>
+      )}
+
+      {/* Tip form */}
+      {canTip ? (
+        <TipForm username={creator.username} creatorName={creator.displayName} />
+      ) : (
+        <div className="card rounded-2xl p-6 text-center text-brand-900/70">
+          {t("notConfigured")}
+        </div>
       )}
 
       {/* Message wall */}
