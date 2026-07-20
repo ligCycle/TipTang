@@ -120,7 +120,18 @@
     "obsReveal": "แสดง URL overlay",
     "obsUrlLabel": "URL overlay (เก็บเป็นความลับ อย่าโชว์บนไลฟ์)",
     "obsPreview": "ทดสอบ/ดูตัวอย่าง",
-    "obsHint": "OBS → Sources → + → Browser → วาง URL → กว้าง 800 สูง 300 (พื้นหลังโปร่งใสอัตโนมัติ)"
+    "obsHint": "OBS → Sources → + → Browser → วาง URL → กว้าง 800 สูง 300 (พื้นหลังโปร่งใสอัตโนมัติ)",
+    "obsCustomize": "ปรับแต่ง Alert (เสียง + รูป/GIF)",
+    "obsSound": "เสียงแจ้งเตือน",
+    "obsSoundHint": "MP3 / WAV / OGG ไม่เกิน 2MB",
+    "obsImage": "รูป / GIF แจ้งเตือน",
+    "obsImageHint": "JPG / PNG / GIF / WebP ไม่เกิน 5MB",
+    "obsUpload": "อัปโหลด",
+    "obsChange": "เปลี่ยน",
+    "obsRemove": "ลบ",
+    "obsTestSound": "ทดสอบเสียง",
+    "obsUploading": "กำลังอัปโหลด...",
+    "obsAssetError": "อัปโหลดไม่สำเร็จ (เช็กชนิด/ขนาดไฟล์)"
   },
   "settings": {
     "title": "ตั้งค่าโปรไฟล์",

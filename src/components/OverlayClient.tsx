@@ -14,10 +14,14 @@ export function OverlayClient({
   username,
   apiKey,
   test,
+  soundUrl,
+  imageUrl,
 }: {
   username: string;
   apiKey: string;
   test: boolean;
+  soundUrl: string | null;
+  imageUrl: string | null;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
   const queue = useRef<Alert[]>([]);
@@ -31,6 +35,16 @@ export function OverlayClient({
     if (!next) return;
     showing.current = true;
     setCurrent(next);
+    if (soundUrl) {
+      // OBS browser sources allow autoplay; normal browsers may block until a
+      // user gesture (fine — the overlay runs inside OBS in real use).
+      try {
+        const audio = new Audio(soundUrl);
+        audio.play().catch(() => {});
+      } catch {
+        // ignore
+      }
+    }
     setTimeout(() => {
       setCurrent(null);
       showing.current = false;
@@ -97,6 +111,14 @@ export function OverlayClient({
           key={current.id}
           className="alert-pop w-full max-w-md rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 p-5 text-white shadow-2xl ring-1 ring-white/20"
         >
+          {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt=""
+              className="mx-auto mb-3 max-h-40 w-auto rounded-xl object-contain"
+            />
+          )}
           <div className="flex items-center justify-between gap-3">
             <span className="text-lg font-extrabold drop-shadow">
               💸 {current.name || "ผู้ไม่ประสงค์ออกนาม"}

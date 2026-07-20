@@ -12,7 +12,12 @@ export async function POST() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { username: true, overlayKey: true },
+    select: {
+      username: true,
+      overlayKey: true,
+      alertSoundUrl: true,
+      alertImageUrl: true,
+    },
   });
   if (!user) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -27,5 +32,10 @@ export async function POST() {
     });
   }
 
-  return NextResponse.json({ username: user.username, key });
+  return NextResponse.json({
+    username: user.username,
+    key,
+    soundUrl: user.alertSoundUrl,
+    imageUrl: user.alertImageUrl,
+  });
 }

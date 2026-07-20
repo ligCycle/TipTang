@@ -120,7 +120,18 @@
     "obsReveal": "Show overlay URL",
     "obsUrlLabel": "Overlay URL (keep secret — don't show it on stream)",
     "obsPreview": "Preview / test",
-    "obsHint": "OBS → Sources → + → Browser → paste URL → width 800, height 300 (background is transparent automatically)"
+    "obsHint": "OBS → Sources → + → Browser → paste URL → width 800, height 300 (background is transparent automatically)",
+    "obsCustomize": "Customize alert (sound + image/GIF)",
+    "obsSound": "Alert sound",
+    "obsSoundHint": "MP3 / WAV / OGG, max 2MB",
+    "obsImage": "Alert image / GIF",
+    "obsImageHint": "JPG / PNG / GIF / WebP, max 5MB",
+    "obsUpload": "Upload",
+    "obsChange": "Change",
+    "obsRemove": "Remove",
+    "obsTestSound": "Test sound",
+    "obsUploading": "Uploading...",
+    "obsAssetError": "Upload failed (check file type/size)"
   },
   "settings": {
     "title": "Profile settings",

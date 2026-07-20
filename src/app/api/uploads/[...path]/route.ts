@@ -6,6 +6,11 @@ const CONTENT_TYPES: Record<string, string> = {
   jpeg: "image/jpeg",
   png: "image/png",
   webp: "image/webp",
+  gif: "image/gif",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  weba: "audio/webm",
 };
 
 // Serves files stored by the "local" storage driver (dev only).

@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { OverlayClient } from "@/components/OverlayClient";
 
 export default async function OverlayPage({
@@ -12,5 +13,23 @@ export default async function OverlayPage({
   const key = typeof sp.key === "string" ? sp.key : "";
   const test = sp.test === "1";
 
-  return <OverlayClient username={username} apiKey={key} test={test} />;
+  const user = await prisma.user.findUnique({
+    where: { username },
+    select: { overlayKey: true, alertSoundUrl: true, alertImageUrl: true },
+  });
+
+  // Invalid/missing key → render nothing (transparent page).
+  if (!user?.overlayKey || user.overlayKey !== key) {
+    return null;
+  }
+
+  return (
+    <OverlayClient
+      username={username}
+      apiKey={key}
+      test={test}
+      soundUrl={user.alertSoundUrl}
+      imageUrl={user.alertImageUrl}
+    />
+  );
 }

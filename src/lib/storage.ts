@@ -15,13 +15,31 @@ const DRIVER =
 const LOCAL_DIR = path.join(process.cwd(), ".uploads");
 
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+// Alert images may be animated GIFs too.
+export const ALLOWED_ALERT_IMAGE_TYPES = [...ALLOWED_IMAGE_TYPES, "image/gif"];
+export const ALLOWED_AUDIO_TYPES = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/ogg",
+  "audio/webm",
+];
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_AUDIO_BYTES = 2 * 1024 * 1024; // 2 MB
 
 function extFor(file: File): string {
   const map: Record<string, string> = {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
+    "image/gif": "gif",
+    "audio/mpeg": "mp3",
+    "audio/mp3": "mp3",
+    "audio/wav": "wav",
+    "audio/x-wav": "wav",
+    "audio/ogg": "ogg",
+    "audio/webm": "weba",
   };
   return map[file.type] ?? "bin";
 }
