@@ -29,6 +29,26 @@ export async function POST(req: Request) {
   const remove = form?.get("remove") === "1";
   const file = form?.get("file");
 
+  // Alert card color (hex) — not a file upload.
+  if (kind === "color") {
+    if (remove) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { alertColor: null },
+      });
+      return NextResponse.json({ ok: true, color: null });
+    }
+    const color = String(form?.get("color") ?? "");
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+      return NextResponse.json({ error: "invalid" }, { status: 400 });
+    }
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { alertColor: color },
+    });
+    return NextResponse.json({ ok: true, color });
+  }
+
   if (kind !== "sound" && kind !== "image" && kind !== "video") {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }

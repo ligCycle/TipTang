@@ -10,6 +10,15 @@ type Alert = {
   message: string | null;
 };
 
+// Darken a #rrggbb color by mixing toward black (amount 0..1).
+function darken(hex: string, amount: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) * (1 - amount));
+  const g = Math.round(((n >> 8) & 255) * (1 - amount));
+  const b = Math.round((n & 255) * (1 - amount));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 export function OverlayClient({
   username,
   apiKey,
@@ -17,6 +26,7 @@ export function OverlayClient({
   soundUrl,
   imageUrl,
   videoUrl,
+  color,
 }: {
   username: string;
   apiKey: string;
@@ -24,6 +34,7 @@ export function OverlayClient({
   soundUrl: string | null;
   imageUrl: string | null;
   videoUrl: string | null;
+  color: string | null;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
   const queue = useRef<Alert[]>([]);
@@ -107,12 +118,25 @@ export function OverlayClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
+  const cardStyle = useCustom
+    ? {
+        backgroundImage: `linear-gradient(to bottom right, ${color}, ${darken(
+          color!,
+          0.3,
+        )})`,
+      }
+    : undefined;
+
   return (
     <div className="flex min-h-screen items-start justify-center p-6">
       {current && (
         <div
           key={current.id}
-          className="alert-pop w-full max-w-md rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 p-5 text-white shadow-2xl ring-1 ring-white/20"
+          style={cardStyle}
+          className={`alert-pop w-full max-w-md rounded-2xl p-5 text-white shadow-2xl ring-1 ring-white/20 ${
+            useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"
+          }`}
         >
           {videoUrl ? (
             <video

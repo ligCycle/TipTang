@@ -18,6 +18,7 @@ export async function POST() {
       alertSoundUrl: true,
       alertImageUrl: true,
       alertVideoUrl: true,
+      alertColor: true,
     },
   });
   if (!user) {
@@ -39,5 +40,6 @@ export async function POST() {
     soundUrl: user.alertSoundUrl,
     imageUrl: user.alertImageUrl,
     videoUrl: user.alertVideoUrl,
+    color: user.alertColor,
   });
 }

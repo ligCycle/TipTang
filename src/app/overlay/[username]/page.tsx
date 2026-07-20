@@ -20,6 +20,7 @@ export default async function OverlayPage({
       alertSoundUrl: true,
       alertImageUrl: true,
       alertVideoUrl: true,
+      alertColor: true,
     },
   });
 
@@ -36,6 +37,7 @@ export default async function OverlayPage({
       soundUrl={user.alertSoundUrl}
       imageUrl={user.alertImageUrl}
       videoUrl={user.alertVideoUrl}
+      color={user.alertColor}
     />
   );
 }

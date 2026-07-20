@@ -9,7 +9,10 @@ type Config = {
   soundUrl: string | null;
   imageUrl: string | null;
   videoUrl: string | null;
+  color: string | null;
 };
+
+const DEFAULT_COLOR = "#ec4899";
 
 const FIELD: Record<Kind, keyof Config> = {
   sound: "soundUrl",
@@ -37,6 +40,7 @@ export function OverlaySettings() {
           soundUrl: d.soundUrl ?? null,
           imageUrl: d.imageUrl ?? null,
           videoUrl: d.videoUrl ?? null,
+          color: d.color ?? null,
         });
       }
     } finally {
@@ -97,6 +101,24 @@ export function OverlaySettings() {
     }
   }
 
+  // Persist the chosen color. Debounced by the browser's color input (fires on
+  // change/commit, not every drag frame).
+  async function saveColor(color: string) {
+    setConfig((c) => (c ? { ...c, color } : c));
+    const fd = new FormData();
+    fd.set("kind", "color");
+    fd.set("color", color);
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
+  async function resetColor() {
+    setConfig((c) => (c ? { ...c, color: null } : c));
+    const fd = new FormData();
+    fd.set("kind", "color");
+    fd.set("remove", "1");
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
   return (
     <div className="card rounded-2xl p-5">
       <h2 className="text-lg font-bold text-brand-900">🔴 {t("obsTitle")}</h2>
@@ -140,6 +162,52 @@ export function OverlaySettings() {
             <p className="text-sm font-semibold text-brand-900/80">
               {t("obsCustomize")}
             </p>
+
+            {/* Alert card color */}
+            <div>
+              <div className="mb-2 flex flex-wrap items-center gap-3">
+                <span className="text-sm text-brand-900/70">🎨 {t("obsColor")}</span>
+                <input
+                  type="color"
+                  value={config.color ?? DEFAULT_COLOR}
+                  onChange={(e) => saveColor(e.target.value)}
+                  className="h-8 w-12 cursor-pointer rounded border border-brand-200 bg-transparent p-0.5"
+                  aria-label={t("obsColor")}
+                />
+                <span className="font-mono text-xs text-brand-900/50">
+                  {config.color ?? `${DEFAULT_COLOR} (${t("obsColorDefault")})`}
+                </span>
+                {config.color && (
+                  <button
+                    onClick={resetColor}
+                    className="text-sm font-medium text-red-600 hover:underline"
+                  >
+                    {t("obsColorReset")}
+                  </button>
+                )}
+              </div>
+              {/* Live preview of the alert card */}
+              <div
+                className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom right, ${
+                    config.color ?? DEFAULT_COLOR
+                  }, color-mix(in srgb, ${
+                    config.color ?? DEFAULT_COLOR
+                  }, black 30%))`,
+                }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-extrabold drop-shadow">
+                    💸 {t("obsPreviewName")}
+                  </span>
+                  <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
+                    ฿100
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-white/95">{t("obsPreviewMsg")}</p>
+              </div>
+            </div>
 
             {/* Video (takes priority) */}
             <div className="rounded-xl bg-brand-50 p-3">
