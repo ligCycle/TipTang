@@ -1,7 +1,22 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import { ReviewsSection } from "@/components/ReviewsSection";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    alternates: {
+      canonical: `/${locale}`,
+      languages: { th: "/th", en: "/en", "x-default": "/th" },
+    },
+  };
+}
 
 export default async function LandingPage({
   params,
@@ -11,6 +26,17 @@ export default async function LandingPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("landing");
+
+  // Structured data so Google understands the site.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "TipTang",
+    url: "https://tiptang.com",
+    inLanguage: locale,
+    description:
+      "รับทิป/โดเนทผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม ทางเลือกแทน TipMe สำหรับครีเอเตอร์และสตรีมเมอร์ไทย",
+  };
 
   const approved = await prisma.review.findMany({
     where: { status: "APPROVED" },
@@ -33,6 +59,10 @@ export default async function LandingPage({
 
   return (
     <div className="space-y-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero */}
       <section className="pt-8 text-center sm:pt-14">
         <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-brand-900 sm:text-5xl">

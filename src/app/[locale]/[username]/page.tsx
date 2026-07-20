@@ -9,22 +9,37 @@ import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ username: string }>;
+  params: Promise<{ locale: string; username: string }>;
 }): Promise<Metadata> {
-  const { username } = await params;
+  const { locale, username } = await params;
   const creator = await prisma.user.findUnique({
     where: { username },
     select: { displayName: true, bio: true },
   });
   if (!creator) return { title: "Not found" };
 
-  const title = `Support ${creator.displayName}`;
+  const title =
+    locale === "th"
+      ? `สนับสนุน ${creator.displayName} — รับทิปผ่าน PromptPay`
+      : `Support ${creator.displayName} — tip via PromptPay`;
   const description =
-    creator.bio || `Support ${creator.displayName} with a tip via PromptPay.`;
+    creator.bio ||
+    (locale === "th"
+      ? `สนับสนุน ${creator.displayName} ด้วยการทิปผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม บน TipTang`
+      : `Support ${creator.displayName} with a tip via PromptPay on TipTang.`);
   return {
     title,
     description,
+    alternates: {
+      canonical: `/${locale}/${username}`,
+      languages: {
+        th: `/th/${username}`,
+        en: `/en/${username}`,
+        "x-default": `/th/${username}`,
+      },
+    },
     openGraph: { title: `${title} · TipTang`, description, type: "profile" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -109,8 +124,26 @@ export default async function ProfilePage({
   const initial = creator.displayName.charAt(0).toUpperCase();
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    inLanguage: locale,
+    mainEntity: {
+      "@type": "Person",
+      name: creator.displayName,
+      alternateName: `@${creator.username}`,
+      url: `https://tiptang.com/${locale}/${creator.username}`,
+      ...(creator.bio ? { description: creator.bio } : {}),
+      ...(creator.avatarUrl ? { image: creator.avatarUrl } : {}),
+    },
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Profile header */}
       <section className="card overflow-hidden rounded-3xl text-center">
         {/* Cover */}
