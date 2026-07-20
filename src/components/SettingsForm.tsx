@@ -9,7 +9,12 @@ type Initial = {
   username: string;
   bio: string;
   promptpayId: string;
+  avatarUrl: string;
+  coverUrl: string;
 };
+
+const MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
 export function SettingsForm({ initial }: { initial: Initial }) {
   const t = useTranslations("settings");
@@ -20,6 +25,44 @@ export function SettingsForm({ initial }: { initial: Initial }) {
     "idle",
   );
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<"avatar" | "cover" | null>(null);
+
+  async function uploadImage(
+    kind: "avatar" | "cover",
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    if (!ALLOWED.includes(file.type) || file.size > MAX_BYTES) {
+      setError(t("imageError"));
+      return;
+    }
+    setUploading(kind);
+    try {
+      const fd = new FormData();
+      fd.set("kind", kind);
+      fd.set("file", file);
+      const res = await fetch("/api/profile/image", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        setError(t("imageError"));
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        [kind === "avatar" ? "avatarUrl" : "coverUrl"]: data.url as string,
+      }));
+      router.refresh();
+    } catch {
+      setError(t("imageError"));
+    } finally {
+      setUploading(null);
+    }
+  }
 
   const update =
     (k: keyof Initial) =>
@@ -64,6 +107,62 @@ export function SettingsForm({ initial }: { initial: Initial }) {
   return (
     <div className="card rounded-3xl p-8">
       <h1 className="mb-6 text-2xl font-bold text-brand-900">{t("title")}</h1>
+
+      {/* Cover + avatar upload */}
+      <div className="mb-6">
+        <span className="mb-1 block text-sm font-medium text-brand-900/80">
+          {t("cover")}
+        </span>
+        <label className="group relative block h-32 cursor-pointer overflow-hidden rounded-2xl border border-brand-200 bg-brand-100">
+          {form.coverUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={form.coverUrl}
+              alt="cover"
+              className="h-full w-full object-cover"
+            />
+          )}
+          <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-sm font-semibold text-white opacity-0 transition group-hover:opacity-100">
+            {uploading === "cover" ? t("uploading") : t("changeImage")}
+          </span>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(e) => uploadImage("cover", e)}
+            className="hidden"
+          />
+        </label>
+
+        <div className="-mt-8 ml-4 flex items-end gap-3">
+          <label className="group relative block h-20 w-20 cursor-pointer overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-brand-400 to-brand-600 shadow">
+            {form.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={form.avatarUrl}
+                alt="avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
+                {form.displayName.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+              {uploading === "avatar" ? "..." : "✎"}
+            </span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => uploadImage("avatar", e)}
+              className="hidden"
+            />
+          </label>
+          <span className="pb-1 text-xs text-brand-900/50">
+            {t("avatar")} · {t("imageHint")}
+          </span>
+        </div>
+      </div>
+
       <form onSubmit={onSubmit} className="space-y-4">
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-brand-900/80">

@@ -20,6 +20,8 @@ export default async function SettingsPage({
       username: true,
       bio: true,
       promptpayId: true,
+      avatarUrl: true,
+      coverUrl: true,
     },
   });
   if (!user) return null;
@@ -32,6 +34,8 @@ export default async function SettingsPage({
           username: user.username,
           bio: user.bio ?? "",
           promptpayId: user.promptpayId ?? "",
+          avatarUrl: user.avatarUrl ?? "",
+          coverUrl: user.coverUrl ?? "",
         }}
       />
     </div>

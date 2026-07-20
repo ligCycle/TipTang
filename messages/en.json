@@ -113,7 +113,13 @@
     "promptpayId": "PromptPay (phone number or national ID)",
     "promptpayHint": "10-digit phone or 13-digit national ID — used only to generate the QR, never shown publicly.",
     "saved": "Saved!",
-    "errorUsernameTaken": "This link name is already taken"
+    "errorUsernameTaken": "This link name is already taken",
+    "avatar": "Profile picture",
+    "cover": "Cover image",
+    "imageHint": "JPG, PNG or WebP, max 5MB",
+    "changeImage": "Change image",
+    "uploading": "Uploading...",
+    "imageError": "Upload failed. Please try again."
   },
   "errors": {
     "tooLarge": "File too large (max 5MB)",
