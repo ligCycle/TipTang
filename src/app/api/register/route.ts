@@ -5,7 +5,7 @@ import { registerSchema } from "@/lib/validators";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
-  const limit = rateLimit(`register:${clientIp(req)}`, 5, 60_000);
+  const limit = await rateLimit(`register:${clientIp(req)}`, 5, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

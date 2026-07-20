@@ -5,7 +5,7 @@ import { generatePromptPayQr } from "@/lib/promptpay";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
-  const limit = rateLimit(`qr:${clientIp(req)}`, 30, 60_000);
+  const limit = await rateLimit(`qr:${clientIp(req)}`, 30, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

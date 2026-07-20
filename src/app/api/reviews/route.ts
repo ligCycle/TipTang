@@ -5,7 +5,7 @@ import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // Public: anyone can submit a review. It starts PENDING until an admin approves.
 export async function POST(req: Request) {
-  const limit = rateLimit(`review:${clientIp(req)}`, 3, 60_000);
+  const limit = await rateLimit(`review:${clientIp(req)}`, 3, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

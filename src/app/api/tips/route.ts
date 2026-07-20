@@ -10,7 +10,7 @@ import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifySlip, receiverMatches } from "@/lib/slip-verify";
 
 export async function POST(req: Request) {
-  const limit = rateLimit(`tip:${clientIp(req)}`, 5, 60_000);
+  const limit = await rateLimit(`tip:${clientIp(req)}`, 5, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

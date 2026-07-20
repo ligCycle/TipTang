@@ -6,7 +6,7 @@ import { resetSchema } from "@/lib/validators";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
-  const limit = rateLimit(`reset:${clientIp(req)}`, 10, 60_000);
+  const limit = await rateLimit(`reset:${clientIp(req)}`, 10, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
