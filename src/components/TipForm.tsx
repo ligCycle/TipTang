@@ -110,7 +110,7 @@ export function TipForm({
         return;
       }
       const data = await res.json().catch(() => ({}));
-      setAutoVerified(Boolean(data.autoVerified));
+      setAutoVerified(Boolean(data.autoVerified) || Boolean(data.confirmed));
       setStep("done");
     } catch {
       setError(tErr("notFound"));
@@ -249,8 +249,18 @@ export function TipForm({
               alt="PromptPay QR"
               className="mx-auto mt-3 h-60 w-60 rounded-2xl border border-brand-100 bg-white p-2"
             />
+            <a
+              href={qr}
+              download={`promptpay-${amount}.png`}
+              className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-200"
+            >
+              ⬇ {t("saveQr")}
+            </a>
             <p className="mx-auto mt-2 max-w-sm text-sm text-brand-900/60">
               {t("scanHint")}
+            </p>
+            <p className="mx-auto mt-1 max-w-sm text-xs text-brand-900/45">
+              {t("saveQrHint")}
             </p>
           </div>
 

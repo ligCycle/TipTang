@@ -26,6 +26,7 @@ export const profileSchema = z.object({
     .regex(/^(0\d{9}|\d{13})$/, "promptpay_invalid")
     .optional()
     .or(z.literal("")),
+  autoConfirmTips: z.boolean().optional(),
 });
 
 export const tipSchema = z.object({

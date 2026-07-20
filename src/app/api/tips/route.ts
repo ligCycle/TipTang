@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
   const creator = await prisma.user.findUnique({
     where: { username: username.data },
-    select: { id: true, promptpayId: true },
+    select: { id: true, promptpayId: true, autoConfirmTips: true },
   });
   if (!creator?.promptpayId) {
     return NextResponse.json({ error: "not_configured" }, { status: 404 });
@@ -88,6 +88,14 @@ export async function POST(req: Request) {
     }
   }
 
+  // Creator opted to trust slips (they watch their bank) — confirm on arrival
+  // without the manual step. Note: this is NOT slip verification, so it stays
+  // off by default.
+  if (status === "PENDING" && creator.autoConfirmTips) {
+    status = "CONFIRMED";
+    confirmedAt = new Date();
+  }
+
   const slipUrl = await uploadImage(slip, "slips");
 
   const tip = await prisma.tip.create({
@@ -106,5 +114,10 @@ export async function POST(req: Request) {
     select: { id: true },
   });
 
-  return NextResponse.json({ ok: true, id: tip.id, autoVerified });
+  return NextResponse.json({
+    ok: true,
+    id: tip.id,
+    autoVerified,
+    confirmed: status === "CONFIRMED",
+  });
 }

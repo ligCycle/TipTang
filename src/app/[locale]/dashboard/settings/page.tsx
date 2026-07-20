@@ -22,6 +22,7 @@ export default async function SettingsPage({
       promptpayId: true,
       avatarUrl: true,
       coverUrl: true,
+      autoConfirmTips: true,
     },
   });
   if (!user) return null;
@@ -36,6 +37,7 @@ export default async function SettingsPage({
           promptpayId: user.promptpayId ?? "",
           avatarUrl: user.avatarUrl ?? "",
           coverUrl: user.coverUrl ?? "",
+          autoConfirmTips: user.autoConfirmTips,
         }}
       />
     </div>

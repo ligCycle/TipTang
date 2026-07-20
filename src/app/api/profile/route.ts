@@ -14,7 +14,8 @@ export async function PATCH(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
-  const { displayName, username, bio, promptpayId } = parsed.data;
+  const { displayName, username, bio, promptpayId, autoConfirmTips } =
+    parsed.data;
 
   // Ensure the username isn't taken by someone else.
   const clash = await prisma.user.findFirst({
@@ -32,6 +33,7 @@ export async function PATCH(req: Request) {
       username,
       bio: bio ? bio : null,
       promptpayId: promptpayId ? promptpayId : null,
+      ...(autoConfirmTips === undefined ? {} : { autoConfirmTips }),
     },
   });
 

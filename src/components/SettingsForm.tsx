@@ -12,6 +12,7 @@ type Initial = {
   promptpayId: string;
   avatarUrl: string;
   coverUrl: string;
+  autoConfirmTips: boolean;
 };
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -239,6 +240,27 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             {t("promptpayHint")}
           </span>
         </label>
+
+        <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={form.autoConfirmTips}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, autoConfirmTips: e.target.checked }))
+              }
+              className="mt-0.5 h-4 w-4 accent-brand-600"
+            />
+            <span>
+              <span className="block text-sm font-medium text-brand-900/80">
+                {t("autoConfirm")}
+              </span>
+              <span className="mt-0.5 block text-xs text-brand-900/55">
+                {t("autoConfirmHint")}
+              </span>
+            </span>
+          </label>
+        </div>
 
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
