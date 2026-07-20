@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tip-tang.vercel.app"),
+  metadataBase: new URL("https://tiptang.com"),
   title: { default: "TipTang", template: "%s · TipTang" },
   description: "Get tipped by your fans easily with PromptPay",
   openGraph: {
