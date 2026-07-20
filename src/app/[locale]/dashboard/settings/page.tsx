@@ -24,8 +24,6 @@ export default async function SettingsPage({
       avatarUrl: true,
       coverUrl: true,
       autoConfirmTips: true,
-      goalTitle: true,
-      goalAmount: true,
       socialLinks: true,
     },
   });
@@ -42,8 +40,6 @@ export default async function SettingsPage({
           avatarUrl: user.avatarUrl ?? "",
           coverUrl: user.coverUrl ?? "",
           autoConfirmTips: user.autoConfirmTips,
-          goalTitle: user.goalTitle ?? "",
-          goalAmount: user.goalAmount ? String(user.goalAmount) : "",
           socialLinks: normalizeSocialLinks(user.socialLinks),
         }}
       />

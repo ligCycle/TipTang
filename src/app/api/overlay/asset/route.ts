@@ -49,6 +49,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, color });
   }
 
+  // Set the fundraising goal (title + amount) from the dashboard OBS card.
+  if (kind === "goalSet") {
+    const title = String(form?.get("title") ?? "").trim().slice(0, 80);
+    const amountRaw = Number(form?.get("amount") ?? 0);
+    const amount =
+      Number.isFinite(amountRaw) && amountRaw > 0
+        ? Math.min(amountRaw, 100000000)
+        : null;
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { goalTitle: title || null, goalAmount: amount },
+    });
+    return NextResponse.json({
+      ok: true,
+      title: title || "",
+      amount: amount ?? "",
+      hasGoal: amount !== null,
+    });
+  }
+
   // Goal-bar overlay on/off toggle.
   if (kind === "goalToggle") {
     const enabled = form?.get("enabled") === "1";

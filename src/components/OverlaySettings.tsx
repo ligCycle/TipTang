@@ -12,6 +12,8 @@ type Config = {
   color: string | null;
   hasGoal: boolean;
   goalEnabled: boolean;
+  goalTitle: string;
+  goalAmount: string;
 };
 
 const DEFAULT_COLOR = "#ec4899";
@@ -44,6 +46,11 @@ export function OverlaySettings() {
   const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hexInput, setHexInput] = useState(DEFAULT_COLOR);
+  const [goalTitle, setGoalTitle] = useState("");
+  const [goalAmount, setGoalAmount] = useState("");
+  const [goalSaved, setGoalSaved] = useState(false);
+  const [savingGoal, setSavingGoal] = useState(false);
+  const [goalRefresh, setGoalRefresh] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Keep the hex text field in sync when the color changes elsewhere (picker,
@@ -66,7 +73,11 @@ export function OverlaySettings() {
           color: d.color ?? null,
           hasGoal: Boolean(d.hasGoal),
           goalEnabled: d.goalEnabled !== false,
+          goalTitle: d.goalTitle ?? "",
+          goalAmount: d.goalAmount ?? "",
         });
+        setGoalTitle(d.goalTitle ?? "");
+        setGoalAmount(d.goalAmount ?? "");
       }
     } finally {
       setLoading(false);
@@ -84,6 +95,35 @@ export function OverlaySettings() {
   }
 
   const goalUrl = config ? config.url.replace("?key=", "/goal?key=") : "";
+
+  async function saveGoal() {
+    setSavingGoal(true);
+    try {
+      const fd = new FormData();
+      fd.set("kind", "goalSet");
+      fd.set("title", goalTitle);
+      fd.set("amount", goalAmount || "0");
+      const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setConfig((c) =>
+          c
+            ? {
+                ...c,
+                goalTitle,
+                goalAmount: goalAmount,
+                hasGoal: Boolean(d.hasGoal),
+              }
+            : c,
+        );
+        setGoalRefresh((n) => n + 1); // reload the preview iframe
+        setGoalSaved(true);
+        setTimeout(() => setGoalSaved(false), 1500);
+      }
+    } finally {
+      setSavingGoal(false);
+    }
+  }
 
   async function toggleGoal(enabled: boolean) {
     setConfig((c) => (c ? { ...c, goalEnabled: enabled } : c));
@@ -235,6 +275,47 @@ export function OverlaySettings() {
 
             {config.goalEnabled && (
               <div className="mt-3">
+                {/* Goal setup — right here, no need to open Settings */}
+                <div className="mb-4 rounded-xl bg-brand-50 p-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                      {t("obsGoalNameLabel")}
+                    </span>
+                    <input
+                      value={goalTitle}
+                      onChange={(e) => setGoalTitle(e.target.value)}
+                      placeholder={t("obsGoalNamePlaceholder")}
+                      maxLength={80}
+                      className="input text-sm"
+                    />
+                  </label>
+                  <label className="mt-2 block">
+                    <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                      {t("obsGoalAmountLabel")}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100000000}
+                      value={goalAmount}
+                      onChange={(e) => setGoalAmount(e.target.value)}
+                      placeholder="5000"
+                      className="input text-sm"
+                    />
+                  </label>
+                  <button
+                    onClick={saveGoal}
+                    disabled={savingGoal}
+                    className="btn-primary mt-3 w-full py-2 text-sm"
+                  >
+                    {savingGoal
+                      ? t("obsGoalSaving")
+                      : goalSaved
+                        ? t("obsGoalSaved")
+                        : t("obsGoalSave")}
+                  </button>
+                </div>
+
                 <p className="mb-1 text-sm font-medium text-brand-900/70">
                   {t("obsGoalUrlLabel")}
                 </p>
@@ -272,7 +353,7 @@ export function OverlaySettings() {
                   {config.hasGoal ? (
                     <div className="overflow-hidden rounded-xl bg-neutral-800 ring-1 ring-black/20">
                       <iframe
-                        key={goalUrl}
+                        key={`${goalUrl}#${goalRefresh}`}
                         src={goalUrl}
                         title="goal-bar preview"
                         className="h-[140px] w-full border-0"

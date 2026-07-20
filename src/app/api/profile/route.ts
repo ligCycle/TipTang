@@ -26,11 +26,19 @@ export async function PATCH(req: Request) {
     socialLinks,
   } = parsed.data;
 
-  // Empty amount / 0 clears the goal.
-  const goalValue =
-    goalAmount === "" || goalAmount === undefined || Number(goalAmount) <= 0
-      ? null
-      : Number(goalAmount);
+  // Goal is edited from the dashboard OBS card, not here — only touch these
+  // fields when the client actually sends them. Empty amount / 0 clears it.
+  const goalTitleUpdate =
+    goalTitle === undefined ? {} : { goalTitle: goalTitle ? goalTitle : null };
+  const goalAmountUpdate =
+    goalAmount === undefined
+      ? {}
+      : {
+          goalAmount:
+            goalAmount === "" || Number(goalAmount) <= 0
+              ? null
+              : Number(goalAmount),
+        };
   const cleanSocials =
     socialLinks === undefined ? undefined : normalizeSocialLinks(socialLinks);
 
@@ -51,8 +59,8 @@ export async function PATCH(req: Request) {
       bio: bio ? bio : null,
       promptpayId: promptpayId ? promptpayId : null,
       ...(autoConfirmTips === undefined ? {} : { autoConfirmTips }),
-      goalTitle: goalTitle ? goalTitle : null,
-      goalAmount: goalValue,
+      ...goalTitleUpdate,
+      ...goalAmountUpdate,
       ...(cleanSocials === undefined ? {} : { socialLinks: cleanSocials }),
     },
   });

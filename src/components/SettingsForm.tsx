@@ -14,8 +14,6 @@ type Initial = {
   avatarUrl: string;
   coverUrl: string;
   autoConfirmTips: boolean;
-  goalTitle: string;
-  goalAmount: string;
   socialLinks: SocialLinks;
 };
 
@@ -269,42 +267,6 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               <span className="mt-0.5 block text-xs text-brand-900/55">
                 {t("autoConfirmHint")}
               </span>
-            </span>
-          </label>
-        </div>
-
-        {/* Fundraising goal */}
-        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-          <p className="mb-3 text-sm font-semibold text-brand-900/80">
-            🎯 {t("goalSection")}
-          </p>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-brand-900/80">
-              {t("goalTitle")}
-            </span>
-            <input
-              value={form.goalTitle}
-              onChange={update("goalTitle")}
-              placeholder={t("goalTitlePlaceholder")}
-              maxLength={80}
-              className="input"
-            />
-          </label>
-          <label className="mt-3 block">
-            <span className="mb-1 block text-sm font-medium text-brand-900/80">
-              {t("goalAmount")}
-            </span>
-            <input
-              type="number"
-              min={0}
-              max={100000000}
-              value={form.goalAmount}
-              onChange={update("goalAmount")}
-              placeholder="5000"
-              className="input"
-            />
-            <span className="mt-1 block text-xs text-brand-900/50">
-              {t("goalHint")}
             </span>
           </label>
         </div>

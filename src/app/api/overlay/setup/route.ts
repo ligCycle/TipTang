@@ -19,6 +19,7 @@ export async function POST() {
       alertImageUrl: true,
       alertVideoUrl: true,
       alertColor: true,
+      goalTitle: true,
       goalAmount: true,
       goalOverlayEnabled: true,
     },
@@ -45,5 +46,7 @@ export async function POST() {
     color: user.alertColor,
     hasGoal: Boolean(user.goalAmount && Number(user.goalAmount) > 0),
     goalEnabled: user.goalOverlayEnabled,
+    goalTitle: user.goalTitle ?? "",
+    goalAmount: user.goalAmount ? String(user.goalAmount) : "",
   });
 }
