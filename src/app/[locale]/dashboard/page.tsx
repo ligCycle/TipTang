@@ -22,7 +22,12 @@ export default async function DashboardPage({
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { displayName: true, username: true, promptpayId: true },
+    select: {
+      displayName: true,
+      username: true,
+      promptpayId: true,
+      autoConfirmTips: true,
+    },
   });
   if (!user) {
     return null;
@@ -53,6 +58,9 @@ export default async function DashboardPage({
 
   const totalConfirmed = Number(confirmedAgg._sum.amount ?? 0);
   const hasPromptpay = Boolean(user.promptpayId && user.promptpayId.length > 0);
+  // With auto-confirm on there's nothing to wait for — hide the pending card
+  // unless some older tips are still pending.
+  const showPending = !user.autoConfirmTips || pendingCount > 0;
   const profilePath = `/${locale}/${user.username}`;
 
   // Convert Prisma Decimal -> number BEFORE passing to the client component.
@@ -111,9 +119,13 @@ export default async function DashboardPage({
       <OverlaySettings />
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div
+        className={`grid gap-4 ${showPending ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+      >
         <Stat label={t("totalReceived")} value={formatBaht(totalConfirmed, currencyLocale)} highlight />
-        <Stat label={t("pendingCount")} value={String(pendingCount)} />
+        {showPending && (
+          <Stat label={t("pendingCount")} value={String(pendingCount)} />
+        )}
         <Stat label={t("tipsCount")} value={String(tips.length)} />
       </div>
 
