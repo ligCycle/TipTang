@@ -13,6 +13,20 @@ type Config = {
 };
 
 const DEFAULT_COLOR = "#ec4899";
+const PRESET_COLORS = [
+  "#ec4899", // pink
+  "#f43f5e", // rose
+  "#ef4444", // red
+  "#f59e0b", // amber
+  "#22c55e", // green
+  "#14b8a6", // teal
+  "#06b6d4", // cyan
+  "#3b82f6", // blue
+  "#8b5cf6", // violet
+  "#a855f7", // purple
+  "#64748b", // slate
+  "#0f172a", // near-black
+];
 
 const FIELD: Record<Kind, keyof Config> = {
   sound: "soundUrl",
@@ -181,62 +195,107 @@ export function OverlaySettings() {
             </p>
 
             {/* Alert card color */}
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-3">
-                <span className="text-sm text-brand-900/70">🎨 {t("obsColor")}</span>
-                <input
-                  type="color"
-                  value={config.color ?? DEFAULT_COLOR}
-                  onChange={(e) => saveColor(e.target.value)}
-                  className="h-8 w-12 cursor-pointer rounded border border-brand-200 bg-transparent p-0.5"
-                  aria-label={t("obsColor")}
-                />
-                <input
-                  type="text"
-                  value={hexInput}
-                  onChange={(e) => onHexChange(e.target.value)}
-                  placeholder={DEFAULT_COLOR}
-                  spellCheck={false}
-                  maxLength={7}
-                  className="input w-28 font-mono text-sm uppercase"
-                  aria-label={t("obsColorCode")}
-                />
-                {!config.color && (
-                  <span className="text-xs text-brand-900/45">
-                    ({t("obsColorDefault")})
-                  </span>
-                )}
-                {config.color && (
-                  <button
-                    onClick={resetColor}
-                    className="text-sm font-medium text-red-600 hover:underline"
-                  >
-                    {t("obsColorReset")}
-                  </button>
-                )}
-              </div>
-              {/* Live preview of the alert card */}
-              <div
-                className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
-                style={{
-                  backgroundImage: `linear-gradient(to bottom right, ${
-                    config.color ?? DEFAULT_COLOR
-                  }, color-mix(in srgb, ${
-                    config.color ?? DEFAULT_COLOR
-                  }, black 30%))`,
-                }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-extrabold drop-shadow">
-                    💸 {t("obsPreviewName")}
-                  </span>
-                  <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
-                    ฿100
-                  </span>
+            {(() => {
+              const activeColor = config.color ?? DEFAULT_COLOR;
+              return (
+                <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-sm font-medium text-brand-900/80">
+                      🎨 {t("obsColor")}
+                    </span>
+                    {config.color ? (
+                      <button
+                        onClick={resetColor}
+                        className="text-xs font-medium text-brand-900/50 hover:text-red-600 hover:underline"
+                      >
+                        ↺ {t("obsColorReset")}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-brand-900/45">
+                        {t("obsColorDefault")}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Preset swatches */}
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {PRESET_COLORS.map((c) => {
+                      const selected = activeColor.toLowerCase() === c;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => saveColor(c)}
+                          aria-label={c}
+                          title={c}
+                          className={`h-7 w-7 rounded-full ring-offset-2 ring-offset-brand-50 transition hover:scale-110 ${
+                            selected
+                              ? "ring-2 ring-brand-900/60"
+                              : "ring-1 ring-black/10"
+                          }`}
+                          style={{ backgroundColor: c }}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom picker + hex code */}
+                  <div className="flex items-center gap-2">
+                    <label className="relative h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-full ring-1 ring-black/10">
+                      <span
+                        className="block h-full w-full"
+                        style={{ backgroundColor: activeColor }}
+                      />
+                      <input
+                        type="color"
+                        value={activeColor}
+                        onChange={(e) => saveColor(e.target.value)}
+                        className="absolute inset-0 cursor-pointer opacity-0"
+                        aria-label={t("obsColor")}
+                      />
+                    </label>
+                    <div className="flex items-center rounded-lg border border-brand-200 bg-white pl-2.5 focus-within:ring-2 focus-within:ring-brand-400 dark:bg-[#241019]">
+                      <span className="font-mono text-sm text-brand-900/40">#</span>
+                      <input
+                        type="text"
+                        value={hexInput.replace(/^#/, "")}
+                        onChange={(e) => onHexChange(e.target.value)}
+                        placeholder={DEFAULT_COLOR.replace(/^#/, "")}
+                        spellCheck={false}
+                        maxLength={7}
+                        className="w-24 bg-transparent py-1.5 pl-1 pr-2.5 font-mono text-sm uppercase text-brand-900 outline-none"
+                        aria-label={t("obsColorCode")}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live preview of the alert card */}
+                  <div className="mt-4">
+                    <p className="mb-1.5 text-xs font-medium text-brand-900/50">
+                      {t("obsColorPreview")}
+                    </p>
+                    <div
+                      className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, ${activeColor}, color-mix(in srgb, ${activeColor}, black 32%))`,
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-extrabold drop-shadow">
+                          💸 {t("obsPreviewName")}
+                        </span>
+                        <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
+                          ฿100
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-white/95">
+                        {t("obsPreviewMsg")}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-1 text-xs text-white/95">{t("obsPreviewMsg")}</p>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Video (takes priority) */}
             <div className="rounded-xl bg-brand-50 p-3">

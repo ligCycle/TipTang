@@ -126,6 +126,7 @@
     "obsCustomize": "ปรับแต่ง Alert (สี + เสียง + รูป/GIF)",
     "obsColor": "สีการ์ดแจ้งเตือน",
     "obsColorCode": "รหัสสี (hex)",
+    "obsColorPreview": "ตัวอย่าง",
     "obsColorDefault": "ค่าเริ่มต้น",
     "obsColorReset": "รีเซ็ตเป็นค่าเริ่มต้น",
     "obsPreviewName": "ผู้สนับสนุนตัวอย่าง",
