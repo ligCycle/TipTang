@@ -43,6 +43,16 @@ export const reviewSchema = z.object({
   comment: z.string().trim().min(1).max(500),
 });
 
+export const forgotSchema = z.object({
+  email: z.string().trim().email().toLowerCase(),
+  locale: z.enum(["th", "en"]).optional(),
+});
+
+export const resetSchema = z.object({
+  token: z.string().min(10),
+  password: z.string().min(8).max(100),
+});
+
 export const qrSchema = z.object({
   username: usernameSchema,
   amount: z.coerce.number().positive().min(1).max(100000),

@@ -51,7 +51,19 @@
     "errorEmailTaken": "This email is already in use",
     "errorUsernameTaken": "This link name is already taken",
     "errorGeneric": "Something went wrong. Please try again.",
-    "passwordHint": "At least 8 characters"
+    "passwordHint": "At least 8 characters",
+    "forgotLink": "Forgot password?",
+    "forgotTitle": "Forgot password",
+    "forgotDesc": "Enter your registered email and we'll send you a link to set a new password.",
+    "forgotSubmit": "Send reset link",
+    "forgotSending": "Sending...",
+    "forgotSent": "If that email exists, we've sent a reset link. Please check your inbox (and spam folder).",
+    "resetTitle": "Set a new password",
+    "newPassword": "New password",
+    "resetSubmit": "Set new password",
+    "resetSuccess": "Password updated! You can now log in.",
+    "resetInvalid": "This link is invalid or expired. Please request a new one.",
+    "backToLogin": "Go to login"
   },
   "profile": {
     "supportTitle": "Support {name}",
