@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { reviewSchema } from "@/lib/validators";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { censorText } from "@/lib/profanity";
 
 // Public: anyone can submit a review. It starts PENDING until an admin approves.
 export async function POST(req: Request) {
@@ -18,9 +19,9 @@ export async function POST(req: Request) {
 
   await prisma.review.create({
     data: {
-      name: parsed.data.name,
+      name: censorText(parsed.data.name),
       rating: parsed.data.rating,
-      comment: parsed.data.comment,
+      comment: censorText(parsed.data.comment),
       status: "PENDING",
     },
   });

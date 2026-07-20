@@ -10,6 +10,7 @@ import {
 } from "@/lib/storage";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifySlip, receiverMatches } from "@/lib/slip-verify";
+import { censorText } from "@/lib/profanity";
 
 export async function POST(req: Request) {
   const limit = await rateLimit(`tip:${clientIp(req)}`, 5, 60_000);
@@ -51,6 +52,11 @@ export async function POST(req: Request) {
   }
   // Parse checkbox manually (see note in validators.ts).
   const isMessagePublic = form.get("isMessagePublic") === "true";
+
+  // Censor offensive words in the public-facing name + message (keeps the
+  // stream/overlay/leaderboard clean).
+  const cleanName = censorText(parsed.data.supporterName);
+  const cleanMessage = censorText(parsed.data.message);
 
   // Validate the slip file.
   const slip = form.get("slip");
@@ -109,8 +115,8 @@ export async function POST(req: Request) {
   const tip = await prisma.tip.create({
     data: {
       creatorId: creator.id,
-      supporterName: parsed.data.supporterName,
-      message: parsed.data.message,
+      supporterName: cleanName,
+      message: cleanMessage,
       amount: parsed.data.amount,
       isMessagePublic,
       slipUrl,
@@ -131,9 +137,9 @@ export async function POST(req: Request) {
       await sendTipNotificationEmail({
         to: creator.email,
         creatorName: creator.displayName,
-        supporterName: parsed.data.supporterName,
+        supporterName: cleanName,
         amount: amountLabel,
-        message: parsed.data.message || null,
+        message: cleanMessage || null,
         confirmed: status === "CONFIRMED",
         dashboardUrl: `${origin}/th/dashboard`,
       });
