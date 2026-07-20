@@ -80,6 +80,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, enabled });
   }
 
+  // Read-aloud (TTS) on/off toggle.
+  if (kind === "ttsToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { ttsEnabled: enabled },
+    });
+    return NextResponse.json({ ok: true, enabled });
+  }
+
   if (kind !== "sound" && kind !== "image" && kind !== "video") {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }

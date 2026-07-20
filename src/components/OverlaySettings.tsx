@@ -11,6 +11,7 @@ type Config = {
   imageUrl: string | null;
   videoUrl: string | null;
   color: string | null;
+  ttsEnabled: boolean;
   hasGoal: boolean;
   goalEnabled: boolean;
   goalTitle: string;
@@ -66,6 +67,7 @@ export function OverlaySettings() {
           imageUrl: d.imageUrl ?? null,
           videoUrl: d.videoUrl ?? null,
           color: d.color ?? null,
+          ttsEnabled: Boolean(d.ttsEnabled),
           hasGoal: Boolean(d.hasGoal),
           goalEnabled: d.goalEnabled !== false,
           goalTitle: d.goalTitle ?? "",
@@ -118,6 +120,24 @@ export function OverlaySettings() {
       }
     } finally {
       setSavingGoal(false);
+    }
+  }
+
+  async function toggleTts(enabled: boolean) {
+    setConfig((c) => (c ? { ...c, ttsEnabled: enabled } : c));
+    const fd = new FormData();
+    fd.set("kind", "ttsToggle");
+    fd.set("enabled", enabled ? "1" : "0");
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
+  function testTts() {
+    const text = "ผู้สนับสนุนตัวอย่าง ทิป 100 บาท ทดสอบเสียงอ่านโดเนต";
+    try {
+      const tts = new Audio(`/api/tts?lang=th&text=${encodeURIComponent(text)}`);
+      tts.play().catch(() => {});
+    } catch {
+      // ignore
     }
   }
 
@@ -438,6 +458,43 @@ export function OverlaySettings() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Read-aloud (TTS) */}
+            <div className="rounded-xl bg-brand-50 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-brand-900/80">
+                    🔊 {t("obsTts")}
+                  </p>
+                  <p className="mt-0.5 text-xs text-brand-900/55">
+                    {t("obsTtsHint")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={config.ttsEnabled}
+                  onClick={() => toggleTts(!config.ttsEnabled)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                    config.ttsEnabled ? "bg-brand-600" : "bg-brand-900/25"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                      config.ttsEnabled ? "left-[22px]" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+              {config.ttsEnabled && (
+                <button
+                  onClick={testTts}
+                  className="mt-2 rounded-full bg-brand-100 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-200"
+                >
+                  ▶ {t("obsTtsTest")}
+                </button>
+              )}
             </div>
 
             {/* Video (takes priority) */}

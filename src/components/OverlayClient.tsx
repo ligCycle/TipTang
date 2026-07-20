@@ -27,6 +27,7 @@ export function OverlayClient({
   imageUrl,
   videoUrl,
   color,
+  ttsEnabled,
 }: {
   username: string;
   apiKey: string;
@@ -35,6 +36,7 @@ export function OverlayClient({
   imageUrl: string | null;
   videoUrl: string | null;
   color: string | null;
+  ttsEnabled: boolean;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
   const queue = useRef<Alert[]>([]);
@@ -42,22 +44,44 @@ export function OverlayClient({
   const lastSeen = useRef<string>(new Date().toISOString());
   const showing = useRef(false);
 
+  // Read the supporter's name + amount + message aloud via the TTS proxy.
+  function speak(a: Alert) {
+    if (!ttsEnabled) return;
+    const parts = [a.name || "ผู้ไม่ประสงค์ออกนาม", "ทิป", String(a.amount), "บาท"];
+    if (a.message) parts.push(a.message);
+    const text = parts.join(" ").slice(0, 200);
+    try {
+      const tts = new Audio(`/api/tts?lang=th&text=${encodeURIComponent(text)}`);
+      tts.play().catch(() => {});
+    } catch {
+      // ignore
+    }
+  }
+
   function pump() {
     if (showing.current) return;
     const next = queue.current.shift();
     if (!next) return;
     showing.current = true;
     setCurrent(next);
-    // Video carries its own audio; only play the separate sound when no video.
+    // Video carries its own audio; only play the separate sound / TTS when no
+    // video. TTS follows the alert sound so they don't overlap.
     if (soundUrl && !videoUrl) {
       // OBS browser sources allow autoplay; normal browsers may block until a
       // user gesture (fine — the overlay runs inside OBS in real use).
       try {
         const audio = new Audio(soundUrl);
-        audio.play().catch(() => {});
+        if (ttsEnabled) {
+          audio.addEventListener("ended", () => speak(next), { once: true });
+        }
+        audio.play().catch(() => {
+          if (ttsEnabled) speak(next);
+        });
       } catch {
-        // ignore
+        if (ttsEnabled) speak(next);
       }
+    } else if (!videoUrl) {
+      speak(next);
     }
     setTimeout(() => {
       setCurrent(null);

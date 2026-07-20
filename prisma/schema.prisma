@@ -61,6 +61,8 @@ model User {
   alertVideoUrl String?
   // Hex color (e.g. "#ec4899") for the alert card; null = default brand pink.
   alertColor    String?
+  // Read the supporter's name + message aloud (TTS) when an alert fires.
+  ttsEnabled    Boolean @default(false)
   // When true, incoming tips are confirmed automatically (creator trusts the
   // slip / checks their bank) instead of waiting for manual confirmation.
   autoConfirmTips Boolean @default(false)

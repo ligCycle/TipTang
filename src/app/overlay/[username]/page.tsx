@@ -21,6 +21,7 @@ export default async function OverlayPage({
       alertImageUrl: true,
       alertVideoUrl: true,
       alertColor: true,
+      ttsEnabled: true,
     },
   });
 
@@ -38,6 +39,7 @@ export default async function OverlayPage({
       imageUrl={user.alertImageUrl}
       videoUrl={user.alertVideoUrl}
       color={user.alertColor}
+      ttsEnabled={user.ttsEnabled}
     />
   );
 }
