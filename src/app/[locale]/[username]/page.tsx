@@ -1,8 +1,31 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { TipForm } from "@/components/TipForm";
 import { formatBaht } from "@/lib/format";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Metadata> {
+  const { username } = await params;
+  const creator = await prisma.user.findUnique({
+    where: { username },
+    select: { displayName: true, bio: true },
+  });
+  if (!creator) return { title: "Not found" };
+
+  const title = `Support ${creator.displayName}`;
+  const description =
+    creator.bio || `Support ${creator.displayName} with a tip via PromptPay.`;
+  return {
+    title,
+    description,
+    openGraph: { title: `${title} · TipTang`, description, type: "profile" },
+  };
+}
 
 export default async function ProfilePage({
   params,

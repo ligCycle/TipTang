@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "TipTang",
+  metadataBase: new URL("https://tip-tang.vercel.app"),
+  title: { default: "TipTang", template: "%s · TipTang" },
   description: "Get tipped by your fans easily with PromptPay",
+  openGraph: {
+    siteName: "TipTang",
+    type: "website",
+    title: "TipTang",
+    description: "Get tipped by your fans easily with PromptPay",
+  },
 };
 
 // The <html>/<body> tags live in [locale]/layout.tsx so the lang attribute can
