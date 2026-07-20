@@ -36,7 +36,9 @@ export default async function LocaleLayout({
       </head>
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
-          <DemoBanner text={t("demoBanner")} />
+          {process.env.NEXT_PUBLIC_DEMO_MODE === "1" && (
+            <DemoBanner text={t("demoBanner")} />
+          )}
           <Header />
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
             {children}
