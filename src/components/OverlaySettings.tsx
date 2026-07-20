@@ -239,43 +239,272 @@ export function OverlaySettings() {
           {loading ? "…" : t("obsReveal")}
         </button>
       ) : (
-        <div className="mt-4 space-y-5">
-          {/* Alert overlay URL */}
-          <div>
-            <p className="mb-1 text-sm font-medium text-brand-900/70">
-              {t("obsUrlLabel")}
+        <div className="mt-4 space-y-6">
+          {/* ===== Alert card ===== */}
+          <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
+            <h3 className="text-base font-bold text-brand-900">
+              🔔 {t("obsAlertSection")}
+            </h3>
+            <p className="mb-3 mt-0.5 text-xs text-brand-900/55">
+              {t("obsAlertSectionDesc")}
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                readOnly
-                value={config.url}
-                onFocus={(e) => e.currentTarget.select()}
-                className="input flex-1 text-xs"
-              />
-              <button
-                onClick={() => copy(config.url, "alert")}
-                className="btn-secondary shrink-0 px-4 py-2 text-sm"
-              >
-                {copied === "alert" ? t("copied") : t("copyLink")}
-              </button>
-              <a
-                href={`${config.url}&test=1`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-              >
-                {t("obsPreview")}
-              </a>
-            </div>
-            <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
-          </div>
 
-          {/* Goal-bar overlay */}
-          <div className="border-t border-brand-900/10 pt-4">
+            {/* Alert overlay URL */}
+            <div>
+              <p className="mb-1 text-sm font-medium text-brand-900/70">
+                {t("obsUrlLabel")}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  readOnly
+                  value={config.url}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="input flex-1 text-xs"
+                />
+                <button
+                  onClick={() => copy(config.url, "alert")}
+                  className="btn-secondary shrink-0 px-4 py-2 text-sm"
+                >
+                  {copied === "alert" ? t("copied") : t("copyLink")}
+                </button>
+                <a
+                  href={`${config.url}&test=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+                >
+                  {t("obsPreview")}
+                </a>
+              </div>
+              <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
+            </div>
+
+            {/* Customize the alert card */}
+            <div className="mt-4 space-y-3 border-t border-brand-900/10 pt-4">
+              <p className="text-sm font-semibold text-brand-900/80">
+                {t("obsCustomize")}
+              </p>
+
+              {/* Color + live preview */}
+              <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-4">
+                <ColorField
+                  value={config.color}
+                  fallback={DEFAULT_COLOR}
+                  presets={PRESET_COLORS}
+                  label={t("obsColor")}
+                  codeLabel={t("obsColorCode")}
+                  resetLabel={t("obsColorReset")}
+                  defaultLabel={t("obsColorDefault")}
+                  onSave={saveColor}
+                  onReset={resetColor}
+                />
+                <div className="mt-4">
+                  <p className="mb-1.5 text-xs font-medium text-brand-900/50">
+                    {t("obsColorPreview")}
+                  </p>
+                  <div
+                    className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, ${
+                        config.color ?? DEFAULT_COLOR
+                      }, color-mix(in srgb, ${
+                        config.color ?? DEFAULT_COLOR
+                      }, black 32%))`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-extrabold drop-shadow">
+                        💸 {t("obsPreviewName")}
+                      </span>
+                      <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
+                        ฿100
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-white/95">
+                      {t("obsPreviewMsg")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sound */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <div className="mb-1 flex items-center gap-3">
+                  <span className="text-sm font-medium text-brand-900/80">
+                    🔉 {t("obsSound")}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="btn-secondary cursor-pointer px-4 py-1.5 text-sm">
+                    {uploading === "sound"
+                      ? t("obsUploading")
+                      : config.soundUrl
+                        ? t("obsChange")
+                        : t("obsUpload")}
+                    <input
+                      type="file"
+                      accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm"
+                      onChange={(e) => uploadAsset("sound", e)}
+                      className="hidden"
+                    />
+                  </label>
+                  {config.soundUrl && (
+                    <>
+                      <button
+                        onClick={testSound}
+                        className="rounded-full bg-brand-100 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-200"
+                      >
+                        ▶ {t("obsTestSound")}
+                      </button>
+                      <button
+                        onClick={() => removeAsset("sound")}
+                        className="text-sm font-medium text-red-600 hover:underline"
+                      >
+                        {t("obsRemove")}
+                      </button>
+                    </>
+                  )}
+                  <span className="text-xs text-brand-900/50">
+                    {t("obsSoundHint")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Image / GIF */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <div className="mb-1 flex items-center gap-3">
+                  <span className="text-sm font-medium text-brand-900/80">
+                    🖼️ {t("obsImage")}
+                  </span>
+                  {config.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={config.imageUrl}
+                      alt=""
+                      className="h-10 w-10 rounded object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="btn-secondary cursor-pointer px-4 py-1.5 text-sm">
+                    {uploading === "image"
+                      ? t("obsUploading")
+                      : config.imageUrl
+                        ? t("obsChange")
+                        : t("obsUpload")}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={(e) => uploadAsset("image", e)}
+                      className="hidden"
+                    />
+                  </label>
+                  {config.imageUrl && (
+                    <button
+                      onClick={() => removeAsset("image")}
+                      className="text-sm font-medium text-red-600 hover:underline"
+                    >
+                      {t("obsRemove")}
+                    </button>
+                  )}
+                  <span className="text-xs text-brand-900/50">
+                    {t("obsImageHint")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Video (takes priority) */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <div className="mb-1 flex items-center gap-3">
+                  <span className="text-sm font-medium text-brand-900/80">
+                    🎬 {t("obsVideo")}
+                  </span>
+                  {config.videoUrl && (
+                    <video
+                      src={config.videoUrl}
+                      muted
+                      className="h-10 w-16 rounded object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="btn-secondary cursor-pointer px-4 py-1.5 text-sm">
+                    {uploading === "video"
+                      ? t("obsUploading")
+                      : config.videoUrl
+                        ? t("obsChange")
+                        : t("obsUpload")}
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm"
+                      onChange={(e) => uploadAsset("video", e)}
+                      className="hidden"
+                    />
+                  </label>
+                  {config.videoUrl && (
+                    <button
+                      onClick={() => removeAsset("video")}
+                      className="text-sm font-medium text-red-600 hover:underline"
+                    >
+                      {t("obsRemove")}
+                    </button>
+                  )}
+                  <span className="text-xs text-brand-900/50">
+                    {t("obsVideoHint")}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-brand-600">{t("obsVideoNote")}</p>
+              </div>
+
+              {/* Read-aloud (TTS) */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-brand-900/80">
+                      🔊 {t("obsTts")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-brand-900/55">
+                      {t("obsTtsHint")}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.ttsEnabled}
+                    onClick={() => toggleTts(!config.ttsEnabled)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                      config.ttsEnabled ? "bg-brand-600" : "bg-brand-900/25"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                        config.ttsEnabled ? "left-[22px]" : "left-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+                {config.ttsEnabled && (
+                  <button
+                    onClick={testTts}
+                    className="mt-2 rounded-full bg-brand-100 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-200"
+                  >
+                    ▶ {t("obsTtsTest")}
+                  </button>
+                )}
+              </div>
+
+              {error && (
+                <p className="text-sm font-medium text-red-600">{error}</p>
+              )}
+            </div>
+          </section>
+
+          {/* ===== Goal bar ===== */}
+          <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
             {/* On/off toggle */}
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-brand-900/80">
+                <p className="text-base font-bold text-brand-900">
                   🎯 {t("obsGoalTitle")}
                 </p>
                 <p className="mt-0.5 text-xs text-brand-900/55">
@@ -300,9 +529,9 @@ export function OverlaySettings() {
             </div>
 
             {config.goalEnabled && (
-              <div className="mt-3">
+              <div className="mt-4 space-y-3 border-t border-brand-900/10 pt-4">
                 {/* Goal setup — right here, no need to open Settings */}
-                <div className="mb-4 rounded-xl bg-brand-50 p-3">
+                <div className="rounded-xl bg-brand-50 p-3">
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-brand-900/70">
                       {t("obsGoalNameLabel")}
@@ -343,7 +572,7 @@ export function OverlaySettings() {
                 </div>
 
                 {/* Goal-bar color (defaults to the alert color) */}
-                <div className="mb-4 rounded-xl bg-brand-50 p-3">
+                <div className="rounded-xl bg-brand-50 p-3">
                   <ColorField
                     value={config.goalColor}
                     fallback={config.color ?? DEFAULT_COLOR}
@@ -357,37 +586,40 @@ export function OverlaySettings() {
                   />
                 </div>
 
-                <p className="mb-1 text-sm font-medium text-brand-900/70">
-                  {t("obsGoalUrlLabel")}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    readOnly
-                    value={goalUrl}
-                    onFocus={(e) => e.currentTarget.select()}
-                    className="input flex-1 text-xs"
-                  />
-                  <button
-                    onClick={() => copy(goalUrl, "goal")}
-                    className="btn-secondary shrink-0 px-4 py-2 text-sm"
-                  >
-                    {copied === "goal" ? t("copied") : t("copyLink")}
-                  </button>
-                  <a
-                    href={goalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-                  >
-                    {t("obsPreview")}
-                  </a>
+                {/* URL */}
+                <div>
+                  <p className="mb-1 text-sm font-medium text-brand-900/70">
+                    {t("obsGoalUrlLabel")}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      readOnly
+                      value={goalUrl}
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="input flex-1 text-xs"
+                    />
+                    <button
+                      onClick={() => copy(goalUrl, "goal")}
+                      className="btn-secondary shrink-0 px-4 py-2 text-sm"
+                    >
+                      {copied === "goal" ? t("copied") : t("copyLink")}
+                    </button>
+                    <a
+                      href={goalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+                    >
+                      {t("obsPreview")}
+                    </a>
+                  </div>
+                  <p className="mt-1 text-xs text-brand-900/55">
+                    {t("obsGoalHint")}
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-brand-900/55">
-                  {t("obsGoalHint")}
-                </p>
 
-                {/* Live goal-bar preview (embedded so you don't switch pages) */}
-                <div className="mt-3">
+                {/* Live goal-bar preview */}
+                <div>
                   <p className="mb-1.5 text-xs font-medium text-brand-900/50">
                     {t("obsGoalPreview")}
                   </p>
@@ -401,225 +633,14 @@ export function OverlaySettings() {
                       />
                     </div>
                   ) : (
-                    <p className="rounded-xl border border-dashed border-brand-300 bg-brand-50 px-4 py-3 text-sm text-brand-900/60">
+                    <p className="rounded-xl border border-dashed border-brand-300 bg-white px-4 py-3 text-sm text-brand-900/60">
                       {t("obsGoalEmpty")}
                     </p>
                   )}
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Customize alert */}
-          <div className="space-y-4 border-t border-brand-900/10 pt-4">
-            <p className="text-sm font-semibold text-brand-900/80">
-              {t("obsCustomize")}
-            </p>
-
-            {/* Alert card color */}
-            <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-              <ColorField
-                value={config.color}
-                fallback={DEFAULT_COLOR}
-                presets={PRESET_COLORS}
-                label={t("obsColor")}
-                codeLabel={t("obsColorCode")}
-                resetLabel={t("obsColorReset")}
-                defaultLabel={t("obsColorDefault")}
-                onSave={saveColor}
-                onReset={resetColor}
-              />
-
-              {/* Live preview of the alert card */}
-              <div className="mt-4">
-                <p className="mb-1.5 text-xs font-medium text-brand-900/50">
-                  {t("obsColorPreview")}
-                </p>
-                <div
-                  className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
-                  style={{
-                    backgroundImage: `linear-gradient(135deg, ${
-                      config.color ?? DEFAULT_COLOR
-                    }, color-mix(in srgb, ${
-                      config.color ?? DEFAULT_COLOR
-                    }, black 32%))`,
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-extrabold drop-shadow">
-                      💸 {t("obsPreviewName")}
-                    </span>
-                    <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
-                      ฿100
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-white/95">
-                    {t("obsPreviewMsg")}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Read-aloud (TTS) */}
-            <div className="rounded-xl bg-brand-50 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-brand-900/80">
-                    🔊 {t("obsTts")}
-                  </p>
-                  <p className="mt-0.5 text-xs text-brand-900/55">
-                    {t("obsTtsHint")}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={config.ttsEnabled}
-                  onClick={() => toggleTts(!config.ttsEnabled)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-                    config.ttsEnabled ? "bg-brand-600" : "bg-brand-900/25"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
-                      config.ttsEnabled ? "left-[22px]" : "left-0.5"
-                    }`}
-                  />
-                </button>
-              </div>
-              {config.ttsEnabled && (
-                <button
-                  onClick={testTts}
-                  className="mt-2 rounded-full bg-brand-100 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-200"
-                >
-                  ▶ {t("obsTtsTest")}
-                </button>
-              )}
-            </div>
-
-            {/* Video (takes priority) */}
-            <div className="rounded-xl bg-brand-50 p-3">
-              <div className="mb-1 flex items-center gap-3">
-                <span className="text-sm font-medium text-brand-900/80">
-                  🎬 {t("obsVideo")}
-                </span>
-                {config.videoUrl && (
-                  <video
-                    src={config.videoUrl}
-                    muted
-                    className="h-10 w-16 rounded object-cover"
-                  />
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="btn-secondary cursor-pointer px-4 py-1.5 text-sm">
-                  {uploading === "video"
-                    ? t("obsUploading")
-                    : config.videoUrl
-                      ? t("obsChange")
-                      : t("obsUpload")}
-                  <input
-                    type="file"
-                    accept="video/mp4,video/webm"
-                    onChange={(e) => uploadAsset("video", e)}
-                    className="hidden"
-                  />
-                </label>
-                {config.videoUrl && (
-                  <button
-                    onClick={() => removeAsset("video")}
-                    className="text-sm font-medium text-red-600 hover:underline"
-                  >
-                    {t("obsRemove")}
-                  </button>
-                )}
-                <span className="text-xs text-brand-900/50">{t("obsVideoHint")}</span>
-              </div>
-              <p className="mt-1 text-xs text-brand-600">{t("obsVideoNote")}</p>
-            </div>
-
-            {/* Image / GIF */}
-            <div>
-              <div className="mb-1 flex items-center gap-3">
-                <span className="text-sm text-brand-900/70">{t("obsImage")}</span>
-                {config.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={config.imageUrl}
-                    alt=""
-                    className="h-10 w-10 rounded object-cover"
-                  />
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="btn-secondary cursor-pointer px-4 py-1.5 text-sm">
-                  {uploading === "image"
-                    ? t("obsUploading")
-                    : config.imageUrl
-                      ? t("obsChange")
-                      : t("obsUpload")}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    onChange={(e) => uploadAsset("image", e)}
-                    className="hidden"
-                  />
-                </label>
-                {config.imageUrl && (
-                  <button
-                    onClick={() => removeAsset("image")}
-                    className="text-sm font-medium text-red-600 hover:underline"
-                  >
-                    {t("obsRemove")}
-                  </button>
-                )}
-                <span className="text-xs text-brand-900/50">{t("obsImageHint")}</span>
-              </div>
-            </div>
-
-            {/* Sound */}
-            <div>
-              <span className="mb-1 block text-sm text-brand-900/70">
-                {t("obsSound")}
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="btn-secondary cursor-pointer px-4 py-1.5 text-sm">
-                  {uploading === "sound"
-                    ? t("obsUploading")
-                    : config.soundUrl
-                      ? t("obsChange")
-                      : t("obsUpload")}
-                  <input
-                    type="file"
-                    accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm"
-                    onChange={(e) => uploadAsset("sound", e)}
-                    className="hidden"
-                  />
-                </label>
-                {config.soundUrl && (
-                  <>
-                    <button
-                      onClick={testSound}
-                      className="rounded-full bg-brand-100 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-200"
-                    >
-                      ▶ {t("obsTestSound")}
-                    </button>
-                    <button
-                      onClick={() => removeAsset("sound")}
-                      className="text-sm font-medium text-red-600 hover:underline"
-                    >
-                      {t("obsRemove")}
-                    </button>
-                  </>
-                )}
-                <span className="text-xs text-brand-900/50">{t("obsSoundHint")}</span>
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-sm font-medium text-red-600">{error}</p>
-            )}
-          </div>
+          </section>
         </div>
       )}
     </div>
