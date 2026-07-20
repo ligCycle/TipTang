@@ -6,7 +6,6 @@ import { formatBaht } from "@/lib/format";
 import { TipRow } from "@/components/TipRow";
 import { CopyLink } from "@/components/CopyLink";
 import { OverlaySettings } from "@/components/OverlaySettings";
-import { EmbedButton } from "@/components/EmbedButton";
 
 export default async function DashboardPage({
   params,
@@ -115,9 +114,6 @@ export default async function DashboardPage({
           </Link>
         </div>
       </div>
-
-      {/* Embeddable "tip me" button */}
-      <EmbedButton path={profilePath} />
 
       {/* OBS donation alert */}
       <OverlaySettings />
