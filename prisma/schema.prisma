@@ -45,6 +45,8 @@ model User {
   // Fundraising goal shown as a progress bar on the profile (optional).
   goalTitle    String?
   goalAmount   Decimal? @db.Decimal(10, 2)
+  // Whether the goal-bar OBS overlay is shown on stream (creator can toggle).
+  goalOverlayEnabled Boolean @default(true)
   // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
   socialLinks  Json?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.

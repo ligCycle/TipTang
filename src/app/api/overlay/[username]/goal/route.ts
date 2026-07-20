@@ -16,7 +16,13 @@ export async function GET(
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { id: true, overlayKey: true, goalTitle: true, goalAmount: true },
+    select: {
+      id: true,
+      overlayKey: true,
+      goalTitle: true,
+      goalAmount: true,
+      goalOverlayEnabled: true,
+    },
   });
   if (!user?.overlayKey || user.overlayKey !== key) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -32,6 +38,7 @@ export async function GET(
   const pct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
 
   return NextResponse.json({
+    enabled: user.goalOverlayEnabled,
     title: user.goalTitle ?? "",
     goal,
     raised,

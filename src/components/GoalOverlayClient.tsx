@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { formatBaht } from "@/lib/format";
 
-type Goal = { title: string; goal: number; raised: number; pct: number };
+type Goal = {
+  enabled: boolean;
+  title: string;
+  goal: number;
+  raised: number;
+  pct: number;
+};
 
 // Darken a #rrggbb color by mixing toward black (amount 0..1).
 function darken(hex: string, amount: number): string {
@@ -51,8 +57,8 @@ export function GoalOverlayClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // No goal set → render nothing (transparent).
-  if (!goal || goal.goal <= 0) return null;
+  // Disabled or no goal set → render nothing (transparent).
+  if (!goal || !goal.enabled || goal.goal <= 0) return null;
 
   const valid = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
   const from = valid ? color! : DEFAULT_A;

@@ -11,6 +11,7 @@ type Config = {
   videoUrl: string | null;
   color: string | null;
   hasGoal: boolean;
+  goalEnabled: boolean;
 };
 
 const DEFAULT_COLOR = "#ec4899";
@@ -64,6 +65,7 @@ export function OverlaySettings() {
           videoUrl: d.videoUrl ?? null,
           color: d.color ?? null,
           hasGoal: Boolean(d.hasGoal),
+          goalEnabled: d.goalEnabled !== false,
         });
       }
     } finally {
@@ -82,6 +84,14 @@ export function OverlaySettings() {
   }
 
   const goalUrl = config ? config.url.replace("?key=", "/goal?key=") : "";
+
+  async function toggleGoal(enabled: boolean) {
+    setConfig((c) => (c ? { ...c, goalEnabled: enabled } : c));
+    const fd = new FormData();
+    fd.set("kind", "goalToggle");
+    fd.set("enabled", enabled ? "1" : "0");
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
 
   async function uploadAsset(kind: Kind, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -194,55 +204,88 @@ export function OverlaySettings() {
             <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
           </div>
 
-          {/* Goal-bar overlay URL */}
-          <div>
-            <p className="mb-1 text-sm font-medium text-brand-900/70">
-              {t("obsGoalUrlLabel")}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                readOnly
-                value={goalUrl}
-                onFocus={(e) => e.currentTarget.select()}
-                className="input flex-1 text-xs"
-              />
-              <button
-                onClick={() => copy(goalUrl, "goal")}
-                className="btn-secondary shrink-0 px-4 py-2 text-sm"
-              >
-                {copied === "goal" ? t("copied") : t("copyLink")}
-              </button>
-              <a
-                href={goalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-              >
-                {t("obsPreview")}
-              </a>
-            </div>
-            <p className="mt-1 text-xs text-brand-900/55">{t("obsGoalHint")}</p>
-
-            {/* Live goal-bar preview (embedded so you don't switch pages) */}
-            <div className="mt-3">
-              <p className="mb-1.5 text-xs font-medium text-brand-900/50">
-                {t("obsGoalPreview")}
-              </p>
-              {config.hasGoal ? (
-                <div className="overflow-hidden rounded-xl bg-neutral-800 ring-1 ring-black/20">
-                  <iframe
-                    key={goalUrl}
-                    src={goalUrl}
-                    title="goal-bar preview"
-                    className="h-[140px] w-full border-0"
-                  />
-                </div>
-              ) : (
-                <p className="rounded-xl border border-dashed border-brand-300 bg-brand-50 px-4 py-3 text-sm text-brand-900/60">
-                  {t("obsGoalEmpty")}
+          {/* Goal-bar overlay */}
+          <div className="border-t border-brand-900/10 pt-4">
+            {/* On/off toggle */}
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-brand-900/80">
+                  🎯 {t("obsGoalTitle")}
                 </p>
-              )}
+                <p className="mt-0.5 text-xs text-brand-900/55">
+                  {t("obsGoalToggleHint")}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={config.goalEnabled}
+                onClick={() => toggleGoal(!config.goalEnabled)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                  config.goalEnabled ? "bg-brand-600" : "bg-brand-900/25"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                    config.goalEnabled ? "left-[22px]" : "left-0.5"
+                  }`}
+                />
+              </button>
             </div>
+
+            {config.goalEnabled && (
+              <div className="mt-3">
+                <p className="mb-1 text-sm font-medium text-brand-900/70">
+                  {t("obsGoalUrlLabel")}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    readOnly
+                    value={goalUrl}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="input flex-1 text-xs"
+                  />
+                  <button
+                    onClick={() => copy(goalUrl, "goal")}
+                    className="btn-secondary shrink-0 px-4 py-2 text-sm"
+                  >
+                    {copied === "goal" ? t("copied") : t("copyLink")}
+                  </button>
+                  <a
+                    href={goalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+                  >
+                    {t("obsPreview")}
+                  </a>
+                </div>
+                <p className="mt-1 text-xs text-brand-900/55">
+                  {t("obsGoalHint")}
+                </p>
+
+                {/* Live goal-bar preview (embedded so you don't switch pages) */}
+                <div className="mt-3">
+                  <p className="mb-1.5 text-xs font-medium text-brand-900/50">
+                    {t("obsGoalPreview")}
+                  </p>
+                  {config.hasGoal ? (
+                    <div className="overflow-hidden rounded-xl bg-neutral-800 ring-1 ring-black/20">
+                      <iframe
+                        key={goalUrl}
+                        src={goalUrl}
+                        title="goal-bar preview"
+                        className="h-[140px] w-full border-0"
+                      />
+                    </div>
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-brand-300 bg-brand-50 px-4 py-3 text-sm text-brand-900/60">
+                      {t("obsGoalEmpty")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Customize alert */}

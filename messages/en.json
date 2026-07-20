@@ -125,6 +125,8 @@
     "obsUrlLabel": "Overlay URL (keep secret — don't show it on stream)",
     "obsPreview": "Preview / test",
     "obsHint": "OBS → Sources → + → Browser → paste URL → width 800, height 300 (background is transparent automatically)",
+    "obsGoalTitle": "Goal bar on stream",
+    "obsGoalToggleHint": "Turn on to use a live progress bar as its own OBS source.",
     "obsGoalUrlLabel": "Goal-bar URL (a live progress bar for your stream)",
     "obsGoalHint": "Add as a second Browser Source (width 700, height 140). Shows only when you've set a goal in Settings; updates live as tips are confirmed.",
     "obsGoalPreview": "Live preview",
