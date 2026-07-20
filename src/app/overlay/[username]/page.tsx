@@ -15,7 +15,12 @@ export default async function OverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertSoundUrl: true, alertImageUrl: true },
+    select: {
+      overlayKey: true,
+      alertSoundUrl: true,
+      alertImageUrl: true,
+      alertVideoUrl: true,
+    },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -30,6 +35,7 @@ export default async function OverlayPage({
       test={test}
       soundUrl={user.alertSoundUrl}
       imageUrl={user.alertImageUrl}
+      videoUrl={user.alertVideoUrl}
     />
   );
 }

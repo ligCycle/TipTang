@@ -5,9 +5,17 @@ import {
   uploadImage,
   ALLOWED_ALERT_IMAGE_TYPES,
   ALLOWED_AUDIO_TYPES,
+  ALLOWED_VIDEO_TYPES,
   MAX_UPLOAD_BYTES,
   MAX_AUDIO_BYTES,
+  MAX_VIDEO_BYTES,
 } from "@/lib/storage";
+
+const KINDS = {
+  sound: { field: "alertSoundUrl", folder: "alert-sounds", types: ALLOWED_AUDIO_TYPES, max: MAX_AUDIO_BYTES },
+  image: { field: "alertImageUrl", folder: "alert-images", types: ALLOWED_ALERT_IMAGE_TYPES, max: MAX_UPLOAD_BYTES },
+  video: { field: "alertVideoUrl", folder: "alert-videos", types: ALLOWED_VIDEO_TYPES, max: MAX_VIDEO_BYTES },
+} as const;
 
 // Auth required: set/remove the creator's custom alert sound or image.
 export async function POST(req: Request) {
@@ -21,15 +29,15 @@ export async function POST(req: Request) {
   const remove = form?.get("remove") === "1";
   const file = form?.get("file");
 
-  if (kind !== "sound" && kind !== "image") {
+  if (kind !== "sound" && kind !== "image" && kind !== "video") {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
-  const field = kind === "sound" ? "alertSoundUrl" : "alertImageUrl";
+  const cfg = KINDS[kind];
 
   if (remove) {
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { [field]: null },
+      data: { [cfg.field]: null },
     });
     return NextResponse.json({ ok: true, url: null });
   }
@@ -37,23 +45,17 @@ export async function POST(req: Request) {
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "no_file" }, { status: 400 });
   }
-
-  const allowed = kind === "sound" ? ALLOWED_AUDIO_TYPES : ALLOWED_ALERT_IMAGE_TYPES;
-  const maxBytes = kind === "sound" ? MAX_AUDIO_BYTES : MAX_UPLOAD_BYTES;
-  if (file.size > maxBytes) {
+  if (file.size > cfg.max) {
     return NextResponse.json({ error: "too_large" }, { status: 413 });
   }
-  if (!allowed.includes(file.type)) {
+  if (!cfg.types.includes(file.type)) {
     return NextResponse.json({ error: "bad_type" }, { status: 415 });
   }
 
-  const url = await uploadImage(
-    file,
-    kind === "sound" ? "alert-sounds" : "alert-images",
-  );
+  const url = await uploadImage(file, cfg.folder);
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { [field]: url },
+    data: { [cfg.field]: url },
   });
 
   return NextResponse.json({ ok: true, url });

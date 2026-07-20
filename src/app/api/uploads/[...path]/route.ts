@@ -11,6 +11,8 @@ const CONTENT_TYPES: Record<string, string> = {
   wav: "audio/wav",
   ogg: "audio/ogg",
   weba: "audio/webm",
+  mp4: "video/mp4",
+  webm: "video/webm",
 };
 
 // Serves files stored by the "local" storage driver (dev only).

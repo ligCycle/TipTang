@@ -49,6 +49,7 @@ model User {
   // Creator-customizable donation-alert assets.
   alertSoundUrl String?
   alertImageUrl String?
+  alertVideoUrl String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

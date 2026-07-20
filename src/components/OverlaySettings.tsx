@@ -3,10 +3,18 @@
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+type Kind = "sound" | "image" | "video";
 type Config = {
   url: string;
   soundUrl: string | null;
   imageUrl: string | null;
+  videoUrl: string | null;
+};
+
+const FIELD: Record<Kind, keyof Config> = {
+  sound: "soundUrl",
+  image: "imageUrl",
+  video: "videoUrl",
 };
 
 export function OverlaySettings() {
@@ -14,7 +22,7 @@ export function OverlaySettings() {
   const [config, setConfig] = useState<Config | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [uploading, setUploading] = useState<"sound" | "image" | null>(null);
+  const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -28,6 +36,7 @@ export function OverlaySettings() {
           url: `${window.location.origin}/overlay/${d.username}?key=${d.key}`,
           soundUrl: d.soundUrl ?? null,
           imageUrl: d.imageUrl ?? null,
+          videoUrl: d.videoUrl ?? null,
         });
       }
     } finally {
@@ -46,10 +55,7 @@ export function OverlaySettings() {
     }
   }
 
-  async function uploadAsset(
-    kind: "sound" | "image",
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) {
+  async function uploadAsset(kind: Kind, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -65,24 +71,20 @@ export function OverlaySettings() {
         setError(t("obsAssetError"));
         return;
       }
-      setConfig((c) =>
-        c ? { ...c, [kind === "sound" ? "soundUrl" : "imageUrl"]: d.url } : c,
-      );
+      setConfig((c) => (c ? { ...c, [FIELD[kind]]: d.url } : c));
     } finally {
       setUploading(null);
     }
   }
 
-  async function removeAsset(kind: "sound" | "image") {
+  async function removeAsset(kind: Kind) {
     setUploading(kind);
     try {
       const fd = new FormData();
       fd.set("kind", kind);
       fd.set("remove", "1");
       await fetch("/api/overlay/asset", { method: "POST", body: fd });
-      setConfig((c) =>
-        c ? { ...c, [kind === "sound" ? "soundUrl" : "imageUrl"]: null } : c,
-      );
+      setConfig((c) => (c ? { ...c, [FIELD[kind]]: null } : c));
     } finally {
       setUploading(null);
     }
@@ -134,13 +136,54 @@ export function OverlaySettings() {
           </div>
 
           {/* Customize alert */}
-          <div className="border-t border-brand-900/10 pt-4">
-            <p className="mb-3 text-sm font-semibold text-brand-900/80">
+          <div className="space-y-4 border-t border-brand-900/10 pt-4">
+            <p className="text-sm font-semibold text-brand-900/80">
               {t("obsCustomize")}
             </p>
 
+            {/* Video (takes priority) */}
+            <div className="rounded-xl bg-brand-50 p-3">
+              <div className="mb-1 flex items-center gap-3">
+                <span className="text-sm font-medium text-brand-900/80">
+                  🎬 {t("obsVideo")}
+                </span>
+                {config.videoUrl && (
+                  <video
+                    src={config.videoUrl}
+                    muted
+                    className="h-10 w-16 rounded object-cover"
+                  />
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="btn-secondary cursor-pointer px-4 py-1.5 text-sm">
+                  {uploading === "video"
+                    ? t("obsUploading")
+                    : config.videoUrl
+                      ? t("obsChange")
+                      : t("obsUpload")}
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm"
+                    onChange={(e) => uploadAsset("video", e)}
+                    className="hidden"
+                  />
+                </label>
+                {config.videoUrl && (
+                  <button
+                    onClick={() => removeAsset("video")}
+                    className="text-sm font-medium text-red-600 hover:underline"
+                  >
+                    {t("obsRemove")}
+                  </button>
+                )}
+                <span className="text-xs text-brand-900/50">{t("obsVideoHint")}</span>
+              </div>
+              <p className="mt-1 text-xs text-brand-600">{t("obsVideoNote")}</p>
+            </div>
+
             {/* Image / GIF */}
-            <div className="mb-4">
+            <div>
               <div className="mb-1 flex items-center gap-3">
                 <span className="text-sm text-brand-900/70">{t("obsImage")}</span>
                 {config.imageUrl && (
@@ -218,7 +261,7 @@ export function OverlaySettings() {
             </div>
 
             {error && (
-              <p className="mt-2 text-sm font-medium text-red-600">{error}</p>
+              <p className="text-sm font-medium text-red-600">{error}</p>
             )}
           </div>
         </div>

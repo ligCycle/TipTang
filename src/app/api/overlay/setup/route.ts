@@ -17,6 +17,7 @@ export async function POST() {
       overlayKey: true,
       alertSoundUrl: true,
       alertImageUrl: true,
+      alertVideoUrl: true,
     },
   });
   if (!user) {
@@ -37,5 +38,6 @@ export async function POST() {
     key,
     soundUrl: user.alertSoundUrl,
     imageUrl: user.alertImageUrl,
+    videoUrl: user.alertVideoUrl,
   });
 }

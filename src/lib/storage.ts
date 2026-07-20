@@ -25,8 +25,10 @@ export const ALLOWED_AUDIO_TYPES = [
   "audio/ogg",
   "audio/webm",
 ];
+export const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm"];
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024; // 2 MB
+export const MAX_VIDEO_BYTES = 10 * 1024 * 1024; // 10 MB
 
 function extFor(file: File): string {
   const map: Record<string, string> = {
@@ -40,6 +42,8 @@ function extFor(file: File): string {
     "audio/x-wav": "wav",
     "audio/ogg": "ogg",
     "audio/webm": "weba",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
   };
   return map[file.type] ?? "bin";
 }
