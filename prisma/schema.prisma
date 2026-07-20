@@ -44,6 +44,8 @@ model User {
   coverUrl     String?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.
   promptpayId  String?
+  // Secret key for the OBS donation-alert overlay URL.
+  overlayKey   String?  @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

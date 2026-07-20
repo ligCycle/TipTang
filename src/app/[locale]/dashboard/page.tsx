@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/format";
 import { TipRow } from "@/components/TipRow";
 import { CopyLink } from "@/components/CopyLink";
+import { OverlaySettings } from "@/components/OverlaySettings";
 
 export default async function DashboardPage({
   params,
@@ -105,6 +106,9 @@ export default async function DashboardPage({
           </Link>
         </div>
       </div>
+
+      {/* OBS donation alert */}
+      <OverlaySettings />
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">

@@ -139,3 +139,26 @@ body {
 [data-theme="dark"] .btn-secondary {
   background: rgba(255, 255, 255, 0.06);
 }
+
+/* ===== OBS donation-alert animation ===== */
+@keyframes alertPop {
+  0% {
+    transform: translateY(-24px) scale(0.96);
+    opacity: 0;
+  }
+  12% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  88% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+}
+.alert-pop {
+  animation: alertPop 7s ease forwards;
+}

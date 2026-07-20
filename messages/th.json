@@ -114,7 +114,13 @@
     "statusConfirmed": "ยืนยันแล้ว",
     "statusRejected": "ปฏิเสธแล้ว",
     "setupPromptpayWarning": "คุณยังไม่ได้ตั้งค่า PromptPay — ไปที่ตั้งค่าเพื่อให้แฟน ๆ ทิปได้",
-    "goSettings": "ไปที่ตั้งค่า"
+    "goSettings": "ไปที่ตั้งค่า",
+    "obsTitle": "Donation Alert สำหรับไลฟ์ (OBS)",
+    "obsDesc": "เอา URL นี้ไปใส่เป็น Browser Source ใน OBS — เวลามีคนทิปและคุณกดยืนยัน การ์ดแจ้งเตือนจะเด้งบนจอไลฟ์อัตโนมัติ",
+    "obsReveal": "แสดง URL overlay",
+    "obsUrlLabel": "URL overlay (เก็บเป็นความลับ อย่าโชว์บนไลฟ์)",
+    "obsPreview": "ทดสอบ/ดูตัวอย่าง",
+    "obsHint": "OBS → Sources → + → Browser → วาง URL → กว้าง 800 สูง 300 (พื้นหลังโปร่งใสอัตโนมัติ)"
   },
   "settings": {
     "title": "ตั้งค่าโปรไฟล์",

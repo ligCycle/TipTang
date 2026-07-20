@@ -114,7 +114,13 @@
     "statusConfirmed": "Confirmed",
     "statusRejected": "Rejected",
     "setupPromptpayWarning": "You haven't set up PromptPay yet — go to settings so fans can tip you.",
-    "goSettings": "Go to settings"
+    "goSettings": "Go to settings",
+    "obsTitle": "Donation Alert for live streams (OBS)",
+    "obsDesc": "Add this URL as a Browser Source in OBS — when a tip comes in and you confirm it, an alert card pops up on your stream automatically.",
+    "obsReveal": "Show overlay URL",
+    "obsUrlLabel": "Overlay URL (keep secret — don't show it on stream)",
+    "obsPreview": "Preview / test",
+    "obsHint": "OBS → Sources → + → Browser → paste URL → width 800, height 300 (background is transparent automatically)"
   },
   "settings": {
     "title": "Profile settings",
