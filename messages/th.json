@@ -125,6 +125,8 @@
     "obsUrlLabel": "URL overlay (เก็บเป็นความลับ อย่าโชว์บนไลฟ์)",
     "obsPreview": "ทดสอบ/ดูตัวอย่าง",
     "obsHint": "OBS → Sources → + → Browser → วาง URL → กว้าง 800 สูง 300 (พื้นหลังโปร่งใสอัตโนมัติ)",
+    "obsGoalUrlLabel": "URL แถบเป้าหมาย (progress bar แบบเรียลไทม์บนสตรีม)",
+    "obsGoalHint": "เพิ่มเป็น Browser Source อีกอัน (กว้าง 700 สูง 140) · จะแสดงเมื่อตั้งเป้าหมายไว้ในหน้าตั้งค่า และขยับเองทุกครั้งที่มีทิปยืนยัน",
     "obsCustomize": "ปรับแต่ง Alert (สี + เสียง + รูป/GIF)",
     "obsColor": "สีการ์ดแจ้งเตือน",
     "obsColorCode": "รหัสสี (hex)",

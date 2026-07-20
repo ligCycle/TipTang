@@ -38,7 +38,7 @@ export function OverlaySettings() {
   const t = useTranslations("dashboard");
   const [config, setConfig] = useState<Config | null>(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"alert" | "goal" | null>(null);
   const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hexInput, setHexInput] = useState(DEFAULT_COLOR);
@@ -69,16 +69,17 @@ export function OverlaySettings() {
     }
   }
 
-  async function copy() {
-    if (!config) return;
+  async function copy(text: string, which: "alert" | "goal") {
     try {
-      await navigator.clipboard.writeText(config.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(text);
+      setCopied(which);
+      setTimeout(() => setCopied(null), 1500);
     } catch {
       // ignore
     }
   }
+
+  const goalUrl = config ? config.url.replace("?key=", "/goal?key=") : "";
 
   async function uploadAsset(kind: Kind, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -161,7 +162,7 @@ export function OverlaySettings() {
         </button>
       ) : (
         <div className="mt-4 space-y-5">
-          {/* Overlay URL */}
+          {/* Alert overlay URL */}
           <div>
             <p className="mb-1 text-sm font-medium text-brand-900/70">
               {t("obsUrlLabel")}
@@ -173,8 +174,11 @@ export function OverlaySettings() {
                 onFocus={(e) => e.currentTarget.select()}
                 className="input flex-1 text-xs"
               />
-              <button onClick={copy} className="btn-secondary shrink-0 px-4 py-2 text-sm">
-                {copied ? t("copied") : t("copyLink")}
+              <button
+                onClick={() => copy(config.url, "alert")}
+                className="btn-secondary shrink-0 px-4 py-2 text-sm"
+              >
+                {copied === "alert" ? t("copied") : t("copyLink")}
               </button>
               <a
                 href={`${config.url}&test=1`}
@@ -186,6 +190,36 @@ export function OverlaySettings() {
               </a>
             </div>
             <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
+          </div>
+
+          {/* Goal-bar overlay URL */}
+          <div>
+            <p className="mb-1 text-sm font-medium text-brand-900/70">
+              {t("obsGoalUrlLabel")}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                readOnly
+                value={goalUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                className="input flex-1 text-xs"
+              />
+              <button
+                onClick={() => copy(goalUrl, "goal")}
+                className="btn-secondary shrink-0 px-4 py-2 text-sm"
+              >
+                {copied === "goal" ? t("copied") : t("copyLink")}
+              </button>
+              <a
+                href={goalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+              >
+                {t("obsPreview")}
+              </a>
+            </div>
+            <p className="mt-1 text-xs text-brand-900/55">{t("obsGoalHint")}</p>
           </div>
 
           {/* Customize alert */}
