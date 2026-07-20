@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ImageCropper } from "./ImageCropper";
+import { SOCIAL_PLATFORMS, type SocialLinks } from "@/lib/socials";
 
 type Initial = {
   displayName: string;
@@ -13,6 +14,9 @@ type Initial = {
   avatarUrl: string;
   coverUrl: string;
   autoConfirmTips: boolean;
+  goalTitle: string;
+  goalAmount: string;
+  socialLinks: SocialLinks;
 };
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -88,6 +92,13 @@ export function SettingsForm({ initial }: { initial: Initial }) {
       ...f,
       username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
     }));
+
+  const updateSocial =
+    (key: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((f) => ({
+        ...f,
+        socialLinks: { ...f.socialLinks, [key]: e.target.value },
+      }));
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -260,6 +271,72 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               </span>
             </span>
           </label>
+        </div>
+
+        {/* Fundraising goal */}
+        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+          <p className="mb-3 text-sm font-semibold text-brand-900/80">
+            🎯 {t("goalSection")}
+          </p>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-brand-900/80">
+              {t("goalTitle")}
+            </span>
+            <input
+              value={form.goalTitle}
+              onChange={update("goalTitle")}
+              placeholder={t("goalTitlePlaceholder")}
+              maxLength={80}
+              className="input"
+            />
+          </label>
+          <label className="mt-3 block">
+            <span className="mb-1 block text-sm font-medium text-brand-900/80">
+              {t("goalAmount")}
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={100000000}
+              value={form.goalAmount}
+              onChange={update("goalAmount")}
+              placeholder="5000"
+              className="input"
+            />
+            <span className="mt-1 block text-xs text-brand-900/50">
+              {t("goalHint")}
+            </span>
+          </label>
+        </div>
+
+        {/* Social links */}
+        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+          <p className="mb-3 text-sm font-semibold text-brand-900/80">
+            🔗 {t("socialSection")}
+          </p>
+          <div className="space-y-2">
+            {SOCIAL_PLATFORMS.map((p) => (
+              <label key={p.key} className="flex items-center gap-2">
+                <span
+                  className="w-24 shrink-0 text-sm text-brand-900/70"
+                  title={p.label}
+                >
+                  {p.icon} {p.label}
+                </span>
+                <input
+                  type="url"
+                  inputMode="url"
+                  value={form.socialLinks[p.key] ?? ""}
+                  onChange={updateSocial(p.key)}
+                  placeholder={p.placeholder}
+                  className="input flex-1 text-sm"
+                />
+              </label>
+            ))}
+          </div>
+          <span className="mt-2 block text-xs text-brand-900/50">
+            {t("socialHint")}
+          </span>
         </div>
 
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}

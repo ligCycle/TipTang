@@ -27,6 +27,25 @@ export const profileSchema = z.object({
     .optional()
     .or(z.literal("")),
   autoConfirmTips: z.boolean().optional(),
+  goalTitle: z.string().trim().max(80).optional().or(z.literal("")),
+  goalAmount: z.coerce
+    .number()
+    .min(0)
+    .max(100000000)
+    .optional()
+    .or(z.literal("")),
+  // Social links: each an http(s) URL or empty (empty = clear that platform).
+  socialLinks: z
+    .record(
+      z.string(),
+      z
+        .string()
+        .trim()
+        .max(300)
+        .regex(/^https?:\/\/.+/i, "url_invalid")
+        .or(z.literal("")),
+    )
+    .optional(),
 });
 
 export const tipSchema = z.object({

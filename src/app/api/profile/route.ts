@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { profileSchema } from "@/lib/validators";
+import { normalizeSocialLinks } from "@/lib/socials";
 
 export async function PATCH(req: Request) {
   const session = await auth();
@@ -14,8 +15,24 @@ export async function PATCH(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
-  const { displayName, username, bio, promptpayId, autoConfirmTips } =
-    parsed.data;
+  const {
+    displayName,
+    username,
+    bio,
+    promptpayId,
+    autoConfirmTips,
+    goalTitle,
+    goalAmount,
+    socialLinks,
+  } = parsed.data;
+
+  // Empty amount / 0 clears the goal.
+  const goalValue =
+    goalAmount === "" || goalAmount === undefined || Number(goalAmount) <= 0
+      ? null
+      : Number(goalAmount);
+  const cleanSocials =
+    socialLinks === undefined ? undefined : normalizeSocialLinks(socialLinks);
 
   // Ensure the username isn't taken by someone else.
   const clash = await prisma.user.findFirst({
@@ -34,6 +51,9 @@ export async function PATCH(req: Request) {
       bio: bio ? bio : null,
       promptpayId: promptpayId ? promptpayId : null,
       ...(autoConfirmTips === undefined ? {} : { autoConfirmTips }),
+      goalTitle: goalTitle ? goalTitle : null,
+      goalAmount: goalValue,
+      ...(cleanSocials === undefined ? {} : { socialLinks: cleanSocials }),
     },
   });
 

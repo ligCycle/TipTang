@@ -83,6 +83,8 @@
     "slipRequired": "Please attach the payment slip",
     "submitTip": "Send tip",
     "submitting": "Sending...",
+    "goalDefaultTitle": "Fundraising goal",
+    "goalProgress": "Raised {raised} of {goal}",
     "recentSupporters": "Recent supporters",
     "noSupporters": "No supporters yet — be the first!",
     "notConfigured": "This creator hasn't set up PromptPay yet",
@@ -164,7 +166,14 @@
     "uploading": "Uploading...",
     "imageError": "Upload failed. Please try again.",
     "cropTitle": "Adjust image — drag/zoom to choose what shows",
-    "zoom": "Zoom"
+    "zoom": "Zoom",
+    "goalSection": "Fundraising goal (optional)",
+    "goalTitle": "Goal title",
+    "goalTitlePlaceholder": "e.g. New microphone",
+    "goalAmount": "Goal amount (THB)",
+    "goalHint": "Shows a progress bar on your profile. Progress = your confirmed tips total. Leave blank or 0 to hide.",
+    "socialSection": "Social links (optional)",
+    "socialHint": "Paste the full URL (starting with https://). Empty ones are hidden."
   },
   "errors": {
     "tooLarge": "File too large (max 5MB)",

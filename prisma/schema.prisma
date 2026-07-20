@@ -42,6 +42,11 @@ model User {
   bio          String?
   avatarUrl    String?
   coverUrl     String?
+  // Fundraising goal shown as a progress bar on the profile (optional).
+  goalTitle    String?
+  goalAmount   Decimal? @db.Decimal(10, 2)
+  // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
+  socialLinks  Json?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.
   promptpayId  String?
   // Secret key for the OBS donation-alert overlay URL.

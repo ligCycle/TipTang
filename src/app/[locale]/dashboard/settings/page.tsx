@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/SettingsForm";
+import { normalizeSocialLinks } from "@/lib/socials";
 
 export default async function SettingsPage({
   params,
@@ -23,6 +24,9 @@ export default async function SettingsPage({
       avatarUrl: true,
       coverUrl: true,
       autoConfirmTips: true,
+      goalTitle: true,
+      goalAmount: true,
+      socialLinks: true,
     },
   });
   if (!user) return null;
@@ -38,6 +42,9 @@ export default async function SettingsPage({
           avatarUrl: user.avatarUrl ?? "",
           coverUrl: user.coverUrl ?? "",
           autoConfirmTips: user.autoConfirmTips,
+          goalTitle: user.goalTitle ?? "",
+          goalAmount: user.goalAmount ? String(user.goalAmount) : "",
+          socialLinks: normalizeSocialLinks(user.socialLinks),
         }}
       />
     </div>

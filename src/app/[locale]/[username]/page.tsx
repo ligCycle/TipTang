@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { TipForm } from "@/components/TipForm";
 import { formatBaht } from "@/lib/format";
+import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 
 export async function generateMetadata({
   params,
@@ -48,24 +49,43 @@ export default async function ProfilePage({
       // promptpayId is selected only to derive `canTip` below — it is NEVER
       // passed to a client component or rendered (PDPA).
       promptpayId: true,
+      goalTitle: true,
+      goalAmount: true,
+      socialLinks: true,
     },
   });
   if (!creator) notFound();
 
   const canTip = Boolean(creator.promptpayId && creator.promptpayId.length > 0);
 
-  const tips = await prisma.tip.findMany({
-    where: { creatorId: creator.id, status: "CONFIRMED", isMessagePublic: true },
-    orderBy: { confirmedAt: "desc" },
-    take: 20,
-    select: {
-      id: true,
-      supporterName: true,
-      message: true,
-      amount: true,
-      confirmedAt: true,
-    },
-  });
+  const [tips, confirmedAgg] = await Promise.all([
+    prisma.tip.findMany({
+      where: {
+        creatorId: creator.id,
+        status: "CONFIRMED",
+        isMessagePublic: true,
+      },
+      orderBy: { confirmedAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        supporterName: true,
+        message: true,
+        amount: true,
+        confirmedAt: true,
+      },
+    }),
+    prisma.tip.aggregate({
+      where: { creatorId: creator.id, status: "CONFIRMED" },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const socials = normalizeSocialLinks(creator.socialLinks);
+  const goalAmount = creator.goalAmount ? Number(creator.goalAmount) : 0;
+  const raised = Number(confirmedAgg._sum.amount ?? 0);
+  const goalPct =
+    goalAmount > 0 ? Math.min(100, Math.round((raised / goalAmount) * 100)) : 0;
 
   const initial = creator.displayName.charAt(0).toUpperCase();
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
@@ -110,8 +130,50 @@ export default async function ProfilePage({
               {creator.bio}
             </p>
           )}
+
+          {/* Social links */}
+          {SOCIAL_PLATFORMS.some((p) => socials[p.key]) && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {SOCIAL_PLATFORMS.filter((p) => socials[p.key]).map((p) => (
+                <a
+                  key={p.key}
+                  href={socials[p.key]}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  title={p.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-lg transition hover:scale-110 hover:bg-brand-200"
+                >
+                  {p.icon}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </section>
+
+      {/* Fundraising goal */}
+      {goalAmount > 0 && (
+        <section className="card rounded-2xl p-5">
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <span className="font-semibold text-brand-900">
+              🎯 {creator.goalTitle || t("goalDefaultTitle")}
+            </span>
+            <span className="text-sm font-bold text-brand-600">{goalPct}%</span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-brand-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all"
+              style={{ width: `${goalPct}%` }}
+            />
+          </div>
+          <p className="mt-2 text-sm text-brand-900/70">
+            {t("goalProgress", {
+              raised: formatBaht(raised, currencyLocale),
+              goal: formatBaht(goalAmount, currencyLocale),
+            })}
+          </p>
+        </section>
+      )}
 
       {/* Tip form */}
       {canTip ? (

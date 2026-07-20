@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendTipNotificationEmail } from "@/lib/email";
+import { formatBaht } from "@/lib/format";
 import { tipSchema, usernameSchema } from "@/lib/validators";
 import {
   uploadImage,
@@ -27,7 +29,13 @@ export async function POST(req: Request) {
 
   const creator = await prisma.user.findUnique({
     where: { username: username.data },
-    select: { id: true, promptpayId: true, autoConfirmTips: true },
+    select: {
+      id: true,
+      promptpayId: true,
+      autoConfirmTips: true,
+      email: true,
+      displayName: true,
+    },
   });
   if (!creator?.promptpayId) {
     return NextResponse.json({ error: "not_configured" }, { status: 404 });
@@ -112,6 +120,26 @@ export async function POST(req: Request) {
       confirmedAt,
     },
     select: { id: true },
+  });
+
+  // Notify the creator by email after the response is sent (best-effort — never
+  // block or fail the tip on email problems).
+  const origin = new URL(req.url).origin;
+  const amountLabel = formatBaht(parsed.data.amount, "th-TH");
+  after(async () => {
+    try {
+      await sendTipNotificationEmail({
+        to: creator.email,
+        creatorName: creator.displayName,
+        supporterName: parsed.data.supporterName,
+        amount: amountLabel,
+        message: parsed.data.message || null,
+        confirmed: status === "CONFIRMED",
+        dashboardUrl: `${origin}/th/dashboard`,
+      });
+    } catch (err) {
+      console.error("[tip-email] failed:", err);
+    }
   });
 
   return NextResponse.json({
