@@ -13,7 +13,8 @@
     "loading": "Loading...",
     "backToHome": "Back to home",
     "baht": "THB",
-    "required": "Required"
+    "required": "Required",
+    "demoBanner": "🚧 This site is currently in demo mode — please verify before using with real money"
   },
   "landing": {
     "heroTitle": "Let your fans support you in a few clicks",
