@@ -22,6 +22,7 @@ export async function POST() {
       goalTitle: true,
       goalAmount: true,
       goalOverlayEnabled: true,
+      goalColor: true,
     },
   });
   if (!user) {
@@ -48,5 +49,6 @@ export async function POST() {
     goalEnabled: user.goalOverlayEnabled,
     goalTitle: user.goalTitle ?? "",
     goalAmount: user.goalAmount ? String(user.goalAmount) : "",
+    goalColor: user.goalColor,
   });
 }

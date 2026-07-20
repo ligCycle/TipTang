@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ColorField } from "./ColorField";
 
 type Kind = "sound" | "image" | "video";
 type Config = {
@@ -14,6 +15,7 @@ type Config = {
   goalEnabled: boolean;
   goalTitle: string;
   goalAmount: string;
+  goalColor: string | null;
 };
 
 const DEFAULT_COLOR = "#ec4899";
@@ -45,19 +47,12 @@ export function OverlaySettings() {
   const [copied, setCopied] = useState<"alert" | "goal" | null>(null);
   const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hexInput, setHexInput] = useState(DEFAULT_COLOR);
   const [goalTitle, setGoalTitle] = useState("");
   const [goalAmount, setGoalAmount] = useState("");
   const [goalSaved, setGoalSaved] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
   const [goalRefresh, setGoalRefresh] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Keep the hex text field in sync when the color changes elsewhere (picker,
-  // reset, or first load).
-  useEffect(() => {
-    setHexInput(config?.color ?? DEFAULT_COLOR);
-  }, [config?.color]);
 
   async function reveal() {
     setLoading(true);
@@ -75,6 +70,7 @@ export function OverlaySettings() {
           goalEnabled: d.goalEnabled !== false,
           goalTitle: d.goalTitle ?? "",
           goalAmount: d.goalAmount ?? "",
+          goalColor: d.goalColor ?? null,
         });
         setGoalTitle(d.goalTitle ?? "");
         setGoalAmount(d.goalAmount ?? "");
@@ -185,22 +181,32 @@ export function OverlaySettings() {
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
-  // Typed/pasted hex code. Auto-prefix "#", keep partial input in the field,
-  // and only persist once it's a valid 6-digit hex.
-  function onHexChange(raw: string) {
-    let v = raw.trim();
-    if (v && !v.startsWith("#")) v = "#" + v;
-    v = v.slice(0, 7);
-    setHexInput(v);
-    if (/^#[0-9a-fA-F]{6}$/.test(v)) saveColor(v.toLowerCase());
-  }
-
   async function resetColor() {
     setConfig((c) => (c ? { ...c, color: null } : c));
     const fd = new FormData();
     fd.set("kind", "color");
     fd.set("remove", "1");
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
+  // Goal-bar color — same shape, persisted under kind=goalColor; refresh the
+  // embedded preview so the change shows immediately.
+  async function saveGoalColor(color: string) {
+    setConfig((c) => (c ? { ...c, goalColor: color } : c));
+    const fd = new FormData();
+    fd.set("kind", "goalColor");
+    fd.set("color", color);
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+    setGoalRefresh((n) => n + 1);
+  }
+
+  async function resetGoalColor() {
+    setConfig((c) => (c ? { ...c, goalColor: null } : c));
+    const fd = new FormData();
+    fd.set("kind", "goalColor");
+    fd.set("remove", "1");
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+    setGoalRefresh((n) => n + 1);
   }
 
   return (
@@ -316,6 +322,21 @@ export function OverlaySettings() {
                   </button>
                 </div>
 
+                {/* Goal-bar color (defaults to the alert color) */}
+                <div className="mb-4 rounded-xl bg-brand-50 p-3">
+                  <ColorField
+                    value={config.goalColor}
+                    fallback={config.color ?? DEFAULT_COLOR}
+                    presets={PRESET_COLORS}
+                    label={t("obsGoalColor")}
+                    codeLabel={t("obsColorCode")}
+                    resetLabel={t("obsGoalColorReset")}
+                    defaultLabel={t("obsGoalColorDefault")}
+                    onSave={saveGoalColor}
+                    onReset={resetGoalColor}
+                  />
+                </div>
+
                 <p className="mb-1 text-sm font-medium text-brand-900/70">
                   {t("obsGoalUrlLabel")}
                 </p>
@@ -376,107 +397,48 @@ export function OverlaySettings() {
             </p>
 
             {/* Alert card color */}
-            {(() => {
-              const activeColor = config.color ?? DEFAULT_COLOR;
-              return (
-                <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-brand-900/80">
-                      🎨 {t("obsColor")}
+            <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+              <ColorField
+                value={config.color}
+                fallback={DEFAULT_COLOR}
+                presets={PRESET_COLORS}
+                label={t("obsColor")}
+                codeLabel={t("obsColorCode")}
+                resetLabel={t("obsColorReset")}
+                defaultLabel={t("obsColorDefault")}
+                onSave={saveColor}
+                onReset={resetColor}
+              />
+
+              {/* Live preview of the alert card */}
+              <div className="mt-4">
+                <p className="mb-1.5 text-xs font-medium text-brand-900/50">
+                  {t("obsColorPreview")}
+                </p>
+                <div
+                  className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${
+                      config.color ?? DEFAULT_COLOR
+                    }, color-mix(in srgb, ${
+                      config.color ?? DEFAULT_COLOR
+                    }, black 32%))`,
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-extrabold drop-shadow">
+                      💸 {t("obsPreviewName")}
                     </span>
-                    {config.color ? (
-                      <button
-                        onClick={resetColor}
-                        className="text-xs font-medium text-brand-900/50 hover:text-red-600 hover:underline"
-                      >
-                        ↺ {t("obsColorReset")}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-brand-900/45">
-                        {t("obsColorDefault")}
-                      </span>
-                    )}
+                    <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
+                      ฿100
+                    </span>
                   </div>
-
-                  {/* Preset swatches */}
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {PRESET_COLORS.map((c) => {
-                      const selected = activeColor.toLowerCase() === c;
-                      return (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => saveColor(c)}
-                          aria-label={c}
-                          title={c}
-                          className={`h-7 w-7 rounded-full ring-offset-2 ring-offset-brand-50 transition hover:scale-110 ${
-                            selected
-                              ? "ring-2 ring-brand-900/60"
-                              : "ring-1 ring-black/10"
-                          }`}
-                          style={{ backgroundColor: c }}
-                        />
-                      );
-                    })}
-                  </div>
-
-                  {/* Custom picker + hex code */}
-                  <div className="flex items-center gap-2">
-                    <label className="relative h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-full ring-1 ring-black/10">
-                      <span
-                        className="block h-full w-full"
-                        style={{ backgroundColor: activeColor }}
-                      />
-                      <input
-                        type="color"
-                        value={activeColor}
-                        onChange={(e) => saveColor(e.target.value)}
-                        className="absolute inset-0 cursor-pointer opacity-0"
-                        aria-label={t("obsColor")}
-                      />
-                    </label>
-                    <div className="flex items-center rounded-lg border border-brand-200 bg-white pl-2.5 focus-within:ring-2 focus-within:ring-brand-400 dark:bg-[#241019]">
-                      <span className="font-mono text-sm text-brand-900/40">#</span>
-                      <input
-                        type="text"
-                        value={hexInput.replace(/^#/, "")}
-                        onChange={(e) => onHexChange(e.target.value)}
-                        placeholder={DEFAULT_COLOR.replace(/^#/, "")}
-                        spellCheck={false}
-                        maxLength={7}
-                        className="w-24 bg-transparent py-1.5 pl-1 pr-2.5 font-mono text-sm uppercase text-brand-900 outline-none"
-                        aria-label={t("obsColorCode")}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Live preview of the alert card */}
-                  <div className="mt-4">
-                    <p className="mb-1.5 text-xs font-medium text-brand-900/50">
-                      {t("obsColorPreview")}
-                    </p>
-                    <div
-                      className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
-                      style={{
-                        backgroundImage: `linear-gradient(135deg, ${activeColor}, color-mix(in srgb, ${activeColor}, black 32%))`,
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-extrabold drop-shadow">
-                          💸 {t("obsPreviewName")}
-                        </span>
-                        <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
-                          ฿100
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-white/95">
-                        {t("obsPreviewMsg")}
-                      </p>
-                    </div>
-                  </div>
+                  <p className="mt-1 text-xs text-white/95">
+                    {t("obsPreviewMsg")}
+                  </p>
                 </div>
-              );
-            })()}
+              </div>
+            </div>
 
             {/* Video (takes priority) */}
             <div className="rounded-xl bg-brand-50 p-3">

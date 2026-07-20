@@ -14,7 +14,7 @@ export default async function GoalOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true },
+    select: { overlayKey: true, alertColor: true, goalColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -22,7 +22,10 @@ export default async function GoalOverlayPage({
     return null;
   }
 
+  // Goal bar follows its own color, else the alert color, else default pink.
+  const color = user.goalColor ?? user.alertColor;
+
   return (
-    <GoalOverlayClient username={username} apiKey={key} color={user.alertColor} />
+    <GoalOverlayClient username={username} apiKey={key} color={color} />
   );
 }

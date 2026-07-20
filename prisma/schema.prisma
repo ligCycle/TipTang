@@ -47,6 +47,8 @@ model User {
   goalAmount   Decimal? @db.Decimal(10, 2)
   // Whether the goal-bar OBS overlay is shown on stream (creator can toggle).
   goalOverlayEnabled Boolean @default(true)
+  // Goal-bar color (hex); null = follow alertColor, then default brand pink.
+  goalColor    String?
   // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
   socialLinks  Json?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.

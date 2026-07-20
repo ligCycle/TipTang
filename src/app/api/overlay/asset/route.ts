@@ -29,12 +29,13 @@ export async function POST(req: Request) {
   const remove = form?.get("remove") === "1";
   const file = form?.get("file");
 
-  // Alert card color (hex) — not a file upload.
-  if (kind === "color") {
+  // Alert card / goal-bar color (hex) — not a file upload.
+  if (kind === "color" || kind === "goalColor") {
+    const field = kind === "goalColor" ? "goalColor" : "alertColor";
     if (remove) {
       await prisma.user.update({
         where: { id: session.user.id },
-        data: { alertColor: null },
+        data: { [field]: null },
       });
       return NextResponse.json({ ok: true, color: null });
     }
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
     }
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { alertColor: color },
+      data: { [field]: color },
     });
     return NextResponse.json({ ok: true, color });
   }
