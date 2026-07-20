@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { ImageCropper } from "./ImageCropper";
 
 type Initial = {
   displayName: string;
@@ -26,23 +27,34 @@ export function SettingsForm({ initial }: { initial: Initial }) {
   );
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"avatar" | "cover" | null>(null);
+  const [cropping, setCropping] = useState<{
+    kind: "avatar" | "cover";
+    file: File;
+  } | null>(null);
 
-  async function uploadImage(
+  // Pick a file -> validate -> open the cropper (upload happens after cropping).
+  function onPick(
     kind: "avatar" | "cover",
     e: React.ChangeEvent<HTMLInputElement>,
   ) {
     const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
     if (!file) return;
     setError(null);
     if (!ALLOWED.includes(file.type) || file.size > MAX_BYTES) {
       setError(t("imageError"));
       return;
     }
+    setCropping({ kind, file });
+  }
+
+  async function doUpload(kind: "avatar" | "cover", blob: Blob) {
+    setCropping(null);
     setUploading(kind);
     try {
       const fd = new FormData();
       fd.set("kind", kind);
-      fd.set("file", file);
+      fd.set("file", new File([blob], `${kind}.jpg`, { type: "image/jpeg" }));
       const res = await fetch("/api/profile/image", {
         method: "POST",
         body: fd,
@@ -106,6 +118,15 @@ export function SettingsForm({ initial }: { initial: Initial }) {
 
   return (
     <div className="card rounded-3xl p-8">
+      {cropping && (
+        <ImageCropper
+          file={cropping.file}
+          aspect={cropping.kind === "avatar" ? 1 : 3}
+          cropShape={cropping.kind === "avatar" ? "round" : "rect"}
+          onCancel={() => setCropping(null)}
+          onCropped={(blob) => doUpload(cropping.kind, blob)}
+        />
+      )}
       <h1 className="mb-6 text-2xl font-bold text-brand-900">{t("title")}</h1>
 
       {/* Cover + avatar upload */}
@@ -128,7 +149,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp"
-            onChange={(e) => uploadImage("cover", e)}
+            onChange={(e) => onPick("cover", e)}
             className="hidden"
           />
         </label>
@@ -153,7 +174,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
-              onChange={(e) => uploadImage("avatar", e)}
+              onChange={(e) => onPick("avatar", e)}
               className="hidden"
             />
           </label>

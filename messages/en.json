@@ -119,7 +119,9 @@
     "imageHint": "JPG, PNG or WebP, max 5MB",
     "changeImage": "Change image",
     "uploading": "Uploading...",
-    "imageError": "Upload failed. Please try again."
+    "imageError": "Upload failed. Please try again.",
+    "cropTitle": "Adjust image — drag/zoom to choose what shows",
+    "zoom": "Zoom"
   },
   "errors": {
     "tooLarge": "File too large (max 5MB)",
