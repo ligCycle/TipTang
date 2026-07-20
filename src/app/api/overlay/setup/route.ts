@@ -19,6 +19,7 @@ export async function POST() {
       alertImageUrl: true,
       alertVideoUrl: true,
       alertColor: true,
+      goalAmount: true,
     },
   });
   if (!user) {
@@ -41,5 +42,6 @@ export async function POST() {
     imageUrl: user.alertImageUrl,
     videoUrl: user.alertVideoUrl,
     color: user.alertColor,
+    hasGoal: Boolean(user.goalAmount && Number(user.goalAmount) > 0),
   });
 }

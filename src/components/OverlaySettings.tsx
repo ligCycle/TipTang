@@ -10,6 +10,7 @@ type Config = {
   imageUrl: string | null;
   videoUrl: string | null;
   color: string | null;
+  hasGoal: boolean;
 };
 
 const DEFAULT_COLOR = "#ec4899";
@@ -62,6 +63,7 @@ export function OverlaySettings() {
           imageUrl: d.imageUrl ?? null,
           videoUrl: d.videoUrl ?? null,
           color: d.color ?? null,
+          hasGoal: Boolean(d.hasGoal),
         });
       }
     } finally {
@@ -220,6 +222,27 @@ export function OverlaySettings() {
               </a>
             </div>
             <p className="mt-1 text-xs text-brand-900/55">{t("obsGoalHint")}</p>
+
+            {/* Live goal-bar preview (embedded so you don't switch pages) */}
+            <div className="mt-3">
+              <p className="mb-1.5 text-xs font-medium text-brand-900/50">
+                {t("obsGoalPreview")}
+              </p>
+              {config.hasGoal ? (
+                <div className="overflow-hidden rounded-xl bg-neutral-800 ring-1 ring-black/20">
+                  <iframe
+                    key={goalUrl}
+                    src={goalUrl}
+                    title="goal-bar preview"
+                    className="h-[140px] w-full border-0"
+                  />
+                </div>
+              ) : (
+                <p className="rounded-xl border border-dashed border-brand-300 bg-brand-50 px-4 py-3 text-sm text-brand-900/60">
+                  {t("obsGoalEmpty")}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Customize alert */}
