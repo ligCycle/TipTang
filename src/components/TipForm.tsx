@@ -285,6 +285,9 @@ export function TipForm({
             <p className="mx-auto mt-1 max-w-sm text-xs text-brand-900/45">
               {t("saveQrHint")}
             </p>
+            <p className="mx-auto mt-3 max-w-sm rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
+              📱 {t("payAnyApp")}
+            </p>
           </div>
 
           <label className="block">

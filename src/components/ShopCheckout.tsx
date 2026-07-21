@@ -185,12 +185,17 @@ export function ShopCheckout({
                   })}
                 </p>
                 {qr && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={qr}
-                    alt="PromptPay QR"
-                    className="mx-auto h-52 w-52 rounded-2xl border border-brand-100 bg-white p-2"
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qr}
+                      alt="PromptPay QR"
+                      className="mx-auto h-52 w-52 rounded-2xl border border-brand-100 bg-white p-2"
+                    />
+                    <p className="mx-auto max-w-sm rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
+                      📱 {t("payAnyApp")}
+                    </p>
+                  </>
                 )}
                 <label className="block">
                   <span className="mb-1 block text-sm font-medium text-brand-900/80">
