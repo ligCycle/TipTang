@@ -29,6 +29,10 @@ export const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm"];
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024; // 2 MB
 export const MAX_VIDEO_BYTES = 10 * 1024 * 1024; // 10 MB
+// Random-library assets are preloaded in bulk on the overlay → keep them small.
+export const MAX_LIBRARY_AUDIO_BYTES = 1 * 1024 * 1024; // 1 MB
+export const MAX_LIBRARY_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+export const MAX_LIBRARY_ITEMS = 20; // per kind, per creator
 
 function extFor(file: File): string {
   const map: Record<string, string> = {
@@ -85,6 +89,39 @@ export async function uploadImage(
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, filename), bytes);
   return `/api/uploads/${folder}/${filename}`;
+}
+
+/**
+ * Delete a previously-uploaded file given its public URL. Best-effort — never
+ * throws (cleanup failures shouldn't fail the request). Prevents storage bloat
+ * when a creator removes a library asset / replaces an image.
+ */
+export async function deleteFile(url: string | null | undefined): Promise<void> {
+  if (!url) return;
+  try {
+    if (DRIVER === "supabase") {
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
+      const marker = `/object/public/${BUCKET}/`;
+      const idx = url.indexOf(marker);
+      if (idx === -1) return;
+      const key = decodeURIComponent(url.slice(idx + marker.length));
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+        auth: { persistSession: false },
+      });
+      await supabase.storage.from(BUCKET).remove([key]);
+    } else {
+      const prefix = "/api/uploads/";
+      const i = url.indexOf(prefix);
+      if (i === -1) return;
+      const rel = url.slice(i + prefix.length);
+      const safe = rel.split("/").filter((s) => s && s !== "." && s !== "..");
+      const filePath = path.join(LOCAL_DIR, ...safe);
+      if (!filePath.startsWith(LOCAL_DIR)) return;
+      await fs.unlink(filePath).catch(() => {});
+    }
+  } catch {
+    // ignore — best-effort cleanup
+  }
 }
 
 /** Read a locally-stored file (used by the /api/uploads route). */

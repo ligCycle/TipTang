@@ -6,6 +6,7 @@ import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 
 type Kind = "sound" | "image" | "video";
+type LibItem = { id: string; url: string };
 type Config = {
   url: string;
   soundUrl: string | null;
@@ -18,6 +19,8 @@ type Config = {
   goalTitle: string;
   goalAmount: string;
   goalColor: string | null;
+  librarySounds: LibItem[];
+  libraryStickers: LibItem[];
 };
 
 
@@ -39,6 +42,9 @@ export function OverlaySettings() {
   const [goalSaved, setGoalSaved] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
   const [goalRefresh, setGoalRefresh] = useState(0);
+  const [libUploading, setLibUploading] = useState<"sound" | "sticker" | null>(
+    null,
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   async function reveal() {
@@ -59,6 +65,8 @@ export function OverlaySettings() {
           goalTitle: d.goalTitle ?? "",
           goalAmount: d.goalAmount ?? "",
           goalColor: d.goalColor ?? null,
+          librarySounds: d.librarySounds ?? [],
+          libraryStickers: d.libraryStickers ?? [],
         });
         setGoalTitle(d.goalTitle ?? "");
         setGoalAmount(d.goalAmount ?? "");
@@ -175,6 +183,71 @@ export function OverlaySettings() {
       audioRef.current = new Audio(config.soundUrl);
       audioRef.current.play().catch(() => {});
     }
+  }
+
+  function playSound(u: string) {
+    audioRef.current = new Audio(u);
+    audioRef.current.play().catch(() => {});
+  }
+
+  // Random-alert library (many sounds/stickers → overlay picks one per alert).
+  async function addLibrary(
+    kind: "sound" | "sticker",
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setError(null);
+    setLibUploading(kind);
+    try {
+      const fd = new FormData();
+      fd.set("kind", kind === "sound" ? "librarySound" : "librarySticker");
+      fd.set("file", file);
+      const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.id) {
+        setError(t("obsAssetError"));
+        return;
+      }
+      setConfig((c) =>
+        c
+          ? {
+              ...c,
+              ...(kind === "sound"
+                ? { librarySounds: [...c.librarySounds, { id: d.id, url: d.url }] }
+                : {
+                    libraryStickers: [
+                      ...c.libraryStickers,
+                      { id: d.id, url: d.url },
+                    ],
+                  }),
+            }
+          : c,
+      );
+    } finally {
+      setLibUploading(null);
+    }
+  }
+
+  async function removeLibrary(kind: "sound" | "sticker", id: string) {
+    const fd = new FormData();
+    fd.set("kind", kind === "sound" ? "librarySound" : "librarySticker");
+    fd.set("remove", "1");
+    fd.set("assetId", id);
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+    setConfig((c) =>
+      c
+        ? {
+            ...c,
+            ...(kind === "sound"
+              ? { librarySounds: c.librarySounds.filter((a) => a.id !== id) }
+              : {
+                  libraryStickers: c.libraryStickers.filter((a) => a.id !== id),
+                }),
+          }
+        : c,
+    );
   }
 
   // Persist the chosen color. Debounced by the browser's color input (fires on
@@ -354,6 +427,95 @@ export function OverlaySettings() {
                     {t("obsSoundHint")}
                   </span>
                 </div>
+              </div>
+
+              {/* Random library — sounds */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-brand-900/80">
+                    🔀 {t("obsSoundLibrary")}
+                  </span>
+                  <label className="btn-secondary cursor-pointer px-3 py-1 text-xs">
+                    {libUploading === "sound" ? t("obsUploading") : t("obsAddToLibrary")}
+                    <input
+                      type="file"
+                      accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm"
+                      onChange={(e) => addLibrary("sound", e)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {config.librarySounds.length > 0 ? (
+                  <ul className="mt-1 space-y-1">
+                    {config.librarySounds.map((a, i) => (
+                      <li
+                        key={a.id}
+                        className="flex items-center gap-2 text-sm text-brand-900/70"
+                      >
+                        <button
+                          onClick={() => playSound(a.url)}
+                          className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700 hover:bg-brand-200"
+                        >
+                          ▶
+                        </button>
+                        <span className="flex-1 truncate">
+                          {t("obsSound")} {i + 1}
+                        </span>
+                        <button
+                          onClick={() => removeLibrary("sound", a.id)}
+                          className="text-xs font-medium text-red-600 hover:underline"
+                        >
+                          {t("obsRemove")}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-brand-900/45">{t("obsLibraryHint")}</p>
+                )}
+              </div>
+
+              {/* Random library — stickers */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-brand-900/80">
+                    🔀 {t("obsStickerLibrary")}
+                  </span>
+                  <label className="btn-secondary cursor-pointer px-3 py-1 text-xs">
+                    {libUploading === "sticker"
+                      ? t("obsUploading")
+                      : t("obsAddToLibrary")}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={(e) => addLibrary("sticker", e)}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {config.libraryStickers.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {config.libraryStickers.map((a) => (
+                      <div key={a.id} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={a.url}
+                          alt=""
+                          className="h-14 w-14 rounded object-cover ring-1 ring-black/10"
+                        />
+                        <button
+                          onClick={() => removeLibrary("sticker", a.id)}
+                          className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+                          aria-label={t("obsRemove")}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-brand-900/45">{t("obsLibraryHint")}</p>
+                )}
               </div>
 
               {/* Image / GIF */}

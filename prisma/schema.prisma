@@ -26,6 +26,23 @@ enum ReportStatus {
   RESOLVED
 }
 
+enum AlertAssetKind {
+  SOUND
+  STICKER
+}
+
+// A sound/sticker in a creator's random-alert library (many per creator).
+model AlertAsset {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      AlertAssetKind
+  url       String
+  createdAt DateTime       @default(now())
+
+  @@index([userId, kind])
+}
+
 // A report / issue / suggestion a creator sends to the platform admin.
 model Report {
   id        String       @id @default(cuid())
@@ -95,6 +112,7 @@ model User {
   tips          Tip[]
   resetTokens   PasswordResetToken[]
   reports       Report[]
+  alertAssets   AlertAsset[]
 }
 
 model PasswordResetToken {

@@ -16,6 +16,7 @@ export default async function OverlayPage({
   const user = await prisma.user.findUnique({
     where: { username },
     select: {
+      id: true,
       overlayKey: true,
       alertSoundUrl: true,
       alertImageUrl: true,
@@ -30,6 +31,17 @@ export default async function OverlayPage({
     return null;
   }
 
+  const assets = await prisma.alertAsset.findMany({
+    where: { userId: user.id },
+    select: { kind: true, url: true },
+  });
+  const librarySounds = assets
+    .filter((a) => a.kind === "SOUND")
+    .map((a) => a.url);
+  const libraryStickers = assets
+    .filter((a) => a.kind === "STICKER")
+    .map((a) => a.url);
+
   return (
     <OverlayClient
       username={username}
@@ -40,6 +52,8 @@ export default async function OverlayPage({
       videoUrl={user.alertVideoUrl}
       color={user.alertColor}
       ttsEnabled={user.ttsEnabled}
+      librarySounds={librarySounds}
+      libraryStickers={libraryStickers}
     />
   );
 }

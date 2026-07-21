@@ -28,6 +28,8 @@ export function OverlayClient({
   videoUrl,
   color,
   ttsEnabled,
+  librarySounds,
+  libraryStickers,
 }: {
   username: string;
   apiKey: string;
@@ -37,12 +39,51 @@ export function OverlayClient({
   videoUrl: string | null;
   color: string | null;
   ttsEnabled: boolean;
+  librarySounds: string[];
+  libraryStickers: string[];
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
+  // Sticker shown with the current alert (randomised per alert from the library).
+  const [sticker, setSticker] = useState<string | null>(null);
   const queue = useRef<Alert[]>([]);
   const seen = useRef<Set<string>>(new Set());
   const lastSeen = useRef<string>(new Date().toISOString());
   const showing = useRef(false);
+
+  function pickRandom(arr: string[]): string | null {
+    return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
+  }
+
+  // Sequentially preload library assets so a randomly-picked one plays instantly
+  // (one at a time to avoid a network/RAM spike when OBS opens the overlay).
+  useEffect(() => {
+    const items = [
+      ...libraryStickers.map((u) => ({ u, img: true })),
+      ...librarySounds.map((u) => ({ u, img: false })),
+    ];
+    let i = 0;
+    let cancelled = false;
+    function loadNext() {
+      if (cancelled || i >= items.length) return;
+      const { u, img } = items[i++];
+      if (img) {
+        const el = new Image();
+        el.onload = el.onerror = loadNext;
+        el.src = u;
+      } else {
+        const a = new Audio();
+        a.preload = "auto";
+        a.oncanplaythrough = a.onerror = loadNext;
+        a.src = u;
+        a.load();
+      }
+    }
+    loadNext();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Read the supporter's name + amount + message aloud via the TTS proxy.
   function speak(a: Alert) {
@@ -64,13 +105,17 @@ export function OverlayClient({
     if (!next) return;
     showing.current = true;
     setCurrent(next);
+    // Random pick from the library each alert; fall back to the single asset.
+    const chosenSound = pickRandom(librarySounds) ?? soundUrl;
+    const chosenSticker = pickRandom(libraryStickers) ?? imageUrl;
+    setSticker(videoUrl ? null : chosenSticker);
     // Video carries its own audio; only play the separate sound / TTS when no
     // video. TTS follows the alert sound so they don't overlap.
-    if (soundUrl && !videoUrl) {
+    if (chosenSound && !videoUrl) {
       // OBS browser sources allow autoplay; normal browsers may block until a
       // user gesture (fine — the overlay runs inside OBS in real use).
       try {
-        const audio = new Audio(soundUrl);
+        const audio = new Audio(chosenSound);
         if (ttsEnabled) {
           audio.addEventListener("ended", () => speak(next), { once: true });
         }
@@ -170,10 +215,10 @@ export function OverlayClient({
               className="mx-auto mb-3 max-h-48 w-auto rounded-xl"
             />
           ) : (
-            imageUrl && (
+            sticker && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={imageUrl}
+                src={sticker}
                 alt=""
                 className="mx-auto mb-3 max-h-40 w-auto rounded-xl object-contain"
               />

@@ -39,9 +39,21 @@ export async function POST() {
     });
   }
 
+  const assets = await prisma.alertAsset.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, kind: true, url: true },
+  });
+
   return NextResponse.json({
     username: user.username,
     key,
+    librarySounds: assets
+      .filter((a) => a.kind === "SOUND")
+      .map((a) => ({ id: a.id, url: a.url })),
+    libraryStickers: assets
+      .filter((a) => a.kind === "STICKER")
+      .map((a) => ({ id: a.id, url: a.url })),
     soundUrl: user.alertSoundUrl,
     imageUrl: user.alertImageUrl,
     videoUrl: user.alertVideoUrl,
