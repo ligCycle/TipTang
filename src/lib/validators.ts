@@ -70,6 +70,20 @@ export const reviewSchema = z.object({
   comment: z.string().trim().min(1).max(500),
 });
 
+export const shopItemSchema = z.object({
+  type: z.enum(["DIGITAL", "COMMISSION"]),
+  title: z.string().trim().min(1).max(100),
+  description: z.string().trim().max(500).optional().or(z.literal("")),
+  price: z.coerce.number().min(1).max(1000000),
+  active: z.boolean().optional(),
+});
+
+export const shopOrderSchema = z.object({
+  buyerName: z.string().trim().min(1).max(60),
+  buyerContact: z.string().trim().min(1).max(200),
+  note: z.string().trim().max(300).optional().or(z.literal("")),
+});
+
 export const reportSchema = z.object({
   category: z.enum(["bug", "payment", "suggestion", "other"]).default("other"),
   message: z.string().trim().min(1).max(1000),

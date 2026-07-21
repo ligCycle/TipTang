@@ -31,6 +31,60 @@ enum AlertAssetKind {
   STICKER
 }
 
+enum ShopItemType {
+  DIGITAL
+  COMMISSION
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  DELIVERED
+}
+
+// A product / commission slot a creator sells on their profile.
+model ShopItem {
+  id          String       @id @default(cuid())
+  creatorId   String
+  creator     User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  type        ShopItemType
+  title       String
+  description String?
+  price       Decimal      @db.Decimal(10, 2)
+  imageUrl    String?
+  active      Boolean      @default(true)
+  // Soft delete: keep the row (orders reference it) but hide it everywhere.
+  isArchived  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  orders ShopOrder[]
+
+  @@index([creatorId, isArchived])
+}
+
+// A purchase/commission order. Paid via PromptPay + slip (like Tip).
+model ShopOrder {
+  id           String      @id @default(cuid())
+  itemId       String
+  item         ShopItem    @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  creatorId    String
+  creator      User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  itemTitle    String // snapshot for history
+  buyerName    String
+  buyerContact String
+  note         String?
+  amount       Decimal     @db.Decimal(10, 2)
+  slipUrl      String?
+  status       OrderStatus @default(PENDING)
+  transRef     String?     @unique
+  createdAt    DateTime    @default(now())
+  confirmedAt  DateTime?
+  deliveredAt  DateTime?
+
+  @@index([creatorId, status])
+}
+
 // A sound/sticker in a creator's random-alert library (many per creator).
 model AlertAsset {
   id        String         @id @default(cuid())
@@ -113,6 +167,8 @@ model User {
   resetTokens   PasswordResetToken[]
   reports       Report[]
   alertAssets   AlertAsset[]
+  shopItems     ShopItem[]
+  shopOrders    ShopOrder[]
 }
 
 model PasswordResetToken {

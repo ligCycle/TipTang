@@ -16,6 +16,7 @@ export default async function DashboardPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("dashboard");
+  const tShop = await getTranslations("shop");
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
 
   const session = await auth();
@@ -82,12 +83,20 @@ export default async function DashboardPage({
         <h1 className="text-2xl font-extrabold text-brand-900">
           {t("welcome", { name: user.displayName })}
         </h1>
-        <Link
-          href={`/${locale}/dashboard/settings`}
-          className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
-        >
-          ⚙️ {t("goSettings")}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/${locale}/dashboard/shop`}
+            className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
+          >
+            🛒 {tShop("dashboardTitle")}
+          </Link>
+          <Link
+            href={`/${locale}/dashboard/settings`}
+            className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
+          >
+            ⚙️ {t("goSettings")}
+          </Link>
+        </div>
       </div>
 
       {!hasPromptpay && (

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { TipForm } from "@/components/TipForm";
+import { ShopCheckout } from "@/components/ShopCheckout";
 import { formatBaht } from "@/lib/format";
 import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 
@@ -78,7 +79,7 @@ export default async function ProfilePage({
 
   const canTip = Boolean(creator.promptpayId && creator.promptpayId.length > 0);
 
-  const [tips, confirmedAgg, topGroups] = await Promise.all([
+  const [tips, confirmedAgg, topGroups, shopItemsRaw] = await Promise.all([
     prisma.tip.findMany({
       where: {
         creatorId: creator.id,
@@ -112,7 +113,32 @@ export default async function ProfilePage({
       orderBy: { _sum: { amount: "desc" } },
       take: 5,
     }),
+    // Shop items (only when the creator can receive payment).
+    canTip
+      ? prisma.shopItem.findMany({
+          where: { creatorId: creator.id, active: true, isArchived: false },
+          orderBy: { createdAt: "desc" },
+          take: 24,
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            description: true,
+            price: true,
+            imageUrl: true,
+          },
+        })
+      : Promise.resolve([]),
   ]);
+
+  const shopItems = shopItemsRaw.map((s) => ({
+    id: s.id,
+    type: s.type,
+    title: s.title,
+    description: s.description,
+    price: Number(s.price),
+    imageUrl: s.imageUrl,
+  }));
 
   const topSupporters = topGroups.map((g) => ({
     name: g.supporterName,
@@ -300,6 +326,15 @@ export default async function ProfilePage({
         <div className="card rounded-2xl p-6 text-center text-brand-900/70">
           {t("notConfigured")}
         </div>
+      )}
+
+      {/* Shop */}
+      {shopItems.length > 0 && (
+        <ShopCheckout
+          username={creator.username}
+          items={shopItems}
+          accentColor={accent}
+        />
       )}
 
       {/* Message wall */}
