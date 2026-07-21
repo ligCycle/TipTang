@@ -336,6 +336,23 @@ export function OverlaySettings() {
                 </a>
               </div>
               <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
+
+              {/* Step-by-step OBS setup guide */}
+              <details className="mt-3 rounded-xl border border-brand-200 bg-white/60">
+                <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold text-brand-800">
+                  {t("obsGuideTitle")}
+                </summary>
+                <ol className="list-decimal space-y-1.5 pb-3 pl-9 pr-3 text-xs text-brand-900/70">
+                  <li>{t("obsGuideStep1")}</li>
+                  <li>{t("obsGuideStep2")}</li>
+                  <li>{t("obsGuideStep3")}</li>
+                  <li>{t("obsGuideStep4")}</li>
+                  <li>{t("obsGuideStep5")}</li>
+                </ol>
+                <p className="px-3 pb-3 text-xs text-brand-600">
+                  💡 {t("obsGuideNote")}
+                </p>
+              </details>
             </div>
 
             {/* Customize the alert card */}
