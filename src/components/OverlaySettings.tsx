@@ -338,7 +338,7 @@ export function OverlaySettings() {
               <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
 
               {/* Step-by-step OBS setup guide */}
-              <details className="mt-3 rounded-xl border border-brand-200 bg-white/60">
+              <details className="mt-3 rounded-xl border border-brand-200 bg-brand-50/70">
                 <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold text-brand-800">
                   {t("obsGuideTitle")}
                 </summary>
