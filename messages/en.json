@@ -29,9 +29,25 @@
     "step3Title": "3. Get tipped",
     "step3Desc": "Fans scan PromptPay, pay, and leave you a message",
     "featuresTitle": "Why TipTang",
-    "feature1": "No fees — you keep every baht",
-    "feature2": "Works with PromptPay across all banks",
-    "feature3": "Confirm slips yourself, stay in control"
+    "feature1": "Free — every feature, unlimited, no ads. You keep every baht",
+    "feature2": "Works with PromptPay across all banks — money goes straight to your account",
+    "feature3": "OBS overlay included: alerts, goal bar, and read-aloud (TTS)",
+    "compareTitle": "Free — with no catch",
+    "compareUsHead": "TipTang",
+    "compareOthersHead": "Typical platforms",
+    "compareRow1Label": "On-screen donation alerts",
+    "compareRow1Us": "Unlimited",
+    "compareRow1Others": "Capped / monthly fee",
+    "compareRow2Label": "Ads on your donation page",
+    "compareRow2Us": "None",
+    "compareRow2Others": "Often on the free plan",
+    "compareRow3Label": "Full overlay customization",
+    "compareRow3Us": "Free",
+    "compareRow3Others": "Usually paid",
+    "compareRow4Label": "Fees / payout",
+    "compareRow4Us": "0%, direct to bank",
+    "compareRow4Others": "0%, direct (same)",
+    "compareNote": "Comparison with typical Thai donation platforms' free tiers."
   },
   "auth": {
     "registerTitle": "Become a creator",
@@ -194,7 +210,13 @@
     "goalAmount": "Goal amount (THB)",
     "goalHint": "Shows a progress bar on your profile. Progress = your confirmed tips total. Leave blank or 0 to hide.",
     "socialSection": "Social links (optional)",
-    "socialHint": "Paste the full URL (starting with https://). Empty ones are hidden."
+    "socialHint": "Paste the full URL (starting with https://). Empty ones are hidden.",
+    "profileColorSection": "Profile theme color",
+    "profileColor": "Accent color",
+    "profileColorCode": "Color code (hex)",
+    "profileColorReset": "Default",
+    "profileColorDefault": "default (pink)",
+    "profileColorHint": "Colors your profile page (buttons, goal bar, header). Pick a darker tone so the white text on buttons stays readable."
   },
   "errors": {
     "tooLarge": "File too large (max 5MB)",

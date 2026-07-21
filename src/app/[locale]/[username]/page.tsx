@@ -67,9 +67,14 @@ export default async function ProfilePage({
       goalTitle: true,
       goalAmount: true,
       socialLinks: true,
+      profileColor: true,
     },
   });
   if (!creator) notFound();
+
+  // Creator-chosen accent color for the profile (null = default brand pink).
+  const accent = creator.profileColor || "#ec4899";
+  const accentStyle = { ["--accent" as string]: accent };
 
   const canTip = Boolean(creator.promptpayId && creator.promptpayId.length > 0);
 
@@ -138,8 +143,10 @@ export default async function ProfilePage({
     },
   };
 
+  const accentGradient = `linear-gradient(135deg, ${accent}, color-mix(in srgb, ${accent}, black 25%))`;
+
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div className="mx-auto max-w-2xl space-y-8" style={accentStyle}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -147,7 +154,10 @@ export default async function ProfilePage({
       {/* Profile header */}
       <section className="card overflow-hidden rounded-3xl text-center">
         {/* Cover */}
-        <div className="h-32 w-full bg-gradient-to-br from-brand-300 to-brand-500 sm:h-40">
+        <div
+          className="h-32 w-full sm:h-40"
+          style={{ backgroundImage: accentGradient }}
+        >
           {creator.coverUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -159,7 +169,10 @@ export default async function ProfilePage({
         </div>
         <div className="px-8 pb-8">
           {/* Avatar (overlaps cover) */}
-          <div className="mx-auto -mt-12 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-brand-400 to-brand-600 text-4xl font-black text-white shadow-lg">
+          <div
+            className="mx-auto -mt-12 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white text-4xl font-black text-white shadow-lg"
+            style={{ backgroundImage: accentGradient }}
+          >
             {creator.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -174,7 +187,7 @@ export default async function ProfilePage({
           <h1 className="mt-4 text-2xl font-extrabold text-brand-900">
             {creator.displayName}
           </h1>
-          <p className="text-sm font-medium text-brand-600">
+          <p className="text-sm font-medium" style={{ color: accent }}>
             @{creator.username}
           </p>
           {creator.bio && (
@@ -210,12 +223,17 @@ export default async function ProfilePage({
             <span className="font-semibold text-brand-900">
               🎯 {creator.goalTitle || t("goalDefaultTitle")}
             </span>
-            <span className="text-sm font-bold text-brand-600">{goalPct}%</span>
+            <span className="text-sm font-bold" style={{ color: accent }}>
+              {goalPct}%
+            </span>
           </div>
           <div className="h-3 w-full overflow-hidden rounded-full bg-brand-100">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all"
-              style={{ width: `${goalPct}%` }}
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${goalPct}%`,
+                backgroundImage: `linear-gradient(to right, ${accent}, color-mix(in srgb, ${accent}, black 20%))`,
+              }}
             />
           </div>
           <p className="mt-2 text-sm text-brand-900/70">
@@ -242,7 +260,10 @@ export default async function ProfilePage({
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="w-7 shrink-0 text-center text-lg font-black text-brand-500">
+                  <span
+                    className="w-7 shrink-0 text-center text-lg font-black"
+                    style={{ color: accent }}
+                  >
                     {medals[i] ?? i + 1}
                   </span>
                   <span className="truncate font-semibold text-brand-800">
@@ -260,7 +281,11 @@ export default async function ProfilePage({
 
       {/* Tip form */}
       {canTip ? (
-        <TipForm username={creator.username} creatorName={creator.displayName} />
+        <TipForm
+          username={creator.username}
+          creatorName={creator.displayName}
+          accentColor={accent}
+        />
       ) : (
         <div className="card rounded-2xl p-6 text-center text-brand-900/70">
           {t("notConfigured")}

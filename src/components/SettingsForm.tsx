@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ImageCropper } from "./ImageCropper";
+import { ColorField } from "./ColorField";
 import { SOCIAL_PLATFORMS, type SocialLinks } from "@/lib/socials";
+import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 
 type Initial = {
   displayName: string;
@@ -15,6 +17,7 @@ type Initial = {
   coverUrl: string;
   autoConfirmTips: boolean;
   socialLinks: SocialLinks;
+  profileColor: string;
 };
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -269,6 +272,27 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               </span>
             </span>
           </label>
+        </div>
+
+        {/* Profile theme color */}
+        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+          <p className="mb-3 text-sm font-semibold text-brand-900/80">
+            🎨 {t("profileColorSection")}
+          </p>
+          <ColorField
+            value={form.profileColor || null}
+            fallback={DEFAULT_COLOR}
+            presets={PRESET_COLORS}
+            label={t("profileColor")}
+            codeLabel={t("profileColorCode")}
+            resetLabel={t("profileColorReset")}
+            defaultLabel={t("profileColorDefault")}
+            onSave={(hex) => setForm((f) => ({ ...f, profileColor: hex }))}
+            onReset={() => setForm((f) => ({ ...f, profileColor: "" }))}
+          />
+          <p className="mt-2 text-xs text-brand-900/55">
+            {t("profileColorHint")}
+          </p>
         </div>
 
         {/* Social links */}

@@ -13,15 +13,24 @@ type Step = "form" | "pay" | "done";
 export function TipForm({
   username,
   creatorName,
+  accentColor,
 }: {
   username: string;
   creatorName: string;
+  accentColor?: string;
 }) {
   const t = useTranslations("profile");
   const tSuccess = useTranslations("tipSuccess");
   const tErr = useTranslations("errors");
   const locale = useLocale();
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
+
+  // Recolor the primary button/selected chip with the creator's accent.
+  // Inline background overrides .btn-primary's solid bg; hover feedback comes
+  // from a brightness filter (not a bg swap) so hover keeps working.
+  const primaryStyle = accentColor
+    ? { backgroundColor: accentColor }
+    : undefined;
 
   const [step, setStep] = useState<Step>("form");
   const [amount, setAmount] = useState(50);
@@ -165,6 +174,7 @@ export function TipForm({
                   type="button"
                   key={a}
                   onClick={() => setAmount(a)}
+                  style={amount === a ? primaryStyle : undefined}
                   className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                     amount === a
                       ? "bg-brand-600 text-white"
@@ -231,7 +241,12 @@ export function TipForm({
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-          <button type="submit" disabled={loading} className="btn-primary w-full">
+          <button
+            type="submit"
+            disabled={loading}
+            style={primaryStyle}
+            className="btn-primary w-full transition hover:brightness-95"
+          >
             {loading ? t("generating") : t("generateQr")}
           </button>
         </form>
@@ -302,7 +317,8 @@ export function TipForm({
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary flex-1"
+              style={primaryStyle}
+              className="btn-primary flex-1 transition hover:brightness-95"
             >
               {loading ? t("submitting") : t("submitTip")}
             </button>

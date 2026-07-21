@@ -72,6 +72,8 @@ model User {
   goalColor    String?
   // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
   socialLinks  Json?
+  // Accent color (hex) for the public profile page; null = default brand pink.
+  profileColor String?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.
   promptpayId  String?
   // Secret key for the OBS donation-alert overlay URL.

@@ -24,6 +24,7 @@ export async function PATCH(req: Request) {
     goalTitle,
     goalAmount,
     socialLinks,
+    profileColor,
   } = parsed.data;
 
   // Goal is edited from the dashboard OBS card, not here — only touch these
@@ -62,6 +63,9 @@ export async function PATCH(req: Request) {
       ...goalTitleUpdate,
       ...goalAmountUpdate,
       ...(cleanSocials === undefined ? {} : { socialLinks: cleanSocials }),
+      ...(profileColor === undefined
+        ? {}
+        : { profileColor: profileColor ? profileColor : null }),
     },
   });
 

@@ -25,6 +25,7 @@ export default async function SettingsPage({
       coverUrl: true,
       autoConfirmTips: true,
       socialLinks: true,
+      profileColor: true,
     },
   });
   if (!user) return null;
@@ -41,6 +42,7 @@ export default async function SettingsPage({
           coverUrl: user.coverUrl ?? "",
           autoConfirmTips: user.autoConfirmTips,
           socialLinks: normalizeSocialLinks(user.socialLinks),
+          profileColor: user.profileColor ?? "",
         }}
       />
     </div>

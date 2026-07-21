@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
+import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 
 type Kind = "sound" | "image" | "video";
 type Config = {
@@ -19,21 +20,6 @@ type Config = {
   goalColor: string | null;
 };
 
-const DEFAULT_COLOR = "#ec4899";
-const PRESET_COLORS = [
-  "#ec4899", // pink
-  "#f43f5e", // rose
-  "#ef4444", // red
-  "#f59e0b", // amber
-  "#22c55e", // green
-  "#14b8a6", // teal
-  "#06b6d4", // cyan
-  "#3b82f6", // blue
-  "#8b5cf6", // violet
-  "#a855f7", // purple
-  "#64748b", // slate
-  "#0f172a", // near-black
-];
 
 const FIELD: Record<Kind, keyof Config> = {
   sound: "soundUrl",

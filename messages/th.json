@@ -29,9 +29,25 @@
     "step3Title": "3. รับทิป",
     "step3Desc": "แฟน ๆ สแกน PromptPay จ่ายและฝากข้อความถึงคุณ",
     "featuresTitle": "ทำไมต้อง TipTang",
-    "feature1": "ไม่มีค่าธรรมเนียม — เงินเข้าบัญชีคุณเต็มจำนวน",
-    "feature2": "รองรับ PromptPay ทุกธนาคาร",
-    "feature3": "ยืนยันสลิปเอง ควบคุมได้ทั้งหมด"
+    "feature1": "ฟรีทุกฟีเจอร์ ไม่จำกัดจำนวนครั้ง ไม่มีโฆษณา — เงินเข้าเต็มจำนวน",
+    "feature2": "รองรับ PromptPay ทุกธนาคาร — เงินเข้าบัญชีคุณตรงๆ",
+    "feature3": "มี overlay สำหรับ OBS ครบ: แจ้งเตือน + แถบเป้าหมาย + เสียงอ่านโดเนต",
+    "compareTitle": "ฟรี — แบบไม่มีเงื่อนไขซ่อน",
+    "compareUsHead": "TipTang",
+    "compareOthersHead": "เจ้าอื่นทั่วไป",
+    "compareRow1Label": "โดเนทขึ้นจอ (alert)",
+    "compareRow1Us": "ไม่จำกัด",
+    "compareRow1Others": "จำกัด / จ่ายรายเดือน",
+    "compareRow2Label": "โฆษณาในหน้ารับเงิน",
+    "compareRow2Us": "ไม่มี",
+    "compareRow2Others": "มักมีในแพลนฟรี",
+    "compareRow3Label": "ปรับแต่ง overlay เต็ม",
+    "compareRow3Us": "ฟรี",
+    "compareRow3Others": "มักต้องจ่าย",
+    "compareRow4Label": "ค่าธรรมเนียม / เงินเข้า",
+    "compareRow4Us": "0% เข้าบัญชีตรง",
+    "compareRow4Others": "0% เข้าตรง (เท่ากัน)",
+    "compareNote": "เทียบกับแพลนฟรีของแพลตฟอร์มรับโดเนททั่วไปในไทย"
   },
   "auth": {
     "registerTitle": "สมัครเป็นครีเอเตอร์",
@@ -194,7 +210,13 @@
     "goalAmount": "จำนวนเป้าหมาย (บาท)",
     "goalHint": "แสดงแถบความคืบหน้าบนโปรไฟล์ · ความคืบหน้า = ยอดทิปที่ยืนยันแล้วรวม · เว้นว่างหรือใส่ 0 เพื่อซ่อน",
     "socialSection": "ลิงก์โซเชียล (ไม่บังคับ)",
-    "socialHint": "วางลิงก์เต็ม (ขึ้นต้นด้วย https://) · ช่องที่เว้นว่างจะไม่แสดง"
+    "socialHint": "วางลิงก์เต็ม (ขึ้นต้นด้วย https://) · ช่องที่เว้นว่างจะไม่แสดง",
+    "profileColorSection": "สีธีมหน้าโปรไฟล์",
+    "profileColor": "สีหลัก",
+    "profileColorCode": "รหัสสี (hex)",
+    "profileColorReset": "ค่าเริ่มต้น",
+    "profileColorDefault": "ค่าเริ่มต้น (ชมพู)",
+    "profileColorHint": "ใช้ทาหน้าโปรไฟล์ (ปุ่ม/แถบเป้าหมาย/หัว) · แนะนำสีโทนเข้ม เพื่อให้ตัวหนังสือขาวบนปุ่มอ่านง่าย"
   },
   "errors": {
     "tooLarge": "ไฟล์ใหญ่เกินไป (สูงสุด 5MB)",

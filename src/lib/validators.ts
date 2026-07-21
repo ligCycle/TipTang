@@ -46,6 +46,13 @@ export const profileSchema = z.object({
         .or(z.literal("")),
     )
     .optional(),
+  // Profile accent color: 3- or 6-digit hex, or empty to clear (default pink).
+  profileColor: z
+    .string()
+    .trim()
+    .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "color_invalid")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const tipSchema = z.object({

@@ -118,6 +118,42 @@ export default async function LandingPage({
         </ul>
       </section>
 
+      {/* Comparison — our real edge vs typical platforms */}
+      <section>
+        <h2 className="mb-6 text-center text-2xl font-bold text-brand-900">
+          {t("compareTitle")}
+        </h2>
+        <div className="overflow-hidden rounded-3xl border border-brand-200">
+          <div className="grid grid-cols-[1.4fr_1fr_1fr] bg-brand-50 text-sm font-bold text-brand-900">
+            <div className="p-3 sm:p-4" />
+            <div className="p-3 text-center sm:p-4">{t("compareUsHead")}</div>
+            <div className="p-3 text-center text-brand-900/55 sm:p-4">
+              {t("compareOthersHead")}
+            </div>
+          </div>
+          {[1, 2, 3, 4].map((n) => (
+            <div
+              key={n}
+              className="grid grid-cols-[1.4fr_1fr_1fr] border-t border-brand-100 text-sm"
+            >
+              <div className="p-3 font-medium text-brand-900/80 sm:p-4">
+                {t(`compareRow${n}Label`)}
+              </div>
+              <div className="flex items-center justify-center gap-1 p-3 text-center font-semibold text-brand-700 sm:p-4">
+                <span className="text-brand-600">✓</span>
+                {t(`compareRow${n}Us`)}
+              </div>
+              <div className="p-3 text-center text-brand-900/55 sm:p-4">
+                {t(`compareRow${n}Others`)}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-center text-xs text-brand-900/50">
+          {t("compareNote")}
+        </p>
+      </section>
+
       {/* Reviews / social proof */}
       <ReviewsSection
         reviews={approved}
