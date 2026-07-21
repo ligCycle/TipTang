@@ -343,6 +343,9 @@ export function OverlaySettings() {
               <p className="text-sm font-semibold text-brand-900/80">
                 {t("obsCustomize")}
               </p>
+              <p className="rounded-lg bg-brand-100/60 px-3 py-2 text-xs text-brand-900/70">
+                ℹ️ {t("obsPriorityNote")}
+              </p>
 
               {/* Color + live preview */}
               <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-4">
