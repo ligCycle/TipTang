@@ -234,5 +234,29 @@
     "statusPending": "รออนุมัติ",
     "statusApproved": "อนุมัติแล้ว",
     "statusRejected": "ปฏิเสธแล้ว"
+  },
+  "report": {
+    "title": "แจ้งปัญหา / ติดต่อแอดมิน",
+    "desc": "เจอบั๊ก หรือมีข้อเสนอแนะ? ส่งถึงแอดมินได้เลย",
+    "openButton": "ส่งรายงาน",
+    "categoryLabel": "ประเภท",
+    "category_bug": "🐞 บั๊ก/ข้อผิดพลาด",
+    "category_payment": "💸 เรื่องเงิน/สลิป",
+    "category_suggestion": "💡 ข้อเสนอแนะ",
+    "category_other": "💬 อื่นๆ",
+    "messageLabel": "รายละเอียด",
+    "messagePlaceholder": "อธิบายปัญหาหรือสิ่งที่อยากให้ปรับ...",
+    "submit": "ส่ง",
+    "sending": "กำลังส่ง...",
+    "cancel": "ยกเลิก",
+    "sent": "ส่งแล้ว! ขอบคุณครับ เดี๋ยวแอดมินเข้ามาดูให้",
+    "sendAnother": "ส่งอีกอัน",
+    "error": "ส่งไม่สำเร็จ ลองใหม่อีกครั้ง",
+    "adminTitle": "รายงานจากผู้ใช้",
+    "adminEmpty": "ยังไม่มีรายงาน",
+    "statusResolved": "แก้ไขแล้ว",
+    "markResolved": "ทำเครื่องหมายแก้ไขแล้ว",
+    "reopen": "เปิดใหม่",
+    "processing": "..."
   }
 }

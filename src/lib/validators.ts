@@ -63,6 +63,11 @@ export const reviewSchema = z.object({
   comment: z.string().trim().min(1).max(500),
 });
 
+export const reportSchema = z.object({
+  category: z.enum(["bug", "payment", "suggestion", "other"]).default("other"),
+  message: z.string().trim().min(1).max(1000),
+});
+
 export const forgotSchema = z.object({
   email: z.string().trim().email().toLowerCase(),
   locale: z.enum(["th", "en"]).optional(),

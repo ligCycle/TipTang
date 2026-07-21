@@ -21,6 +21,27 @@ enum ReviewStatus {
   REJECTED
 }
 
+enum ReportStatus {
+  OPEN
+  RESOLVED
+}
+
+// A report / issue / suggestion a creator sends to the platform admin.
+model Report {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Snapshot for admin context (survives later profile edits).
+  username  String
+  email     String
+  category  String       @default("other")
+  message   String
+  status    ReportStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+
+  @@index([status, createdAt])
+}
+
 // Website/platform reviews left by visitors (social proof + feedback).
 model Review {
   id        String       @id @default(cuid())
@@ -71,6 +92,7 @@ model User {
 
   tips          Tip[]
   resetTokens   PasswordResetToken[]
+  reports       Report[]
 }
 
 model PasswordResetToken {

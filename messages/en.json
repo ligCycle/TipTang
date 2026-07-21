@@ -234,5 +234,29 @@
     "statusPending": "Pending",
     "statusApproved": "Approved",
     "statusRejected": "Rejected"
+  },
+  "report": {
+    "title": "Report an issue / contact admin",
+    "desc": "Found a bug or have a suggestion? Send it to the admin.",
+    "openButton": "Send a report",
+    "categoryLabel": "Type",
+    "category_bug": "🐞 Bug",
+    "category_payment": "💸 Payment",
+    "category_suggestion": "💡 Suggestion",
+    "category_other": "💬 Other",
+    "messageLabel": "Details",
+    "messagePlaceholder": "Describe the issue or your suggestion...",
+    "submit": "Send",
+    "sending": "Sending...",
+    "cancel": "Cancel",
+    "sent": "Sent! Thanks — the admin will take a look.",
+    "sendAnother": "Send another",
+    "error": "Couldn't send. Please try again.",
+    "adminTitle": "Reports",
+    "adminEmpty": "No reports yet",
+    "statusResolved": "Resolved",
+    "markResolved": "Mark resolved",
+    "reopen": "Reopen",
+    "processing": "..."
   }
 }

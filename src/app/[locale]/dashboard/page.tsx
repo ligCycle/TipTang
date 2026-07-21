@@ -6,6 +6,7 @@ import { formatBaht } from "@/lib/format";
 import { TipRow } from "@/components/TipRow";
 import { CopyLink } from "@/components/CopyLink";
 import { OverlaySettings } from "@/components/OverlaySettings";
+import { ReportForm } from "@/components/ReportForm";
 
 export default async function DashboardPage({
   params,
@@ -144,6 +145,9 @@ export default async function DashboardPage({
           </ul>
         )}
       </div>
+
+      {/* Report / contact admin */}
+      <ReportForm />
     </div>
   );
 }
