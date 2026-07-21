@@ -31,6 +31,11 @@ export function TipForm({
   const primaryStyle = accentColor
     ? { backgroundColor: accentColor }
     : undefined;
+  const cardTintStyle = accentColor
+    ? {
+        backgroundImage: `linear-gradient(155deg, color-mix(in srgb, ${accentColor} 16%, transparent), color-mix(in srgb, ${accentColor} 5%, transparent))`,
+      }
+    : undefined;
 
   const [step, setStep] = useState<Step>("form");
   const [amount, setAmount] = useState(50);
@@ -141,7 +146,10 @@ export function TipForm({
 
   if (step === "done") {
     return (
-      <section className="card rounded-3xl p-8 text-center">
+      <section
+        className="card rounded-3xl p-8 text-center"
+        style={cardTintStyle}
+      >
         <div className="text-5xl">🎉</div>
         <h2 className="mt-3 text-xl font-bold text-brand-900">
           {tSuccess("title")}
@@ -157,7 +165,7 @@ export function TipForm({
   }
 
   return (
-    <section className="card rounded-3xl p-6 sm:p-8">
+    <section className="card rounded-3xl p-6 sm:p-8" style={cardTintStyle}>
       <h2 className="mb-5 text-xl font-bold text-brand-900">
         {t("supportTitle", { name: creatorName })}
       </h2>

@@ -144,6 +144,9 @@ export default async function ProfilePage({
   };
 
   const accentGradient = `linear-gradient(135deg, ${accent}, color-mix(in srgb, ${accent}, black 25%))`;
+  // Translucent accent wash layered over each card's own bg — tints the whole
+  // page in the creator's color while staying readable in light & dark mode.
+  const cardTint = `linear-gradient(155deg, color-mix(in srgb, ${accent} 16%, transparent), color-mix(in srgb, ${accent} 5%, transparent))`;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8" style={accentStyle}>
@@ -152,7 +155,10 @@ export default async function ProfilePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Profile header */}
-      <section className="card overflow-hidden rounded-3xl text-center">
+      <section
+        className="card overflow-hidden rounded-3xl text-center"
+        style={{ backgroundImage: cardTint }}
+      >
         {/* Cover */}
         <div
           className="h-32 w-full sm:h-40"
@@ -218,7 +224,10 @@ export default async function ProfilePage({
 
       {/* Fundraising goal */}
       {goalAmount > 0 && (
-        <section className="card rounded-2xl p-5">
+        <section
+          className="card rounded-2xl p-5"
+          style={{ backgroundImage: cardTint }}
+        >
           <div className="mb-2 flex items-end justify-between gap-3">
             <span className="font-semibold text-brand-900">
               🎯 {creator.goalTitle || t("goalDefaultTitle")}
@@ -255,6 +264,7 @@ export default async function ProfilePage({
             {topSupporters.map((s, i) => (
               <li
                 key={s.name}
+                style={{ backgroundImage: cardTint }}
                 className={`card flex items-center justify-between gap-3 rounded-2xl p-4 ${
                   i === 0 ? "ring-1 ring-brand-300" : ""
                 }`}
@@ -304,7 +314,11 @@ export default async function ProfilePage({
         ) : (
           <ul className="space-y-3">
             {tips.map((tip) => (
-              <li key={tip.id} className="card rounded-2xl p-4">
+              <li
+                key={tip.id}
+                className="card rounded-2xl p-4"
+                style={{ backgroundImage: cardTint }}
+              >
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold text-brand-800">
                     {tip.supporterName || t("namePlaceholder")}
