@@ -168,7 +168,10 @@ export function OverlayClient({
       // without pressing "Test" again (each alert shows ~7.6s).
       testIv = setInterval(fire, 8000);
     }
-    if (!apiKey) {
+    // In test mode show ONLY the looping sample alerts — don't also poll real
+    // confirmed tips (they'd appear with unexpected amounts mixed into the
+    // preview).
+    if (test || !apiKey) {
       return () => {
         if (testIv) clearInterval(testIv);
       };
@@ -227,7 +230,7 @@ export function OverlayClient({
     : undefined;
 
   return (
-    <div className="flex min-h-screen items-start justify-center p-6">
+    <div className="fixed inset-0 flex items-start justify-center p-6">
       {current && (
         <div
           key={current.id}
