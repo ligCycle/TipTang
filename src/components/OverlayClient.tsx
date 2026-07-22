@@ -146,15 +146,26 @@ export function OverlayClient({
   }
 
   useEffect(() => {
+    let testIv: ReturnType<typeof setInterval> | undefined;
     if (test) {
-      enqueue({
-        id: "test",
-        name: "ผู้สนับสนุนตัวอย่าง",
-        amount: 100,
-        message: "ทดสอบ Donation Alert 🎉",
-      });
+      let n = 0;
+      const fire = () =>
+        enqueue({
+          id: `test-${n++}`,
+          name: "ผู้สนับสนุนตัวอย่าง",
+          amount: 100,
+          message: "ทดสอบ Donation Alert 🎉",
+        });
+      fire();
+      // Loop the preview so the creator can watch the effect repeatedly
+      // without pressing "Test" again (each alert shows ~7.6s).
+      testIv = setInterval(fire, 8000);
     }
-    if (!apiKey) return;
+    if (!apiKey) {
+      return () => {
+        if (testIv) clearInterval(testIv);
+      };
+    }
 
     let active = true;
     async function poll() {
@@ -186,6 +197,7 @@ export function OverlayClient({
     return () => {
       active = false;
       clearInterval(iv);
+      if (testIv) clearInterval(testIv);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
