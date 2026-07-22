@@ -14,7 +14,7 @@ export default async function TimerOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true },
+    select: { overlayKey: true, alertColor: true, timerColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -22,11 +22,10 @@ export default async function TimerOverlayPage({
     return null;
   }
 
+  // Clock follows its own color, else the alert color, else default pink.
+  const color = user.timerColor ?? user.alertColor;
+
   return (
-    <TimerOverlayClient
-      username={username}
-      apiKey={key}
-      color={user.alertColor}
-    />
+    <TimerOverlayClient username={username} apiKey={key} color={color} />
   );
 }

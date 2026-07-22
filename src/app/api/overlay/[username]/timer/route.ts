@@ -23,6 +23,7 @@ export async function GET(
       timerEndsAt: true,
       timerRemaining: true,
       timerInitialSeconds: true,
+      timerMaxSeconds: true,
     },
   });
   if (!user?.overlayKey || user.overlayKey !== key) {
@@ -52,5 +53,6 @@ export async function GET(
     state,
     running: state === "running",
     remainingSeconds,
+    maxSeconds: user.timerMaxSeconds ?? 0,
   });
 }

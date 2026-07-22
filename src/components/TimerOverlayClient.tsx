@@ -37,6 +37,7 @@ export function TimerOverlayClient({
   const [enabled, setEnabled] = useState(false);
   const [state, setState] = useState<State>("stopped");
   const [display, setDisplay] = useState<number | null>(null);
+  const [maxSeconds, setMaxSeconds] = useState(0);
   // Base measurement from the last poll while running: remaining seconds + the
   // local time it was received. The tick derives the live display from this, so
   // we never trust the client's absolute clock — only elapsed time.
@@ -54,6 +55,7 @@ export function TimerOverlayClient({
         if (!active) return;
         setEnabled(Boolean(d.enabled));
         setState(d.state as State);
+        setMaxSeconds(d.maxSeconds ?? 0);
         if (d.running) {
           baseRef.current = { rem: d.remainingSeconds, at: Date.now() };
         } else {
@@ -108,6 +110,11 @@ export function TimerOverlayClient({
         >
           {fmt(display)}
         </p>
+        {maxSeconds > 0 && (
+          <p className="mt-1 text-center text-xs font-semibold text-white/70 drop-shadow">
+            สูงสุด {fmt(maxSeconds)}
+          </p>
+        )}
       </div>
     </div>
   );

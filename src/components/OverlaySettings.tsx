@@ -27,6 +27,7 @@ type Config = {
   timerInitialSeconds: number;
   timerMaxSeconds: number | null;
   timerState: "running" | "paused" | "stopped";
+  timerColor: string | null;
 };
 
 // Format seconds as H:MM:SS (or MM:SS under an hour).
@@ -109,6 +110,7 @@ export function OverlaySettings() {
           timerInitialSeconds: d.timerInitialSeconds ?? 3600,
           timerMaxSeconds: d.timerMaxSeconds ?? null,
           timerState: (d.timerState as Config["timerState"]) ?? "stopped",
+          timerColor: d.timerColor ?? null,
         });
         setGoalTitle(d.goalTitle ?? "");
         setGoalAmount(d.goalAmount ?? "");
@@ -388,6 +390,23 @@ export function OverlaySettings() {
     fd.set("remove", "1");
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
     setGoalRefresh((n) => n + 1);
+  }
+
+  // Subathon-timer clock color (defaults to the alert color).
+  async function saveTimerColor(color: string) {
+    setConfig((c) => (c ? { ...c, timerColor: color } : c));
+    const fd = new FormData();
+    fd.set("kind", "timerColor");
+    fd.set("color", color);
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
+  async function resetTimerColor() {
+    setConfig((c) => (c ? { ...c, timerColor: null } : c));
+    const fd = new FormData();
+    fd.set("kind", "timerColor");
+    fd.set("remove", "1");
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
   return (
@@ -1004,6 +1023,21 @@ export function OverlaySettings() {
                         ? t("obsGoalSaved")
                         : t("obsTimerSave")}
                   </button>
+                </div>
+
+                {/* Clock color */}
+                <div className="rounded-xl bg-brand-50 p-3">
+                  <ColorField
+                    value={config.timerColor}
+                    fallback={config.color ?? DEFAULT_COLOR}
+                    presets={PRESET_COLORS}
+                    label={t("obsTimerColor")}
+                    codeLabel={t("obsColorCode")}
+                    resetLabel={t("obsTimerColorReset")}
+                    defaultLabel={t("obsTimerColorDefault")}
+                    onSave={saveTimerColor}
+                    onReset={resetTimerColor}
+                  />
                 </div>
 
                 {/* Control + live countdown (always shows a time) */}

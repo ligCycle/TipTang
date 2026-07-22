@@ -31,6 +31,7 @@ export async function POST() {
       timerMaxSeconds: true,
       timerEndsAt: true,
       timerRemaining: true,
+      timerColor: true,
     },
   });
   if (!user) {
@@ -96,5 +97,6 @@ export async function POST() {
     timerMaxSeconds: user.timerMaxSeconds,
     timerState,
     timerRemainingSeconds,
+    timerColor: user.timerColor,
   });
 }
