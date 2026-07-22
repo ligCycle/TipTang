@@ -221,3 +221,30 @@ body {
     alertGlowIn 7s ease forwards,
     alertGlowPulse 1.6s ease-in-out infinite;
 }
+
+/* ===== Big-tip: bigger card + confetti ===== */
+.alert-big {
+  transform: scale(1.12);
+  box-shadow:
+    0 0 0 3px rgba(253, 224, 71, 0.9),
+    0 12px 40px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* GPU-accelerated fall (translate3d + will-change) to avoid OBS frame drops. */
+@keyframes confettiFall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 105vh, 0) rotate(720deg);
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  will-change: transform, opacity;
+  animation-name: confettiFall;
+  animation-timing-function: cubic-bezier(0.3, 0.3, 0.7, 1);
+  animation-fill-mode: forwards;
+  animation-iteration-count: 1;
+}

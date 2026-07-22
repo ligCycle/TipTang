@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { formatBaht } from "@/lib/format";
 import { isAlertStyle, DEFAULT_ALERT_STYLE } from "@/lib/alertStyles";
+import { Confetti } from "./Confetti";
 
 type Alert = {
   id: string;
@@ -32,6 +33,7 @@ export function OverlayClient({
   librarySounds,
   libraryStickers,
   alertStyle,
+  bigTipThreshold,
 }: {
   username: string;
   apiKey: string;
@@ -44,6 +46,7 @@ export function OverlayClient({
   librarySounds: string[];
   libraryStickers: string[];
   alertStyle: string;
+  bigTipThreshold: number;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
   // Sticker shown with the current alert (randomised per alert from the library).
@@ -149,13 +152,17 @@ export function OverlayClient({
     let testIv: ReturnType<typeof setInterval> | undefined;
     if (test) {
       let n = 0;
-      const fire = () =>
+      const fire = () => {
+        // Alternate a normal (฿100) and a big (฿1,000) tip so both the regular
+        // and the big-tip celebration can be previewed on one page.
+        const big = n % 2 === 1;
         enqueue({
           id: `test-${n++}`,
           name: "ผู้สนับสนุนตัวอย่าง",
-          amount: 100,
+          amount: big ? 1000 : 100,
           message: "ทดสอบ Donation Alert 🎉",
         });
+      };
       fire();
       // Loop the preview so the creator can watch the effect repeatedly
       // without pressing "Test" again (each alert shows ~7.6s).
@@ -202,6 +209,13 @@ export function OverlayClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Big-tip celebration: threshold is an Int, amount may arrive as a decimal /
+  // string — coerce before comparing.
+  const isBig =
+    bigTipThreshold > 0 &&
+    current != null &&
+    Number(current.amount) >= bigTipThreshold;
+
   const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
   const cardStyle = useCustom
     ? {
@@ -220,10 +234,17 @@ export function OverlayClient({
           style={cardStyle}
           className={`alert-${
             isAlertStyle(alertStyle) ? alertStyle : DEFAULT_ALERT_STYLE
+          } ${
+            isBig ? "alert-big" : ""
           } w-full max-w-md rounded-2xl p-5 text-white shadow-2xl ring-1 ring-white/20 ${
             useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"
           }`}
         >
+          {isBig && (
+            <p className="mb-2 text-center text-sm font-black uppercase tracking-widest drop-shadow">
+              🎉 SUPER TIP! 🎉
+            </p>
+          )}
           {videoUrl ? (
             <video
               src={videoUrl}
@@ -254,6 +275,9 @@ export function OverlayClient({
           )}
         </div>
       )}
+      {/* Confetti is a SIBLING of the card (card clips overflow) — fixed + high
+          z so pieces spread across the whole OBS canvas. Keyed to replay. */}
+      {current && isBig && <Confetti key={current.id} />}
     </div>
   );
 }

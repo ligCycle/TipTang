@@ -15,6 +15,7 @@ type Config = {
   videoUrl: string | null;
   color: string | null;
   alertStyle: string;
+  bigTipThreshold: number;
   ttsEnabled: boolean;
   hasGoal: boolean;
   goalEnabled: boolean;
@@ -65,6 +66,8 @@ export function OverlaySettings() {
   const [libUploading, setLibUploading] = useState<"sound" | "sticker" | null>(
     null,
   );
+  const [bigTip, setBigTip] = useState("0");
+  const [bigTipSaved, setBigTipSaved] = useState(false);
   // Subathon timer config inputs (kept in minutes for the UI).
   const [tBaht, setTBaht] = useState("10");
   const [tMin, setTMin] = useState("1");
@@ -100,6 +103,7 @@ export function OverlaySettings() {
           videoUrl: d.videoUrl ?? null,
           color: d.color ?? null,
           alertStyle: d.alertStyle ?? "pop",
+          bigTipThreshold: d.bigTipThreshold ?? 0,
           ttsEnabled: Boolean(d.ttsEnabled),
           hasGoal: Boolean(d.hasGoal),
           goalEnabled: d.goalEnabled !== false,
@@ -118,6 +122,7 @@ export function OverlaySettings() {
         });
         setGoalTitle(d.goalTitle ?? "");
         setGoalAmount(d.goalAmount ?? "");
+        setBigTip(String(d.bigTipThreshold ?? 0));
         setTBaht(String(d.timerBahtPerUnit ?? 10));
         setTMin(String(Math.round((d.timerSecondsPerUnit ?? 60) / 60)));
         setTInit(String(Math.round((d.timerInitialSeconds ?? 3600) / 60)));
@@ -387,6 +392,21 @@ export function OverlaySettings() {
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
+  // Big-tip threshold (baht; 0 = off). Server coerces to a clean Int.
+  async function saveBigTip() {
+    const fd = new FormData();
+    fd.set("kind", "bigTipThreshold");
+    fd.set("value", bigTip || "0");
+    const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+    if (!res.ok) return;
+    const d = await res.json().catch(() => ({}));
+    const value = d.value ?? 0;
+    setConfig((c) => (c ? { ...c, bigTipThreshold: value } : c));
+    setBigTip(String(value));
+    setBigTipSaved(true);
+    setTimeout(() => setBigTipSaved(false), 1500);
+  }
+
   // Goal-bar color — same shape, persisted under kind=goalColor; refresh the
   // embedded preview so the change shows immediately.
   async function saveGoalColor(color: string) {
@@ -589,6 +609,35 @@ export function OverlaySettings() {
                 </div>
                 <p className="mt-1.5 text-xs text-brand-900/50">
                   {t("obsAlertStyleHint")}
+                </p>
+              </div>
+
+              {/* Big-tip celebration */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <p className="mb-1 text-sm font-medium text-brand-900/80">
+                  🎉 {t("obsBigTip")}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={bigTip}
+                    onChange={(e) => setBigTip(e.target.value)}
+                    placeholder="0"
+                    className="input w-32 text-sm"
+                  />
+                  <span className="text-sm text-brand-900/70">
+                    {t("obsBigTipUnit")}
+                  </span>
+                  <button
+                    onClick={saveBigTip}
+                    className="btn-secondary px-4 py-1.5 text-sm"
+                  >
+                    {bigTipSaved ? t("obsGoalSaved") : t("obsBigTipSave")}
+                  </button>
+                </div>
+                <p className="mt-1.5 text-xs text-brand-900/50">
+                  {t("obsBigTipHint")}
                 </p>
               </div>
 

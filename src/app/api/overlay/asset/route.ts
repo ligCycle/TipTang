@@ -207,6 +207,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
+  // Big-tip threshold (baht; 0 = disabled). Coerce string/decimal → clean Int.
+  if (kind === "bigTipThreshold") {
+    const n = Math.round(Number(form?.get("value")));
+    const value = Number.isFinite(n) ? Math.min(Math.max(n, 0), 100000000) : 0;
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { bigTipThreshold: value },
+    });
+    revalidateOverlay();
+    return NextResponse.json({ ok: true, value });
+  }
+
   // Alert entrance/exit animation style.
   if (kind === "alertStyle") {
     const style = String(form?.get("style") ?? "");

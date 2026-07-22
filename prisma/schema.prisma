@@ -157,6 +157,9 @@ model User {
   alertColor    String?
   // Alert entrance/exit animation style (see src/lib/alertStyles.ts).
   alertStyle    String  @default("pop")
+  // Donations >= this amount (baht) get a bigger celebratory alert + confetti.
+  // 0 = disabled.
+  bigTipThreshold Int   @default(0)
   // Read the supporter's name + message aloud (TTS) when an alert fires.
   ttsEnabled    Boolean @default(false)
   // When true, incoming tips are confirmed automatically (creator trusts the
