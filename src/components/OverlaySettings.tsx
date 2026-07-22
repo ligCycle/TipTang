@@ -1065,9 +1065,12 @@ export function OverlaySettings() {
                             : t("obsTimerStateReady")}
                       </p>
                       <p
-                        className={`text-3xl font-black tabular-nums text-brand-700 ${
+                        className={`text-3xl font-black tabular-nums ${
                           config.timerState === "paused" ? "opacity-60" : ""
                         }`}
+                        style={{
+                          color: config.timerColor ?? config.color ?? DEFAULT_COLOR,
+                        }}
                       >
                         {fmtDuration(timerDisplay ?? config.timerInitialSeconds)}
                       </p>
