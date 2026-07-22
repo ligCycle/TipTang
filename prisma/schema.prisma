@@ -168,8 +168,12 @@ model User {
   timerInitialSeconds Int       @default(3600)
   // Optional cap on total remaining time (seconds); null = no cap.
   timerMaxSeconds     Int?
-  // Countdown target; null = timer stopped / not running.
+  // Countdown target while running; null when paused/stopped.
   timerEndsAt         DateTime?
+  // Frozen remaining seconds while paused; null when running or reset/stopped
+  // (a reset shows timerInitialSeconds). State is derived:
+  //   running = timerEndsAt != null; paused = timerRemaining != null; else stopped.
+  timerRemaining      Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

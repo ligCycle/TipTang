@@ -131,30 +131,55 @@ export async function POST(req: Request) {
     });
   }
 
-  // Subathon timer control: start (arm the countdown) / stop.
+  // Subathon timer control: start/resume / pause / reset.
   if (kind === "timerControl") {
     const control = String(form?.get("control") ?? "");
-    if (control === "stop") {
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { timerEndsAt: null },
-      });
-      return NextResponse.json({ ok: true, running: false, remainingSeconds: 0 });
-    }
+    const u = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        timerEndsAt: true,
+        timerRemaining: true,
+        timerInitialSeconds: true,
+      },
+    });
+    const initial = u?.timerInitialSeconds ?? 3600;
+    const now = Date.now();
+
     if (control === "start") {
-      const u = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { timerInitialSeconds: true },
-      });
-      const initial = u?.timerInitialSeconds ?? 3600;
-      const endsAt = new Date(Date.now() + initial * 1000);
+      // Start fresh (from stopped) or resume from a paused remaining.
+      const base = u?.timerRemaining != null ? u.timerRemaining : initial;
       await prisma.user.update({
         where: { id: session.user.id },
-        data: { timerEndsAt: endsAt },
+        data: { timerEndsAt: new Date(now + base * 1000), timerRemaining: null },
       });
       return NextResponse.json({
         ok: true,
-        running: true,
+        state: "running",
+        remainingSeconds: base,
+      });
+    }
+    if (control === "pause") {
+      const rem = u?.timerEndsAt
+        ? Math.max(0, Math.round((u.timerEndsAt.getTime() - now) / 1000))
+        : (u?.timerRemaining ?? initial);
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { timerEndsAt: null, timerRemaining: rem },
+      });
+      return NextResponse.json({
+        ok: true,
+        state: "paused",
+        remainingSeconds: rem,
+      });
+    }
+    if (control === "reset") {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { timerEndsAt: null, timerRemaining: null },
+      });
+      return NextResponse.json({
+        ok: true,
+        state: "stopped",
         remainingSeconds: initial,
       });
     }

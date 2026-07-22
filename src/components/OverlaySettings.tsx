@@ -26,7 +26,7 @@ type Config = {
   timerSecondsPerUnit: number;
   timerInitialSeconds: number;
   timerMaxSeconds: number | null;
-  timerRunning: boolean;
+  timerState: "running" | "paused" | "stopped";
 };
 
 // Format seconds as H:MM:SS (or MM:SS under an hour).
@@ -76,10 +76,7 @@ export function OverlaySettings() {
   // Tick the dashboard countdown once a second from the last measured base.
   useEffect(() => {
     const iv = setInterval(() => {
-      if (!timerBaseRef.current) {
-        setTimerDisplay(null);
-        return;
-      }
+      if (!timerBaseRef.current) return; // paused/stopped → keep static value
       const elapsed = (Date.now() - timerBaseRef.current.at) / 1000;
       setTimerDisplay(Math.max(0, Math.round(timerBaseRef.current.rem - elapsed)));
     }, 1000);
@@ -111,7 +108,7 @@ export function OverlaySettings() {
           timerSecondsPerUnit: d.timerSecondsPerUnit ?? 60,
           timerInitialSeconds: d.timerInitialSeconds ?? 3600,
           timerMaxSeconds: d.timerMaxSeconds ?? null,
-          timerRunning: Boolean(d.timerRunning),
+          timerState: (d.timerState as Config["timerState"]) ?? "stopped",
         });
         setGoalTitle(d.goalTitle ?? "");
         setGoalAmount(d.goalAmount ?? "");
@@ -119,9 +116,12 @@ export function OverlaySettings() {
         setTMin(String(Math.round((d.timerSecondsPerUnit ?? 60) / 60)));
         setTInit(String(Math.round((d.timerInitialSeconds ?? 3600) / 60)));
         setTMax(d.timerMaxSeconds ? String(Math.round(d.timerMaxSeconds / 60)) : "");
-        timerBaseRef.current = d.timerRunning
-          ? { rem: d.timerRemainingSeconds ?? 0, at: Date.now() }
-          : null;
+        if (d.timerState === "running") {
+          timerBaseRef.current = { rem: d.timerRemainingSeconds ?? 0, at: Date.now() };
+        } else {
+          timerBaseRef.current = null;
+          setTimerDisplay(d.timerRemainingSeconds ?? 0); // static (paused/stopped)
+        }
       }
     } finally {
       setLoading(false);
@@ -162,23 +162,32 @@ export function OverlaySettings() {
       if (res.ok) {
         setTimerSaved(true);
         setTimeout(() => setTimerSaved(false), 1500);
+        // If the timer is idle (stopped), reflect the new starting time now.
+        if (config?.timerState === "stopped") {
+          timerBaseRef.current = null;
+          setTimerDisplay((Number(tInit) || 0) * 60);
+        }
       }
     } finally {
       setSavingTimer(false);
     }
   }
 
-  async function timerControl(control: "start" | "stop") {
+  async function timerControl(control: "start" | "pause" | "reset") {
     const fd = new FormData();
     fd.set("kind", "timerControl");
     fd.set("control", control);
     const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) return;
-    setConfig((c) => (c ? { ...c, timerRunning: Boolean(d.running) } : c));
-    timerBaseRef.current = d.running
-      ? { rem: d.remainingSeconds ?? 0, at: Date.now() }
-      : null;
+    const state = d.state as Config["timerState"];
+    setConfig((c) => (c ? { ...c, timerState: state } : c));
+    if (state === "running") {
+      timerBaseRef.current = { rem: d.remainingSeconds ?? 0, at: Date.now() };
+    } else {
+      timerBaseRef.current = null;
+      setTimerDisplay(d.remainingSeconds ?? 0);
+    }
   }
 
   async function saveGoal() {
@@ -997,34 +1006,50 @@ export function OverlaySettings() {
                   </button>
                 </div>
 
-                {/* Control + live countdown */}
+                {/* Control + live countdown (always shows a time) */}
                 <div className="rounded-xl bg-brand-50 p-3">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-medium text-brand-900/60">
-                        {t("obsTimerStatusLabel")}
+                        {config.timerState === "running"
+                          ? t("obsTimerStateRunning")
+                          : config.timerState === "paused"
+                            ? t("obsTimerStatePaused")
+                            : t("obsTimerStateReady")}
                       </p>
-                      <p className="text-3xl font-black tabular-nums text-brand-700">
-                        {config.timerRunning && timerDisplay !== null
-                          ? fmtDuration(timerDisplay)
-                          : t("obsTimerStopped")}
+                      <p
+                        className={`text-3xl font-black tabular-nums text-brand-700 ${
+                          config.timerState === "paused" ? "opacity-60" : ""
+                        }`}
+                      >
+                        {fmtDuration(timerDisplay ?? config.timerInitialSeconds)}
                       </p>
                     </div>
-                    {config.timerRunning ? (
+                    <div className="flex shrink-0 gap-2">
+                      {config.timerState === "running" ? (
+                        <button
+                          onClick={() => timerControl("pause")}
+                          className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-200"
+                        >
+                          {t("obsTimerPause")}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => timerControl("start")}
+                          className="btn-primary px-4 py-2 text-sm"
+                        >
+                          {config.timerState === "paused"
+                            ? t("obsTimerResume")
+                            : t("obsTimerStart")}
+                        </button>
+                      )}
                       <button
-                        onClick={() => timerControl("stop")}
-                        className="shrink-0 rounded-full bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-200"
+                        onClick={() => timerControl("reset")}
+                        className="rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-200"
                       >
-                        {t("obsTimerStop")}
+                        {t("obsTimerReset")}
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => timerControl("start")}
-                        className="btn-primary shrink-0 px-4 py-2 text-sm"
-                      >
-                        {t("obsTimerStart")}
-                      </button>
-                    )}
+                    </div>
                   </div>
                   <p className="mt-1 text-xs text-brand-900/55">
                     {t("obsTimerControlHint")}

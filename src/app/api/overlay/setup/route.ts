@@ -30,10 +30,29 @@ export async function POST() {
       timerInitialSeconds: true,
       timerMaxSeconds: true,
       timerEndsAt: true,
+      timerRemaining: true,
     },
   });
   if (!user) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  // Derived timer state + the time to show (running=live, paused=frozen,
+  // stopped=starting time).
+  let timerState: "running" | "paused" | "stopped";
+  let timerRemainingSeconds: number;
+  if (user.timerEndsAt) {
+    timerState = "running";
+    timerRemainingSeconds = Math.max(
+      0,
+      Math.round((user.timerEndsAt.getTime() - Date.now()) / 1000),
+    );
+  } else if (user.timerRemaining != null) {
+    timerState = "paused";
+    timerRemainingSeconds = user.timerRemaining;
+  } else {
+    timerState = "stopped";
+    timerRemainingSeconds = user.timerInitialSeconds;
   }
 
   let key = user.overlayKey;
@@ -75,9 +94,7 @@ export async function POST() {
     timerSecondsPerUnit: user.timerSecondsPerUnit,
     timerInitialSeconds: user.timerInitialSeconds,
     timerMaxSeconds: user.timerMaxSeconds,
-    timerRunning: Boolean(user.timerEndsAt),
-    timerRemainingSeconds: user.timerEndsAt
-      ? Math.max(0, Math.round((user.timerEndsAt.getTime() - Date.now()) / 1000))
-      : 0,
+    timerState,
+    timerRemainingSeconds,
   });
 }
