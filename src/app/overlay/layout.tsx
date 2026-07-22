@@ -11,8 +11,13 @@ export const metadata: Metadata = {
 // no header/footer/banner. Lives outside [locale] so none of the app chrome renders.
 export default function OverlayLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body style={{ background: "transparent" }}>{children}</body>
+    // overflow:hidden — an OBS overlay never scrolls; this stops confetti (or
+    // any transient off-screen element) from expanding the document and
+    // nudging the centered alert card sideways.
+    <html lang="en" style={{ overflow: "hidden" }}>
+      <body style={{ background: "transparent", overflow: "hidden" }}>
+        {children}
+      </body>
     </html>
   );
 }
