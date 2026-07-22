@@ -50,6 +50,7 @@ const FIELD: Record<Kind, keyof Config> = {
 export function OverlaySettings() {
   const t = useTranslations("dashboard");
   const [config, setConfig] = useState<Config | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<"alert" | "goal" | "timer" | null>(null);
   const [uploading, setUploading] = useState<Kind | null>(null);
@@ -406,10 +407,29 @@ export function OverlaySettings() {
 
   return (
     <div className="card rounded-2xl p-5">
-      <h2 className="text-lg font-bold text-brand-900">🔴 {t("obsTitle")}</h2>
-      <p className="mt-1 text-sm text-brand-900/65">{t("obsDesc")}</p>
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-expanded={!collapsed}
+        className="flex w-full items-center justify-between gap-3 text-left"
+      >
+        <div>
+          <h2 className="text-lg font-bold text-brand-900">🔴 {t("obsTitle")}</h2>
+          {!collapsed && (
+            <p className="mt-1 text-sm text-brand-900/65">{t("obsDesc")}</p>
+          )}
+        </div>
+        <span
+          className={`shrink-0 text-xl text-brand-900/45 transition-transform ${
+            collapsed ? "" : "rotate-180"
+          }`}
+          aria-hidden
+        >
+          ⌄
+        </span>
+      </button>
 
-      {!config ? (
+      {collapsed ? null : !config ? (
         <button onClick={reveal} disabled={loading} className="btn-secondary mt-4">
           {loading ? "…" : t("obsReveal")}
         </button>
