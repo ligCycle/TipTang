@@ -22,7 +22,7 @@ const COUNT = 34;
 
 export function Confetti() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-[100] overflow-visible">
+    <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden">
       {Array.from({ length: COUNT }).map((_, i) => {
         const left = (i * 97) % 100; // spread across the width, deterministic
         const delay = (i % 10) * 0.12; // staggered start

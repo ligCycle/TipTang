@@ -222,9 +222,13 @@ body {
     alertGlowPulse 1.6s ease-in-out infinite;
 }
 
-/* ===== Big-tip: bigger card + confetti ===== */
+/* ===== Big-tip: bigger card + confetti =====
+   Make the card bigger via max-width (NOT transform) — the alert-<style>
+   animations already drive `transform`, so a transform here would conflict and
+   only appear to work for some styles. Unlayered CSS beats the Tailwind
+   max-w-md utility, so this widens reliably across every style. */
 .alert-big {
-  transform: scale(1.12);
+  max-width: 34rem;
   box-shadow:
     0 0 0 3px rgba(253, 224, 71, 0.9),
     0 12px 40px -8px rgba(0, 0, 0, 0.6);
