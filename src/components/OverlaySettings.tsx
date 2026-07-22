@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
+import { ALERT_STYLES } from "@/lib/alertStyles";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string };
@@ -13,6 +14,7 @@ type Config = {
   imageUrl: string | null;
   videoUrl: string | null;
   color: string | null;
+  alertStyle: string;
   ttsEnabled: boolean;
   hasGoal: boolean;
   goalEnabled: boolean;
@@ -97,6 +99,7 @@ export function OverlaySettings() {
           imageUrl: d.imageUrl ?? null,
           videoUrl: d.videoUrl ?? null,
           color: d.color ?? null,
+          alertStyle: d.alertStyle ?? "pop",
           ttsEnabled: Boolean(d.ttsEnabled),
           hasGoal: Boolean(d.hasGoal),
           goalEnabled: d.goalEnabled !== false,
@@ -375,6 +378,15 @@ export function OverlaySettings() {
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
+  // Alert entrance/exit animation style — saved immediately on pick.
+  async function saveAlertStyle(style: string) {
+    setConfig((c) => (c ? { ...c, alertStyle: style } : c));
+    const fd = new FormData();
+    fd.set("kind", "alertStyle");
+    fd.set("style", style);
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
   // Goal-bar color — same shape, persisted under kind=goalColor; refresh the
   // embedded preview so the change shows immediately.
   async function saveGoalColor(color: string) {
@@ -404,6 +416,15 @@ export function OverlaySettings() {
   function resetTimerColor() {
     setConfig((c) => (c ? { ...c, timerColor: null } : c));
   }
+
+  const styleLabels: Record<string, string> = {
+    pop: t("obsStylePop"),
+    slide: t("obsStyleSlide"),
+    bounce: t("obsStyleBounce"),
+    fade: t("obsStyleFade"),
+    zoom: t("obsStyleZoom"),
+    glow: t("obsStyleGlow"),
+  };
 
   return (
     <div className="card rounded-2xl p-5">
@@ -540,6 +561,35 @@ export function OverlaySettings() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Alert animation style */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <p className="mb-1 text-sm font-medium text-brand-900/80">
+                  ✨ {t("obsAlertStyle")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ALERT_STYLES.map((s) => {
+                    const active = (config.alertStyle || "pop") === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => saveAlertStyle(s)}
+                        className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                          active
+                            ? "bg-brand-600 text-white"
+                            : "bg-brand-100 text-brand-700 hover:bg-brand-200"
+                        }`}
+                      >
+                        {styleLabels[s] ?? s}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-brand-900/50">
+                  {t("obsAlertStyleHint")}
+                </p>
               </div>
 
               {/* Sound */}

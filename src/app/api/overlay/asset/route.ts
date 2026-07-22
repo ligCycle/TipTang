@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isAlertStyle } from "@/lib/alertStyles";
 import {
   uploadImage,
   deleteFile,
@@ -204,6 +205,20 @@ export async function POST(req: Request) {
       });
     }
     return NextResponse.json({ error: "invalid" }, { status: 400 });
+  }
+
+  // Alert entrance/exit animation style.
+  if (kind === "alertStyle") {
+    const style = String(form?.get("style") ?? "");
+    if (!isAlertStyle(style)) {
+      return NextResponse.json({ error: "invalid" }, { status: 400 });
+    }
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { alertStyle: style },
+    });
+    revalidateOverlay();
+    return NextResponse.json({ ok: true, style });
   }
 
   // Read-aloud (TTS) on/off toggle.

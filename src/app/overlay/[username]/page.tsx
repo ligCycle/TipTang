@@ -22,6 +22,7 @@ export default async function OverlayPage({
       alertImageUrl: true,
       alertVideoUrl: true,
       alertColor: true,
+      alertStyle: true,
       ttsEnabled: true,
     },
   });
@@ -54,6 +55,7 @@ export default async function OverlayPage({
       ttsEnabled={user.ttsEnabled}
       librarySounds={librarySounds}
       libraryStickers={libraryStickers}
+      alertStyle={user.alertStyle}
     />
   );
 }

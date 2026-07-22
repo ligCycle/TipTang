@@ -155,6 +155,8 @@ model User {
   alertVideoUrl String?
   // Hex color (e.g. "#ec4899") for the alert card; null = default brand pink.
   alertColor    String?
+  // Alert entrance/exit animation style (see src/lib/alertStyles.ts).
+  alertStyle    String  @default("pop")
   // Read the supporter's name + message aloud (TTS) when an alert fires.
   ttsEnabled    Boolean @default(false)
   // When true, incoming tips are confirmed automatically (creator trusts the

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatBaht } from "@/lib/format";
+import { isAlertStyle, DEFAULT_ALERT_STYLE } from "@/lib/alertStyles";
 
 type Alert = {
   id: string;
@@ -30,6 +31,7 @@ export function OverlayClient({
   ttsEnabled,
   librarySounds,
   libraryStickers,
+  alertStyle,
 }: {
   username: string;
   apiKey: string;
@@ -41,6 +43,7 @@ export function OverlayClient({
   ttsEnabled: boolean;
   librarySounds: string[];
   libraryStickers: string[];
+  alertStyle: string;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
   // Sticker shown with the current alert (randomised per alert from the library).
@@ -203,7 +206,9 @@ export function OverlayClient({
         <div
           key={current.id}
           style={cardStyle}
-          className={`alert-pop w-full max-w-md rounded-2xl p-5 text-white shadow-2xl ring-1 ring-white/20 ${
+          className={`alert-${
+            isAlertStyle(alertStyle) ? alertStyle : DEFAULT_ALERT_STYLE
+          } w-full max-w-md rounded-2xl p-5 text-white shadow-2xl ring-1 ring-white/20 ${
             useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"
           }`}
         >
