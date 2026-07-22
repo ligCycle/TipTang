@@ -160,6 +160,8 @@ export function OverlaySettings() {
       fd.set("secondsPerUnit", String((Number(tMin) || 1) * 60));
       fd.set("initialSeconds", String((Number(tInit) || 0) * 60));
       fd.set("maxSeconds", tMax ? String((Number(tMax) || 0) * 60) : "");
+      // Persist the staged clock color in the same request ("" = use alert color).
+      fd.set("color", config?.timerColor ?? "");
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
       if (res.ok) {
         setTimerSaved(true);
@@ -392,21 +394,14 @@ export function OverlaySettings() {
     setGoalRefresh((n) => n + 1);
   }
 
-  // Subathon-timer clock color (defaults to the alert color).
-  async function saveTimerColor(color: string) {
+  // Subathon-timer clock color — staged locally; persisted by the single
+  // "Save settings" button below (saveTimerConfig) so one press saves all.
+  function saveTimerColor(color: string) {
     setConfig((c) => (c ? { ...c, timerColor: color } : c));
-    const fd = new FormData();
-    fd.set("kind", "timerColor");
-    fd.set("color", color);
-    await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
-  async function resetTimerColor() {
+  function resetTimerColor() {
     setConfig((c) => (c ? { ...c, timerColor: null } : c));
-    const fd = new FormData();
-    fd.set("kind", "timerColor");
-    fd.set("remove", "1");
-    await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
   return (
@@ -1012,6 +1007,19 @@ export function OverlaySettings() {
                       className="input text-sm"
                     />
                   </label>
+                  <div className="border-t border-brand-900/10 pt-3">
+                    <ColorField
+                      value={config.timerColor}
+                      fallback={config.color ?? DEFAULT_COLOR}
+                      presets={PRESET_COLORS}
+                      label={t("obsTimerColor")}
+                      codeLabel={t("obsColorCode")}
+                      resetLabel={t("obsTimerColorReset")}
+                      defaultLabel={t("obsTimerColorDefault")}
+                      onSave={saveTimerColor}
+                      onReset={resetTimerColor}
+                    />
+                  </div>
                   <button
                     onClick={saveTimerConfig}
                     disabled={savingTimer}
@@ -1023,21 +1031,6 @@ export function OverlaySettings() {
                         ? t("obsGoalSaved")
                         : t("obsTimerSave")}
                   </button>
-                </div>
-
-                {/* Clock color */}
-                <div className="rounded-xl bg-brand-50 p-3">
-                  <ColorField
-                    value={config.timerColor}
-                    fallback={config.color ?? DEFAULT_COLOR}
-                    presets={PRESET_COLORS}
-                    label={t("obsTimerColor")}
-                    codeLabel={t("obsColorCode")}
-                    resetLabel={t("obsTimerColorReset")}
-                    defaultLabel={t("obsTimerColorDefault")}
-                    onSave={saveTimerColor}
-                    onReset={resetTimerColor}
-                  />
                 </div>
 
                 {/* Control + live countdown (always shows a time) */}

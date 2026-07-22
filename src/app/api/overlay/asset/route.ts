@@ -118,21 +118,36 @@ export async function POST(req: Request) {
     const maxRaw = Math.round(Number(form?.get("maxSeconds")));
     const maxSeconds =
       Number.isFinite(maxRaw) && maxRaw > 0 ? Math.min(maxRaw, 604800) : null;
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        timerBahtPerUnit: bahtPerUnit,
-        timerSecondsPerUnit: secondsPerUnit,
-        timerInitialSeconds: initialSeconds,
-        timerMaxSeconds: maxSeconds,
-      },
-    });
+
+    const data: {
+      timerBahtPerUnit: number;
+      timerSecondsPerUnit: number;
+      timerInitialSeconds: number;
+      timerMaxSeconds: number | null;
+      timerColor?: string | null;
+    } = {
+      timerBahtPerUnit: bahtPerUnit,
+      timerSecondsPerUnit: secondsPerUnit,
+      timerInitialSeconds: initialSeconds,
+      timerMaxSeconds: maxSeconds,
+    };
+    // Clock color persisted together: "" clears it (use alert color), a valid
+    // hex sets it, anything else leaves it unchanged.
+    const colorRaw = form?.get("color");
+    if (typeof colorRaw === "string") {
+      if (colorRaw === "") data.timerColor = null;
+      else if (/^#[0-9a-fA-F]{6}$/.test(colorRaw))
+        data.timerColor = colorRaw.toLowerCase();
+    }
+
+    await prisma.user.update({ where: { id: session.user.id }, data });
     return NextResponse.json({
       ok: true,
       bahtPerUnit,
       secondsPerUnit,
       initialSeconds,
       maxSeconds,
+      timerColor: data.timerColor,
     });
   }
 
