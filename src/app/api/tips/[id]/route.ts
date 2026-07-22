@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { addSubathonTime } from "@/lib/subathon";
 
 export async function PATCH(
   req: Request,
@@ -20,7 +21,7 @@ export async function PATCH(
 
   const tip = await prisma.tip.findUnique({
     where: { id },
-    select: { creatorId: true },
+    select: { creatorId: true, status: true, amount: true },
   });
   if (!tip) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -37,6 +38,13 @@ export async function PATCH(
       confirmedAt: action === "confirm" ? new Date() : null,
     },
   });
+
+  // Add time to a running subathon timer — only on a fresh confirmation
+  // (guard against re-confirming an already-confirmed tip).
+  if (action === "confirm" && tip.status !== "CONFIRMED") {
+    const amount = Number(tip.amount);
+    after(() => addSubathonTime(session.user.id, amount));
+  }
 
   return NextResponse.json({ ok: true });
 }

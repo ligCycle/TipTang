@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "timerEnabled" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "timerBahtPerUnit" INTEGER NOT NULL DEFAULT 10,
+ADD COLUMN     "timerSecondsPerUnit" INTEGER NOT NULL DEFAULT 60,
+ADD COLUMN     "timerInitialSeconds" INTEGER NOT NULL DEFAULT 3600,
+ADD COLUMN     "timerMaxSeconds" INTEGER,
+ADD COLUMN     "timerEndsAt" TIMESTAMP(3);

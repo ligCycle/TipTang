@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
@@ -21,7 +21,23 @@ type Config = {
   goalColor: string | null;
   librarySounds: LibItem[];
   libraryStickers: LibItem[];
+  timerEnabled: boolean;
+  timerBahtPerUnit: number;
+  timerSecondsPerUnit: number;
+  timerInitialSeconds: number;
+  timerMaxSeconds: number | null;
+  timerRunning: boolean;
 };
+
+// Format seconds as H:MM:SS (or MM:SS under an hour).
+function fmtDuration(total: number): string {
+  const s = Math.max(0, Math.round(total));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+}
 
 
 const FIELD: Record<Kind, keyof Config> = {
@@ -34,7 +50,7 @@ export function OverlaySettings() {
   const t = useTranslations("dashboard");
   const [config, setConfig] = useState<Config | null>(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState<"alert" | "goal" | null>(null);
+  const [copied, setCopied] = useState<"alert" | "goal" | "timer" | null>(null);
   const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [goalTitle, setGoalTitle] = useState("");
@@ -45,7 +61,30 @@ export function OverlaySettings() {
   const [libUploading, setLibUploading] = useState<"sound" | "sticker" | null>(
     null,
   );
+  // Subathon timer config inputs (kept in minutes for the UI).
+  const [tBaht, setTBaht] = useState("10");
+  const [tMin, setTMin] = useState("1");
+  const [tInit, setTInit] = useState("60");
+  const [tMax, setTMax] = useState("");
+  const [timerSaved, setTimerSaved] = useState(false);
+  const [savingTimer, setSavingTimer] = useState(false);
+  const [timerDisplay, setTimerDisplay] = useState<number | null>(null);
+  // Live-countdown base for the dashboard preview: remaining + when measured.
+  const timerBaseRef = useRef<{ rem: number; at: number } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Tick the dashboard countdown once a second from the last measured base.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      if (!timerBaseRef.current) {
+        setTimerDisplay(null);
+        return;
+      }
+      const elapsed = (Date.now() - timerBaseRef.current.at) / 1000;
+      setTimerDisplay(Math.max(0, Math.round(timerBaseRef.current.rem - elapsed)));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, []);
 
   async function reveal() {
     setLoading(true);
@@ -67,16 +106,29 @@ export function OverlaySettings() {
           goalColor: d.goalColor ?? null,
           librarySounds: d.librarySounds ?? [],
           libraryStickers: d.libraryStickers ?? [],
+          timerEnabled: Boolean(d.timerEnabled),
+          timerBahtPerUnit: d.timerBahtPerUnit ?? 10,
+          timerSecondsPerUnit: d.timerSecondsPerUnit ?? 60,
+          timerInitialSeconds: d.timerInitialSeconds ?? 3600,
+          timerMaxSeconds: d.timerMaxSeconds ?? null,
+          timerRunning: Boolean(d.timerRunning),
         });
         setGoalTitle(d.goalTitle ?? "");
         setGoalAmount(d.goalAmount ?? "");
+        setTBaht(String(d.timerBahtPerUnit ?? 10));
+        setTMin(String(Math.round((d.timerSecondsPerUnit ?? 60) / 60)));
+        setTInit(String(Math.round((d.timerInitialSeconds ?? 3600) / 60)));
+        setTMax(d.timerMaxSeconds ? String(Math.round(d.timerMaxSeconds / 60)) : "");
+        timerBaseRef.current = d.timerRunning
+          ? { rem: d.timerRemainingSeconds ?? 0, at: Date.now() }
+          : null;
       }
     } finally {
       setLoading(false);
     }
   }
 
-  async function copy(text: string, which: "alert" | "goal") {
+  async function copy(text: string, which: "alert" | "goal" | "timer") {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(which);
@@ -87,6 +139,47 @@ export function OverlaySettings() {
   }
 
   const goalUrl = config ? config.url.replace("?key=", "/goal?key=") : "";
+  const timerUrl = config ? config.url.replace("?key=", "/timer?key=") : "";
+
+  async function toggleTimer(enabled: boolean) {
+    setConfig((c) => (c ? { ...c, timerEnabled: enabled } : c));
+    const fd = new FormData();
+    fd.set("kind", "timerToggle");
+    fd.set("enabled", enabled ? "1" : "0");
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
+  async function saveTimerConfig() {
+    setSavingTimer(true);
+    try {
+      const fd = new FormData();
+      fd.set("kind", "timerConfig");
+      fd.set("bahtPerUnit", tBaht || "10");
+      fd.set("secondsPerUnit", String((Number(tMin) || 1) * 60));
+      fd.set("initialSeconds", String((Number(tInit) || 0) * 60));
+      fd.set("maxSeconds", tMax ? String((Number(tMax) || 0) * 60) : "");
+      const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      if (res.ok) {
+        setTimerSaved(true);
+        setTimeout(() => setTimerSaved(false), 1500);
+      }
+    } finally {
+      setSavingTimer(false);
+    }
+  }
+
+  async function timerControl(control: "start" | "stop") {
+    const fd = new FormData();
+    fd.set("kind", "timerControl");
+    fd.set("control", control);
+    const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return;
+    setConfig((c) => (c ? { ...c, timerRunning: Boolean(d.running) } : c));
+    timerBaseRef.current = d.running
+      ? { rem: d.remainingSeconds ?? 0, at: Date.now() }
+      : null;
+  }
 
   async function saveGoal() {
     setSavingGoal(true);
@@ -805,6 +898,169 @@ export function OverlaySettings() {
                       {t("obsGoalEmpty")}
                     </p>
                   )}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ===== Subathon timer ===== */}
+          <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-base font-bold text-brand-900">
+                  ⏱️ {t("obsTimerTitle")}
+                </p>
+                <p className="mt-0.5 text-xs text-brand-900/55">
+                  {t("obsTimerToggleHint")}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={config.timerEnabled}
+                onClick={() => toggleTimer(!config.timerEnabled)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                  config.timerEnabled ? "bg-brand-600" : "bg-brand-900/25"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                    config.timerEnabled ? "left-[22px]" : "left-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {config.timerEnabled && (
+              <div className="mt-4 space-y-3 border-t border-brand-900/10 pt-4">
+                {/* Rate + initial + max */}
+                <div className="space-y-3 rounded-xl bg-brand-50 p-3">
+                  <div>
+                    <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                      {t("obsTimerRateLabel")}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-brand-900/80">
+                      <span>{t("obsTimerRateEvery")}</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={tBaht}
+                        onChange={(e) => setTBaht(e.target.value)}
+                        className="input w-20 text-sm"
+                      />
+                      <span>{t("obsTimerRateBahtEq")}</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={tMin}
+                        onChange={(e) => setTMin(e.target.value)}
+                        className="input w-20 text-sm"
+                      />
+                      <span>{t("obsTimerRateMin")}</span>
+                    </div>
+                  </div>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                      {t("obsTimerInitialLabel")}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={tInit}
+                      onChange={(e) => setTInit(e.target.value)}
+                      className="input text-sm"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                      {t("obsTimerMaxLabel")}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={tMax}
+                      onChange={(e) => setTMax(e.target.value)}
+                      placeholder={t("obsTimerMaxPlaceholder")}
+                      className="input text-sm"
+                    />
+                  </label>
+                  <button
+                    onClick={saveTimerConfig}
+                    disabled={savingTimer}
+                    className="btn-primary w-full py-2 text-sm"
+                  >
+                    {savingTimer
+                      ? t("obsGoalSaving")
+                      : timerSaved
+                        ? t("obsGoalSaved")
+                        : t("obsTimerSave")}
+                  </button>
+                </div>
+
+                {/* Control + live countdown */}
+                <div className="rounded-xl bg-brand-50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-brand-900/60">
+                        {t("obsTimerStatusLabel")}
+                      </p>
+                      <p className="text-3xl font-black tabular-nums text-brand-700">
+                        {config.timerRunning && timerDisplay !== null
+                          ? fmtDuration(timerDisplay)
+                          : t("obsTimerStopped")}
+                      </p>
+                    </div>
+                    {config.timerRunning ? (
+                      <button
+                        onClick={() => timerControl("stop")}
+                        className="shrink-0 rounded-full bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-200"
+                      >
+                        {t("obsTimerStop")}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => timerControl("start")}
+                        className="btn-primary shrink-0 px-4 py-2 text-sm"
+                      >
+                        {t("obsTimerStart")}
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-brand-900/55">
+                    {t("obsTimerControlHint")}
+                  </p>
+                </div>
+
+                {/* URL + copy + preview */}
+                <div>
+                  <p className="mb-1 text-sm font-medium text-brand-900/70">
+                    {t("obsTimerUrlLabel")}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      readOnly
+                      value={timerUrl}
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="input flex-1 text-xs"
+                    />
+                    <button
+                      onClick={() => copy(timerUrl, "timer")}
+                      className="btn-secondary shrink-0 px-4 py-2 text-sm"
+                    >
+                      {copied === "timer" ? t("copied") : t("copyLink")}
+                    </button>
+                    <a
+                      href={timerUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+                    >
+                      {t("obsPreview")}
+                    </a>
+                  </div>
+                  <p className="mt-1 text-xs text-brand-900/55">
+                    {t("obsTimerHint")}
+                  </p>
                 </div>
               </div>
             )}

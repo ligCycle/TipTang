@@ -11,6 +11,7 @@ import {
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifySlip, receiverMatches } from "@/lib/slip-verify";
 import { censorText } from "@/lib/profanity";
+import { addSubathonTime } from "@/lib/subathon";
 
 export async function POST(req: Request) {
   const limit = await rateLimit(`tip:${clientIp(req)}`, 5, 60_000);
@@ -127,6 +128,11 @@ export async function POST(req: Request) {
     },
     select: { id: true },
   });
+
+  // Confirmed on arrival (auto-verified or auto-confirm) → add subathon time.
+  if (status === "CONFIRMED") {
+    after(() => addSubathonTime(creator.id, parsed.data.amount));
+  }
 
   // Notify the creator by email after the response is sent (best-effort — never
   // block or fail the tip on email problems).

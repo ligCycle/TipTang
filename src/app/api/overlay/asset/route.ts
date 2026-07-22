@@ -91,6 +91,76 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, enabled });
   }
 
+  // Subathon timer on/off toggle.
+  if (kind === "timerToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { timerEnabled: enabled },
+    });
+    return NextResponse.json({ ok: true, enabled });
+  }
+
+  // Subathon timer rate/initial/max config.
+  if (kind === "timerConfig") {
+    const clampInt = (v: unknown, min: number, max: number, dflt: number) => {
+      const n = Math.round(Number(v));
+      return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : dflt;
+    };
+    const bahtPerUnit = clampInt(form?.get("bahtPerUnit"), 1, 100000, 10);
+    const secondsPerUnit = clampInt(form?.get("secondsPerUnit"), 1, 86400, 60);
+    const initialSeconds = clampInt(form?.get("initialSeconds"), 0, 604800, 3600);
+    const maxRaw = Math.round(Number(form?.get("maxSeconds")));
+    const maxSeconds =
+      Number.isFinite(maxRaw) && maxRaw > 0 ? Math.min(maxRaw, 604800) : null;
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        timerBahtPerUnit: bahtPerUnit,
+        timerSecondsPerUnit: secondsPerUnit,
+        timerInitialSeconds: initialSeconds,
+        timerMaxSeconds: maxSeconds,
+      },
+    });
+    return NextResponse.json({
+      ok: true,
+      bahtPerUnit,
+      secondsPerUnit,
+      initialSeconds,
+      maxSeconds,
+    });
+  }
+
+  // Subathon timer control: start (arm the countdown) / stop.
+  if (kind === "timerControl") {
+    const control = String(form?.get("control") ?? "");
+    if (control === "stop") {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { timerEndsAt: null },
+      });
+      return NextResponse.json({ ok: true, running: false, remainingSeconds: 0 });
+    }
+    if (control === "start") {
+      const u = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { timerInitialSeconds: true },
+      });
+      const initial = u?.timerInitialSeconds ?? 3600;
+      const endsAt = new Date(Date.now() + initial * 1000);
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { timerEndsAt: endsAt },
+      });
+      return NextResponse.json({
+        ok: true,
+        running: true,
+        remainingSeconds: initial,
+      });
+    }
+    return NextResponse.json({ error: "invalid" }, { status: 400 });
+  }
+
   // Read-aloud (TTS) on/off toggle.
   if (kind === "ttsToggle") {
     const enabled = form?.get("enabled") === "1";

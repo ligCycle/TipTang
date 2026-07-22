@@ -24,6 +24,12 @@ export async function POST() {
       goalAmount: true,
       goalOverlayEnabled: true,
       goalColor: true,
+      timerEnabled: true,
+      timerBahtPerUnit: true,
+      timerSecondsPerUnit: true,
+      timerInitialSeconds: true,
+      timerMaxSeconds: true,
+      timerEndsAt: true,
     },
   });
   if (!user) {
@@ -64,5 +70,14 @@ export async function POST() {
     goalTitle: user.goalTitle ?? "",
     goalAmount: user.goalAmount ? String(user.goalAmount) : "",
     goalColor: user.goalColor,
+    timerEnabled: user.timerEnabled,
+    timerBahtPerUnit: user.timerBahtPerUnit,
+    timerSecondsPerUnit: user.timerSecondsPerUnit,
+    timerInitialSeconds: user.timerInitialSeconds,
+    timerMaxSeconds: user.timerMaxSeconds,
+    timerRunning: Boolean(user.timerEndsAt),
+    timerRemainingSeconds: user.timerEndsAt
+      ? Math.max(0, Math.round((user.timerEndsAt.getTime() - Date.now()) / 1000))
+      : 0,
   });
 }

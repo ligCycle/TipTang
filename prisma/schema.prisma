@@ -160,6 +160,16 @@ model User {
   // When true, incoming tips are confirmed automatically (creator trusts the
   // slip / checks their bank) instead of waiting for manual confirmation.
   autoConfirmTips Boolean @default(false)
+  // Subathon timer (OBS overlay): confirmed donations add time to a live
+  // countdown. Rate = timerSecondsPerUnit seconds added per timerBahtPerUnit baht.
+  timerEnabled        Boolean   @default(false)
+  timerBahtPerUnit    Int       @default(10)
+  timerSecondsPerUnit Int       @default(60)
+  timerInitialSeconds Int       @default(3600)
+  // Optional cap on total remaining time (seconds); null = no cap.
+  timerMaxSeconds     Int?
+  // Countdown target; null = timer stopped / not running.
+  timerEndsAt         DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
