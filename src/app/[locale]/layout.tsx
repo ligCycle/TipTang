@@ -4,6 +4,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
 import { routing } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 import { Header } from "@/components/Header";
 import { DemoBanner } from "@/components/DemoBanner";
 import "../globals.css";
@@ -44,7 +45,18 @@ export default async function LocaleLayout({
             {children}
           </main>
           <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-center text-sm text-brand-900/50">
-            TipTang · MVP
+            <nav className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
+              <Link href="/start" className="hover:text-brand-700 hover:underline">
+                {t("guide")}
+              </Link>
+              <Link href="/terms" className="hover:text-brand-700 hover:underline">
+                {t("terms")}
+              </Link>
+              <Link href="/privacy" className="hover:text-brand-700 hover:underline">
+                {t("privacy")}
+              </Link>
+            </nav>
+            <p>TipTang · MVP</p>
           </footer>
           <Analytics />
         </NextIntlClientProvider>
