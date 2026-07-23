@@ -17,6 +17,7 @@ export default async function DashboardPage({
   setRequestLocale(locale);
   const t = await getTranslations("dashboard");
   const tShop = await getTranslations("shop");
+  const tCommon = await getTranslations("common");
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
 
   const session = await auth();
@@ -84,6 +85,12 @@ export default async function DashboardPage({
           {t("welcome", { name: user.displayName })}
         </h1>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/${locale}/start`}
+            className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
+          >
+            📖 {tCommon("guide")}
+          </Link>
           <Link
             href={`/${locale}/dashboard/shop`}
             className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"

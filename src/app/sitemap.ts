@@ -22,6 +22,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
+  // Getting-started guide (each locale).
+  for (const locale of routing.locales) {
+    entries.push({
+      url: `${BASE}/${locale}/start`,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
+  }
+
   // Public creator profiles (each locale).
   for (const u of users) {
     for (const locale of routing.locales) {

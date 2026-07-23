@@ -46,6 +46,12 @@ export async function Header() {
         <nav className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
           <LocaleSwitcher />
+          <Link
+            href="/start"
+            className="rounded-full px-3 py-1.5 text-sm font-medium text-brand-800 hover:bg-brand-100"
+          >
+            {t("guide")}
+          </Link>
           {session?.user ? (
             <>
               <Link
