@@ -227,10 +227,13 @@ body {
    animations already drive `transform`, so a transform here would conflict and
    only appear to work for some styles. Unlayered CSS beats the Tailwind
    max-w-md utility, so this widens reliably across every style. */
+/* Gold ring via outline + filter (NOT box-shadow) so it survives the glow
+   style, which animates box-shadow and would otherwise override the ring. */
 .alert-big {
-  box-shadow:
-    0 0 0 3px rgba(253, 224, 71, 0.9),
-    0 12px 40px -8px rgba(0, 0, 0, 0.6);
+  outline: 3px solid rgba(253, 224, 71, 0.95);
+  outline-offset: 1px;
+  border-radius: 1rem;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
 }
 
 /* GPU-accelerated fall (translate3d + will-change) to avoid OBS frame drops. */
