@@ -13,7 +13,19 @@ type Tip = {
   status: "PENDING" | "CONFIRMED" | "REJECTED";
   slipUrl: string | null;
   autoVerified: boolean;
+  verifyCode: string | null;
+  verifyDetail: string | null;
   createdAt: string;
+};
+
+// Dashboard flag styling per verifier verdict. `ok` = amount + receiver matched
+// (green, reassuring); the rest need a human look.
+const VERIFY_STYLES: Record<string, string> = {
+  match: "bg-emerald-100 text-emerald-800",
+  amount: "bg-amber-100 text-amber-800",
+  receiver: "bg-amber-100 text-amber-800",
+  notslip: "bg-rose-100 text-rose-700",
+  unreadable: "bg-gray-200 text-gray-600",
 };
 
 const STATUS_STYLES: Record<Tip["status"], string> = {
@@ -34,6 +46,24 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
     CONFIRMED: t("statusConfirmed"),
     REJECTED: t("statusRejected"),
   }[tip.status];
+
+  // Build the verifier-flag label (shown when a tip wasn't auto-confirmed).
+  const verifyLabel = (() => {
+    switch (tip.verifyCode) {
+      case "match":
+        return `✅ ${t("verifyMatch")}`;
+      case "amount":
+        return `⚠️ ${t("verifyAmount")}${tip.verifyDetail ? ` (${tip.verifyDetail})` : ""}`;
+      case "receiver":
+        return `⚠️ ${t("verifyReceiver")}`;
+      case "notslip":
+        return `⚠️ ${t("verifyNotSlip")}`;
+      case "unreadable":
+        return `❓ ${t("verifyUnreadable")}`;
+      default:
+        return "";
+    }
+  })();
 
   async function act(action: "confirm" | "reject") {
     setLoading(true);
@@ -61,13 +91,22 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           >
             {statusLabel}
           </span>
-          {tip.autoVerified && (
+          {tip.autoVerified ? (
             <span
               title="auto-verified"
               className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700"
             >
               ⚡ auto
             </span>
+          ) : (
+            tip.verifyCode &&
+            VERIFY_STYLES[tip.verifyCode] && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${VERIFY_STYLES[tip.verifyCode]}`}
+              >
+                {verifyLabel}
+              </span>
+            )
           )}
         </div>
         <span className="text-lg font-extrabold text-brand-700">

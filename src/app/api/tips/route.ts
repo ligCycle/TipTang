@@ -71,18 +71,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_type" }, { status: 415 });
   }
 
-  // Auto-verify the slip (no-op unless a provider is configured).
-  // Fail-safe: only auto-confirm when verified + amount matches + receiver
-  // matches the creator + the slip hasn't been used before.
+  // Screen the slip with the verifier (Gemini/SlipOK/EasySlip — no-op unless a
+  // provider is configured). We compute a verdict for EVERY slip and store it
+  // as a dashboard flag; auto-confirm is reserved for a clean "match".
   const verify = await verifySlip(slip);
   if (!verify.ok && verify.reason === "duplicate") {
     return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
   }
+  // Did a verifier actually run? (false only when no provider is configured.)
+  const verifierRan = verify.ok || verify.reason !== "disabled";
 
   let status: "PENDING" | "CONFIRMED" = "PENDING";
   let transRef: string | null = null;
   let autoVerified = false;
   let confirmedAt: Date | null = null;
+  // Verdict flag for the dashboard. NULL when no verifier ran.
+  let verifyCode: string | null = null;
+  let verifyDetail: string | null = null;
 
   if (verify.ok) {
     transRef = verify.transRef;
@@ -97,16 +102,33 @@ export async function POST(req: Request) {
     const amountOk = Math.abs(verify.amount - parsed.data.amount) < 0.01;
     const receiverOk = receiverMatches(creator.promptpayId, verify.receiverRaw);
     if (amountOk && receiverOk) {
-      status = "CONFIRMED";
-      autoVerified = true;
-      confirmedAt = new Date();
+      verifyCode = "match";
+    } else if (!amountOk) {
+      // The slip's amount differs from what the supporter entered.
+      verifyCode = "amount";
+      verifyDetail = formatBaht(verify.amount, "th-TH");
+    } else {
+      // Amount is right but the money didn't go to this creator.
+      verifyCode = "receiver";
     }
+  } else if (verify.reason === "invalid") {
+    // Verifier read the image but it isn't a (matching) transfer slip.
+    verifyCode = "notslip";
+  } else if (verify.reason === "timeout" || verify.reason === "error") {
+    // Verifier couldn't finish (slow/blurry/network) — hold for manual review.
+    verifyCode = "unreadable";
   }
 
-  // Creator opted to trust slips (they watch their bank) — confirm on arrival
-  // without the manual step. Note: this is NOT slip verification, so it stays
-  // off by default.
-  if (status === "PENDING" && creator.autoConfirmTips) {
+  // Auto-confirm ONLY a clean match, and ONLY when the creator opted in. Every
+  // other verdict (mismatch / unreadable) stays PENDING so a suspicious slip is
+  // never signed off automatically — the creator reviews it (guided by the flag).
+  if (verifyCode === "match" && creator.autoConfirmTips) {
+    status = "CONFIRMED";
+    autoVerified = true;
+    confirmedAt = new Date();
+  } else if (!verifierRan && creator.autoConfirmTips) {
+    // Backward-compat: no verifier configured + creator trusts slips (they watch
+    // their bank) — confirm on arrival, as before. NOT slip verification.
     status = "CONFIRMED";
     confirmedAt = new Date();
   }
@@ -125,6 +147,8 @@ export async function POST(req: Request) {
       transRef,
       autoVerified,
       confirmedAt,
+      verifyCode,
+      verifyDetail,
     },
     select: { id: true },
   });

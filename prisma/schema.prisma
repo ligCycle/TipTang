@@ -219,6 +219,12 @@ model Tip {
   // of the same slip. NULL when not verified (Postgres allows many NULLs).
   transRef        String?   @unique
   autoVerified    Boolean   @default(false)
+  // Slip screening verdict from the verifier (Gemini/SlipOK/EasySlip), shown as
+  // a flag on the dashboard to help manual review. NULL = not screened.
+  //   verifyCode:   "match" | "amount" | "receiver" | "notslip" | "unreadable"
+  //   verifyDetail: short extra context (e.g. the amount the slip actually shows)
+  verifyCode      String?
+  verifyDetail    String?
   createdAt       DateTime  @default(now())
   confirmedAt     DateTime?
 

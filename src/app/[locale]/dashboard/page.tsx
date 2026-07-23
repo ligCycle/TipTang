@@ -49,6 +49,8 @@ export default async function DashboardPage({
         status: true,
         slipUrl: true,
         autoVerified: true,
+        verifyCode: true,
+        verifyDetail: true,
         createdAt: true,
       },
     }),
@@ -75,6 +77,8 @@ export default async function DashboardPage({
     status: tip.status,
     slipUrl: tip.slipUrl,
     autoVerified: tip.autoVerified,
+    verifyCode: tip.verifyCode,
+    verifyDetail: tip.verifyDetail,
     createdAt: tip.createdAt.toISOString(),
   }));
 
