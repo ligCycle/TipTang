@@ -64,9 +64,7 @@ export default async function StartPage({
           <p className="mt-1.5 text-xs text-brand-900/45">{t("step2Hint")}</p>
         </Step>
 
-        <Step icon="🔗" n={3} title={t("step3Title")} desc={t("step3Desc")} />
-
-        <Step icon="📺" n={4} title={t("step4Title")} desc={t("step4Desc")}>
+        <Step icon="📺" n={3} title={t("step3Title")} desc={t("step3Desc")}>
           <p className="mt-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs text-brand-900/70">
             💡 {t("obsLeadIn")}
           </p>
@@ -78,6 +76,8 @@ export default async function StartPage({
             ))}
           </ol>
         </Step>
+
+        <Step icon="🔗" n={4} title={t("step4Title")} desc={t("step4Desc")} />
 
         <Step icon="🎉" n={5} title={t("step5Title")} desc={t("step5Desc")} />
       </ol>
