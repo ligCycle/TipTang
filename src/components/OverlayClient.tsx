@@ -230,8 +230,17 @@ export function OverlayClient({
     : undefined;
 
   return (
-    <div className="fixed inset-0 flex items-start justify-center p-6">
+    <div className="pointer-events-none fixed inset-0 overflow-hidden">
       {current && (
+        // Centering wrapper: absolute left-1/2 + translateX(-50%) pins the card
+        // to the viewport centre regardless of document width / siblings /
+        // scroll. The inner card runs the entrance animation (its own transform),
+        // so the two never conflict.
+        <div
+          className={`absolute left-1/2 top-6 w-[calc(100%-2rem)] -translate-x-1/2 ${
+            isBig ? "max-w-[34rem]" : "max-w-md"
+          }`}
+        >
         <div
           key={current.id}
           style={cardStyle}
@@ -239,7 +248,7 @@ export function OverlayClient({
             isAlertStyle(alertStyle) ? alertStyle : DEFAULT_ALERT_STYLE
           } ${
             isBig ? "alert-big" : ""
-          } w-full max-w-md rounded-2xl p-5 text-white shadow-2xl ring-1 ring-white/20 ${
+          } w-full rounded-2xl p-5 text-white shadow-2xl ring-1 ring-white/20 ${
             useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"
           }`}
         >
@@ -276,6 +285,7 @@ export function OverlayClient({
           {current.message && (
             <p className="mt-2 text-white/95">{current.message}</p>
           )}
+        </div>
         </div>
       )}
       {/* Confetti is a SIBLING of the card (card clips overflow) — fixed + high
