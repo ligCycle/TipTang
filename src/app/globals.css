@@ -31,6 +31,10 @@ body {
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans Thai",
     Tahoma, sans-serif;
   min-height: 100vh;
+  /* Belt-and-suspenders against horizontal scroll on mobile. `clip` (not
+     `hidden`) doesn't establish a scroll container, so the sticky header
+     keeps working. */
+  overflow-x: clip;
 }
 
 /* Subtle card surface used across the app */
