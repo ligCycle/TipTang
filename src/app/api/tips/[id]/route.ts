@@ -48,3 +48,37 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const tip = await prisma.tip.findUnique({
+    where: { id },
+    select: { creatorId: true, status: true },
+  });
+  if (!tip) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  // Ownership check — a creator can only delete their own tips.
+  if (tip.creatorId !== session.user.id) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  // Protect the money record: confirmed tips count toward the total, so they
+  // can't be deleted (only clear out pending / rejected clutter).
+  if (tip.status === "CONFIRMED") {
+    return NextResponse.json(
+      { error: "cannot_delete_confirmed" },
+      { status: 400 },
+    );
+  }
+
+  await prisma.tip.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

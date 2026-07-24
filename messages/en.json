@@ -136,6 +136,8 @@
     "viewSlip": "View slip",
     "confirm": "Confirm",
     "reject": "Reject",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this tip permanently? This can't be undone.",
     "processing": "Processing...",
     "statusPending": "Pending",
     "statusConfirmed": "Confirmed",

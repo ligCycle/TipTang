@@ -136,6 +136,8 @@
     "viewSlip": "ดูสลิป",
     "confirm": "ยืนยัน",
     "reject": "ปฏิเสธ",
+    "delete": "ลบ",
+    "deleteConfirm": "ลบทิปนี้ถาวร? กู้คืนไม่ได้",
     "processing": "กำลังดำเนินการ...",
     "statusPending": "รอยืนยัน",
     "statusConfirmed": "ยืนยันแล้ว",

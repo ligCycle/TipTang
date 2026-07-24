@@ -79,6 +79,22 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
     }
   }
 
+  async function del() {
+    if (!window.confirm(t("deleteConfirm"))) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/tips/${tip.id}`, { method: "DELETE" });
+      if (res.ok) {
+        // The row unmounts on refresh — don't touch state afterwards.
+        router.refresh();
+        return;
+      }
+      setLoading(false);
+    } catch {
+      setLoading(false);
+    }
+  }
+
   return (
     <li className="card rounded-2xl p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -121,12 +137,24 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           {formatDate(tip.createdAt, currencyLocale)}
         </span>
         <div className="flex items-center gap-2">
+          {tip.status !== "CONFIRMED" && (
+            <button
+              onClick={del}
+              disabled={loading}
+              className="rounded-full border border-rose-200 px-3 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+            >
+              {t("delete")}
+            </button>
+          )}
           {tip.slipUrl && (
             <a
               href={tip.slipUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-brand-200 px-3 py-1 text-sm font-medium text-brand-700 hover:bg-brand-50"
+              aria-disabled={loading}
+              className={`rounded-full border border-brand-200 px-3 py-1 text-sm font-medium text-brand-700 hover:bg-brand-50 ${
+                loading ? "pointer-events-none opacity-50" : ""
+              }`}
             >
               {t("viewSlip")}
             </a>
