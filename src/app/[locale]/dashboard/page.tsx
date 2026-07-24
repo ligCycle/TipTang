@@ -23,20 +23,19 @@ export default async function DashboardPage({
   const session = await auth();
   const userId = session!.user.id;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      displayName: true,
-      username: true,
-      promptpayId: true,
-      autoConfirmTips: true,
-    },
-  });
-  if (!user) {
-    return null;
-  }
-
-  const [tips, confirmedAgg, pendingCount] = await Promise.all([
+  // Fetch the profile + all tip stats in ONE parallel batch (a single DB
+  // round trip instead of two back-to-back) to cut the dashboard's server
+  // response time. The tip queries don't depend on the user row.
+  const [user, tips, confirmedAgg, pendingCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        displayName: true,
+        username: true,
+        promptpayId: true,
+        autoConfirmTips: true,
+      },
+    }),
     prisma.tip.findMany({
       where: { creatorId: userId },
       orderBy: { createdAt: "desc" },
@@ -60,6 +59,9 @@ export default async function DashboardPage({
     }),
     prisma.tip.count({ where: { creatorId: userId, status: "PENDING" } }),
   ]);
+  if (!user) {
+    return null;
+  }
 
   const totalConfirmed = Number(confirmedAgg._sum.amount ?? 0);
   const hasPromptpay = Boolean(user.promptpayId && user.promptpayId.length > 0);
