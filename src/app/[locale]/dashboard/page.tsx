@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/format";
 import { TipRow } from "@/components/TipRow";
+import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OverlaySettings } from "@/components/OverlaySettings";
 import { ReportForm } from "@/components/ReportForm";
@@ -64,6 +65,7 @@ export default async function DashboardPage({
   }
 
   const totalConfirmed = Number(confirmedAgg._sum.amount ?? 0);
+  const rejectedCount = tips.filter((tip) => tip.status === "REJECTED").length;
   const hasPromptpay = Boolean(user.promptpayId && user.promptpayId.length > 0);
   // With auto-confirm on there's nothing to wait for — hide the pending card
   // unless some older tips are still pending.
@@ -154,7 +156,10 @@ export default async function DashboardPage({
 
       {/* Tips */}
       <div>
-        <h2 className="mb-4 text-lg font-bold text-brand-900">{t("tipsTitle")}</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-brand-900">{t("tipsTitle")}</h2>
+          {rejectedCount > 0 && <ClearRejectedButton count={rejectedCount} />}
+        </div>
         {clientTips.length === 0 ? (
           <p className="card rounded-2xl p-6 text-center text-brand-900/60">
             {t("noTips")}

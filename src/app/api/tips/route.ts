@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendTipNotificationEmail } from "@/lib/email";
 import { formatBaht } from "@/lib/format";
@@ -184,4 +185,17 @@ export async function POST(req: Request) {
     autoVerified,
     confirmed: status === "CONFIRMED",
   });
+}
+
+// Bulk-clear the signed-in creator's REJECTED tips (dashboard "clear all
+// rejected" button). Confirmed tips are never touched.
+export async function DELETE() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  const result = await prisma.tip.deleteMany({
+    where: { creatorId: session.user.id, status: "REJECTED" },
+  });
+  return NextResponse.json({ ok: true, count: result.count });
 }

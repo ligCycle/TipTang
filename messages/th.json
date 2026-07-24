@@ -138,6 +138,8 @@
     "reject": "ปฏิเสธ",
     "delete": "ลบ",
     "deleteConfirm": "ลบทิปนี้ถาวร? กู้คืนไม่ได้",
+    "clearRejected": "ลบที่ปฏิเสธทั้งหมด",
+    "clearRejectedConfirm": "ลบทิปที่ปฏิเสธทั้งหมด {count} รายการ? กู้คืนไม่ได้",
     "processing": "กำลังดำเนินการ...",
     "statusPending": "รอยืนยัน",
     "statusConfirmed": "ยืนยันแล้ว",

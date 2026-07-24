@@ -138,6 +138,8 @@
     "reject": "Reject",
     "delete": "Delete",
     "deleteConfirm": "Delete this tip permanently? This can't be undone.",
+    "clearRejected": "Clear all rejected",
+    "clearRejectedConfirm": "Delete all {count} rejected tips? This can't be undone.",
     "processing": "Processing...",
     "statusPending": "Pending",
     "statusConfirmed": "Confirmed",
