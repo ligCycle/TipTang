@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ReviewsSection } from "@/components/ReviewsSection";
 
@@ -38,12 +39,18 @@ export default async function LandingPage({
       "รับทิป/โดเนทผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม ทางเลือกแทน TipMe สำหรับครีเอเตอร์และสตรีมเมอร์ไทย",
   };
 
-  const approved = await prisma.review.findMany({
-    where: { status: "APPROVED" },
-    orderBy: { createdAt: "desc" },
-    take: 12,
-    select: { id: true, name: true, rating: true, comment: true },
-  });
+  // Check the session (for login-aware hero CTAs) alongside the reviews in a
+  // single parallel round trip.
+  const [session, approved] = await Promise.all([
+    auth(),
+    prisma.review.findMany({
+      where: { status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      select: { id: true, name: true, rating: true, comment: true },
+    }),
+  ]);
+  const loggedIn = Boolean(session?.user);
   const reviewCount = approved.length;
   const avgRating =
     reviewCount > 0
@@ -72,18 +79,30 @@ export default async function LandingPage({
           {t("heroSubtitle")}
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/register"
-            className="rounded-full bg-brand-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700"
-          >
-            {t("ctaPrimary")}
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-brand-300 bg-brand-50/70 px-7 py-3 text-base font-semibold text-brand-800 transition hover:bg-brand-100"
-          >
-            {t("ctaSecondary")}
-          </Link>
+          {loggedIn ? (
+            // Already signed in — skip register/login, go straight to the dashboard.
+            <Link
+              href="/dashboard"
+              className="rounded-full bg-brand-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700"
+            >
+              {t("ctaDashboard")}
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="rounded-full bg-brand-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700"
+              >
+                {t("ctaPrimary")}
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-full border border-brand-300 bg-brand-50/70 px-7 py-3 text-base font-semibold text-brand-800 transition hover:bg-brand-100"
+              >
+                {t("ctaSecondary")}
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
