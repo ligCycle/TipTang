@@ -128,7 +128,8 @@ model Review {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
+  // Null for accounts created via OAuth (Google) — they sign in without a password.
+  passwordHash String?
   username     String   @unique
   displayName  String
   bio          String?

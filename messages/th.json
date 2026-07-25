@@ -57,6 +57,8 @@
   "auth": {
     "registerTitle": "สมัครเป็นครีเอเตอร์",
     "loginTitle": "เข้าสู่ระบบ",
+    "continueWithGoogle": "เข้าสู่ระบบด้วย Google",
+    "orDivider": "หรือ",
     "email": "อีเมล",
     "password": "รหัสผ่าน",
     "displayName": "ชื่อที่แสดง",
