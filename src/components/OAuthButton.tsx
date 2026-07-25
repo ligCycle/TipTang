@@ -36,7 +36,7 @@ export function OAuthButton({
     <button
       type="button"
       onClick={() => signIn(provider, { callbackUrl: "/dashboard" })}
-      className="flex w-full items-center justify-center gap-3 rounded-xl border border-brand-200 bg-white px-4 py-2.5 text-sm font-semibold text-brand-900 transition hover:bg-brand-50"
+      className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
     >
       <GoogleIcon />
       {label}
