@@ -152,22 +152,43 @@ async function viaGemini(file: File): Promise<SlipVerifyResult> {
         }),
       },
     );
-    if (!res.ok) return { ok: false, reason: "invalid" };
+    // API-level failure (bad key / wrong model / quota / bad request) is OUR
+    // problem, not a bad slip → reason "error" (shows "couldn't verify", not
+    // "not a slip"). Log the real cause so it's visible in the server logs.
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.error("[gemini] HTTP", res.status, errBody.slice(0, 600));
+      return { ok: false, reason: "error" };
+    }
     const json = await res.json().catch(() => null);
     const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return { ok: false, reason: "invalid" };
+    if (!text) {
+      console.error(
+        "[gemini] no text in response",
+        JSON.stringify(json)?.slice(0, 600),
+      );
+      return { ok: false, reason: "error" };
+    }
 
     let data;
     try {
       data = JSON.parse(text);
     } catch {
-      return { ok: false, reason: "invalid" };
+      console.error("[gemini] JSON parse failed", text.slice(0, 600));
+      return { ok: false, reason: "error" };
     }
 
-    if (!data?.isSlip) return { ok: false, reason: "invalid" };
+    if (!data?.isSlip) {
+      console.error("[gemini] isSlip=false", JSON.stringify(data).slice(0, 600));
+      return { ok: false, reason: "invalid" };
+    }
     const amount = Number(String(data.amount ?? "").replace(/[, ]/g, ""));
     const transRef = String(data.transRef ?? "").trim();
     if (!Number.isFinite(amount) || amount <= 0 || !transRef) {
+      console.error(
+        "[gemini] missing amount/transRef",
+        JSON.stringify(data).slice(0, 600),
+      );
       return { ok: false, reason: "invalid" };
     }
     // Stuff both name + account digits so receiverMatches (last-4) can find it.
@@ -178,6 +199,7 @@ async function viaGemini(file: File): Promise<SlipVerifyResult> {
     return { ok: true, transRef, amount, receiverRaw };
   } catch (err) {
     const aborted = err instanceof Error && err.name === "AbortError";
+    console.error("[gemini] fetch threw", aborted ? "ABORTED (timeout)" : err);
     return { ok: false, reason: aborted ? "timeout" : "error" };
   } finally {
     clearTimeout(timer);
