@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/format";
 import { TipRow } from "@/components/TipRow";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OverlaySettings } from "@/components/OverlaySettings";
@@ -88,6 +89,8 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-8">
+      {/* Keep the tip list fresh without a manual reload. */}
+      <AutoRefresh />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold text-brand-900">
           {t("welcome", { name: user.displayName })}

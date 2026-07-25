@@ -38,7 +38,10 @@ export function TipForm({
     : undefined;
 
   const [step, setStep] = useState<Step>("form");
-  const [amount, setAmount] = useState(50);
+  // Keep the amount as the raw input string so clearing the field leaves it
+  // empty (not a stubborn "0" that's annoying to type over); derive the number.
+  const [amountStr, setAmountStr] = useState("50");
+  const amount = amountStr.trim() === "" ? 0 : Number(amountStr);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -55,7 +58,7 @@ export function TipForm({
   async function generateQr(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (amount < 1) return;
+    if (!Number.isFinite(amount) || amount < 1) return;
     setLoading(true);
     try {
       const res = await fetch("/api/qr", {
@@ -140,7 +143,7 @@ export function TipForm({
     setSlipPreview(null);
     setName("");
     setMessage("");
-    setAmount(50);
+    setAmountStr("50");
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -181,7 +184,7 @@ export function TipForm({
                 <button
                   type="button"
                   key={a}
-                  onClick={() => setAmount(a)}
+                  onClick={() => setAmountStr(String(a))}
                   style={amount === a ? primaryStyle : undefined}
                   className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                     amount === a
@@ -203,8 +206,9 @@ export function TipForm({
               type="number"
               min={1}
               max={100000}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              inputMode="numeric"
+              value={amountStr}
+              onChange={(e) => setAmountStr(e.target.value)}
               className="input"
               required
             />
