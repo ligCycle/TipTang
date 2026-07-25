@@ -95,7 +95,9 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
 async function viaGemini(file: File): Promise<SlipVerifyResult> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { ok: false, reason: "disabled" };
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  // gemini-2.0-flash no longer has a free-tier quota (returns 429 limit:0);
+  // the 2.5 flash family still does. Override with GEMINI_MODEL if needed.
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
   const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
   const prompt = [
