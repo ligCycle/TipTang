@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/SettingsForm";
+import { ConnectedAccounts } from "@/components/ConnectedAccounts";
 import { normalizeSocialLinks } from "@/lib/socials";
 
 export default async function SettingsPage({
@@ -17,6 +18,8 @@ export default async function SettingsPage({
     where: { id: session!.user.id },
     // promptpayId belongs to the owner — safe to load into their OWN edit form.
     select: {
+      email: true,
+      googleId: true,
       displayName: true,
       username: true,
       bio: true,
@@ -29,6 +32,10 @@ export default async function SettingsPage({
     },
   });
   if (!user) return null;
+
+  const googleAuthEnabled = Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+  );
 
   return (
     <div className="mx-auto max-w-lg">
@@ -44,6 +51,11 @@ export default async function SettingsPage({
           socialLinks: normalizeSocialLinks(user.socialLinks),
           profileColor: user.profileColor ?? "",
         }}
+      />
+      <ConnectedAccounts
+        googleConnected={Boolean(user.googleId)}
+        accountEmail={user.email}
+        googleAuthEnabled={googleAuthEnabled}
       />
     </div>
   );

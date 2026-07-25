@@ -253,6 +253,11 @@
   },
   "settings": {
     "title": "Profile settings",
+    "connectedAccounts": "Connected accounts",
+    "connectedAccountsHint": "Link a social account to sign in faster.",
+    "connected": "Connected",
+    "connectGoogle": "Connect Google",
+    "connectGoogleHint": "Use the Google account with this email: {email}",
     "displayName": "Display name",
     "username": "Link name (username)",
     "bio": "Bio",

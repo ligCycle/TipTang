@@ -69,13 +69,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const email = (p.email ?? "").toLowerCase();
       // Only link/create for a Google-verified email.
       if (!email || p.email_verified !== true) return false;
+      const googleId = account.providerAccountId || null;
 
       const existing = await prisma.user.findUnique({
         where: { email },
-        select: { id: true },
+        select: { id: true, googleId: true },
       });
-      // Existing account → sign in, but DON'T touch their data (esp. avatarUrl).
-      if (existing) return true;
+      // Existing account → sign in. Link Google (set googleId) if not linked yet,
+      // but DON'T touch other data (esp. avatarUrl).
+      if (existing) {
+        if (!existing.googleId && googleId) {
+          await prisma.user
+            .update({ where: { id: existing.id }, data: { googleId } })
+            .catch(() => {});
+        }
+        return true;
+      }
 
       const displayName = p.name || email.split("@")[0];
       const avatarUrl = p.picture || null;
@@ -88,6 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               username: await generateUniqueUsername(email, p.name),
               passwordHash: null,
               avatarUrl,
+              googleId,
             },
           });
           break;

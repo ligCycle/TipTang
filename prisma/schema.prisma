@@ -130,6 +130,9 @@ model User {
   email        String   @unique
   // Null for accounts created via OAuth (Google) — they sign in without a password.
   passwordHash String?
+  // Linked Google account id (the OAuth "sub"). Set when the user signs in with
+  // Google; drives the "Google connected" status on the settings page.
+  googleId     String?  @unique
   username     String   @unique
   displayName  String
   bio          String?

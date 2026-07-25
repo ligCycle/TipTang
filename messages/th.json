@@ -253,6 +253,11 @@
   },
   "settings": {
     "title": "ตั้งค่าโปรไฟล์",
+    "connectedAccounts": "การเชื่อมบัญชี",
+    "connectedAccountsHint": "เชื่อมบัญชีโซเชียลเพื่อล็อกอินได้เร็วขึ้น",
+    "connected": "เชื่อมแล้ว",
+    "connectGoogle": "เชื่อม Google",
+    "connectGoogleHint": "ใช้บัญชี Google ที่เป็นอีเมลเดียวกับบัญชีนี้: {email}",
     "displayName": "ชื่อที่แสดง",
     "username": "ชื่อลิงก์ (username)",
     "bio": "แนะนำตัว",
