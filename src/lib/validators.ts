@@ -75,6 +75,8 @@ export const shopItemSchema = z.object({
   title: z.string().trim().min(1).max(100),
   description: z.string().trim().max(500).optional().or(z.literal("")),
   price: z.coerce.number().min(1).max(1000000),
+  // DIGITAL only: link/key/message auto-delivered on confirmed payment.
+  deliverableText: z.string().trim().max(2000).optional().or(z.literal("")),
   active: z.boolean().optional(),
 });
 

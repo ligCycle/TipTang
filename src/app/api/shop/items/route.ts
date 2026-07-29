@@ -19,10 +19,17 @@ export async function POST(req: Request) {
     title: form.get("title") ?? "",
     description: form.get("description") ?? "",
     price: form.get("price"),
+    deliverableText: form.get("deliverableText") ?? "",
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
+
+  // Deliverable only applies to digital items; ignore it for commissions.
+  const deliverableText =
+    parsed.data.type === "DIGITAL" && parsed.data.deliverableText
+      ? parsed.data.deliverableText
+      : null;
 
   let imageUrl: string | null = null;
   const file = form.get("image");
@@ -43,6 +50,7 @@ export async function POST(req: Request) {
       title: parsed.data.title,
       description: parsed.data.description || null,
       price: parsed.data.price,
+      deliverableText,
       imageUrl,
     },
     select: { id: true },

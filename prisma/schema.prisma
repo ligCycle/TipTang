@@ -53,6 +53,9 @@ model ShopItem {
   description String?
   price       Decimal      @db.Decimal(10, 2)
   imageUrl    String?
+  // DIGITAL only: link / key / message auto-delivered to the buyer once payment
+  // is confirmed (shown on their receipt page). Null = deliver manually.
+  deliverableText String?
   active      Boolean      @default(true)
   // Soft delete: keep the row (orders reference it) but hide it everywhere.
   isArchived  Boolean      @default(false)
@@ -78,6 +81,13 @@ model ShopOrder {
   slipUrl      String?
   status       OrderStatus @default(PENDING)
   transRef     String?     @unique
+  // Snapshot of the item's deliverable at purchase time (survives later item
+  // edits/archive). Present = digital auto-delivery; revealed on the receipt
+  // page once status is CONFIRMED/DELIVERED.
+  deliverableText String?
+  // Unguessable token for the buyer's public receipt/unlock page (no login).
+  // Nullable-unique like transRef → safe to add to existing rows.
+  receiptToken String?     @unique
   createdAt    DateTime    @default(now())
   confirmedAt  DateTime?
   deliveredAt  DateTime?

@@ -32,6 +32,8 @@ export function ShopCheckout({
 
   const [sel, setSel] = useState<ShopItem | null>(null);
   const [step, setStep] = useState<"pay" | "done">("pay");
+  const [receiptToken, setReceiptToken] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   const [qr, setQr] = useState<string | null>(null);
   const [buyerName, setBuyerName] = useState("");
   const [contact, setContact] = useState("");
@@ -48,6 +50,8 @@ export function ShopCheckout({
     setSel(item);
     setStep("pay");
     setError(null);
+    setReceiptToken(null);
+    setConfirmed(false);
     setQr(null);
     setBuyerName("");
     setContact("");
@@ -103,6 +107,9 @@ export function ShopCheckout({
         setError(map[d.error] ?? tErr("notFound"));
         return;
       }
+      const d = await res.json().catch(() => ({}));
+      setReceiptToken(d.receiptToken ?? null);
+      setConfirmed(Boolean(d.confirmed));
       setStep("done");
     } catch {
       setError(tErr("notFound"));
@@ -169,10 +176,26 @@ export function ShopCheckout({
             {step === "done" ? (
               <div className="py-6 text-center">
                 <div className="text-4xl">🎉</div>
-                <p className="mt-3 text-brand-900/75">{t("orderSent")}</p>
+                <p className="mt-3 font-semibold text-brand-900">
+                  {confirmed ? t("doneConfirmedReceipt") : t("doneWithReceipt")}
+                </p>
+                {receiptToken && (
+                  <>
+                    <a
+                      href={`/${locale}/order/${receiptToken}`}
+                      style={primaryStyle}
+                      className="btn-primary mt-4 inline-block transition hover:brightness-95"
+                    >
+                      {t("ctaViewOrder")}
+                    </a>
+                    <p className="mx-auto mt-2 max-w-xs text-xs text-brand-900/50">
+                      {t("receiptSaveLink")}
+                    </p>
+                  </>
+                )}
                 <button
                   onClick={() => setSel(null)}
-                  className="btn-secondary mt-5"
+                  className="btn-secondary mx-auto mt-4 block"
                 >
                   {t("close")}
                 </button>

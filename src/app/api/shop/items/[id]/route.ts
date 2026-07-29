@@ -53,10 +53,17 @@ export async function PATCH(
     title: form.get("title") ?? "",
     description: form.get("description") ?? "",
     price: form.get("price"),
+    deliverableText: form.get("deliverableText") ?? "",
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
+
+  // Deliverable only applies to digital items; clear it for commissions.
+  const deliverableText =
+    parsed.data.type === "DIGITAL" && parsed.data.deliverableText
+      ? parsed.data.deliverableText
+      : null;
 
   let newImageUrl: string | undefined;
   const file = form.get("image");
@@ -77,6 +84,7 @@ export async function PATCH(
       title: parsed.data.title,
       description: parsed.data.description || null,
       price: parsed.data.price,
+      deliverableText,
       ...(newImageUrl ? { imageUrl: newImageUrl } : {}),
     },
   });

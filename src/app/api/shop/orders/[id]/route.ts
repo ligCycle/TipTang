@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -17,18 +18,23 @@ export async function PATCH(
 
   const order = await prisma.shopOrder.findFirst({
     where: { id, creatorId: session.user.id },
-    select: { id: true },
+    select: { id: true, deliverableText: true },
   });
   if (!order) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const data =
-    action === "confirm"
-      ? { status: "CONFIRMED" as const, confirmedAt: new Date() }
-      : action === "reject"
-        ? { status: "REJECTED" as const }
-        : action === "deliver"
-          ? { status: "DELIVERED" as const, deliveredAt: new Date() }
-          : null;
+  const now = new Date();
+  let data: Prisma.ShopOrderUpdateInput | null = null;
+  if (action === "confirm") {
+    // Digital orders (have a snapshotted deliverable) auto-deliver on confirm —
+    // the buyer already gets it on their receipt page.
+    data = order.deliverableText
+      ? { status: "DELIVERED", confirmedAt: now, deliveredAt: now }
+      : { status: "CONFIRMED", confirmedAt: now };
+  } else if (action === "reject") {
+    data = { status: "REJECTED" };
+  } else if (action === "deliver") {
+    data = { status: "DELIVERED", deliveredAt: now };
+  }
   if (!data) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
   await prisma.shopOrder.update({ where: { id }, data });

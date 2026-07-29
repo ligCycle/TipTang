@@ -28,6 +28,7 @@ export default async function ShopPage({
         description: true,
         price: true,
         imageUrl: true,
+        deliverableText: true,
         active: true,
       },
     }),

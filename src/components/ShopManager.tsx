@@ -12,6 +12,7 @@ type Item = {
   description: string | null;
   price: number;
   imageUrl: string | null;
+  deliverableText: string | null;
   active: boolean;
 };
 type Order = {
@@ -44,6 +45,7 @@ export function ShopManager({
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [deliverable, setDeliverable] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export function ShopManager({
     setTitle("");
     setPrice("");
     setDescription("");
+    setDeliverable("");
     setImage(null);
     setError(null);
     setOpen(true);
@@ -64,6 +67,7 @@ export function ShopManager({
     setTitle(item.title);
     setPrice(String(item.price));
     setDescription(item.description ?? "");
+    setDeliverable(item.deliverableText ?? "");
     setImage(null);
     setError(null);
     setOpen(true);
@@ -80,6 +84,7 @@ export function ShopManager({
       fd.set("title", title);
       fd.set("price", price);
       fd.set("description", description);
+      fd.set("deliverableText", type === "DIGITAL" ? deliverable : "");
       if (image) fd.set("image", image);
       const url = editing ? `/api/shop/items/${editing.id}` : "/api/shop/items";
       const res = await fetch(url, { method: editing ? "PATCH" : "POST", body: fd });
@@ -171,6 +176,19 @@ export function ShopManager({
                       ? t("typeCommission")
                       : t("typeDigital")}
                   </p>
+                  {item.type === "DIGITAL" && (
+                    <p className="mt-1 text-xs font-medium">
+                      {item.deliverableText ? (
+                        <span className="text-emerald-600">
+                          🔓 {t("deliverableSet")}
+                        </span>
+                      ) : (
+                        <span className="text-amber-600">
+                          ⚠️ {t("deliverableMissing")}
+                        </span>
+                      )}
+                    </p>
+                  )}
                   <div className="mt-2 flex flex-wrap gap-3 text-xs font-medium">
                     <button
                       onClick={() => startEdit(item)}
@@ -346,6 +364,23 @@ export function ShopManager({
                 className="input resize-none"
               />
             </label>
+            {type === "DIGITAL" && (
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-brand-900/80">
+                  {t("deliverableLabel")}
+                </span>
+                <textarea
+                  value={deliverable}
+                  onChange={(e) => setDeliverable(e.target.value)}
+                  maxLength={2000}
+                  rows={3}
+                  className="input resize-none"
+                />
+                <span className="mt-1 block text-xs text-brand-900/50">
+                  {t("deliverableHint")}
+                </span>
+              </label>
+            )}
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-brand-900/80">
                 {t("imageLabel")}
