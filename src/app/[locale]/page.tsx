@@ -104,6 +104,9 @@ export default async function LandingPage({
             </>
           )}
         </div>
+        {!loggedIn && (
+          <p className="mt-3 text-sm text-brand-900/50">{t("ctaMicro")}</p>
+        )}
       </section>
 
       {/* How it works */}
@@ -171,6 +174,31 @@ export default async function LandingPage({
         <p className="mt-3 text-center text-xs text-brand-900/50">
           {t("compareNote")}
         </p>
+      </section>
+
+      {/* FAQ — answer the "is it really free?" skepticism head-on */}
+      <section>
+        <h2 className="mb-6 text-center text-2xl font-bold text-brand-900">
+          {t("faqTitle")}
+        </h2>
+        <div className="mx-auto max-w-2xl space-y-3">
+          {[1, 2, 3].map((n) => (
+            <details key={n} className="card group rounded-2xl p-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-brand-900 [&::-webkit-details-marker]:hidden">
+                <span>{t(`faqQ${n}`)}</span>
+                <span
+                  className="shrink-0 text-xl leading-none text-brand-500 transition-transform group-open:rotate-45"
+                  aria-hidden
+                >
+                  ＋
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-brand-900/70">
+                {t(`faqA${n}`)}
+              </p>
+            </details>
+          ))}
+        </div>
       </section>
 
       {/* Reviews / social proof */}

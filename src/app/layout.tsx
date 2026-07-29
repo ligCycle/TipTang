@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: "%s · TipTang",
   },
   description:
-    "TipTang รับทิป/โดเนทผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม เงินเข้าบัญชีคุณตรง — ทางเลือกแทน TipMe สำหรับครีเอเตอร์และสตรีมเมอร์ไทย พร้อม overlay สำหรับ OBS (แจ้งเตือน/เป้าหมาย/อ่านโดเนต)",
+    "TipTang รับทิป/โดเนทผ่านพร้อมเพย์ ฟรี 0% ไม่หักค่าธรรมเนียม เงินเข้าบัญชีคุณตรง ไม่ต้องรอถอน — ทางเลือกแทน TipMe สำหรับครีเอเตอร์และสตรีมเมอร์ไทย พร้อม overlay สำหรับ OBS (แจ้งเตือน/เป้าหมาย/เสียงอ่านโดเนท)",
   keywords: [
     "รับโดเนท",
     "รับทิป",
@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     type: "website",
     title: "TipTang — รับทิป & โดเนทผ่าน PromptPay ฟรี",
     description:
-      "รับทิป/โดเนทผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม ทางเลือกแทน TipMe พร้อม overlay สำหรับ OBS",
+      "รับทิป/โดเนทผ่านพร้อมเพย์ ฟรี 0% เงินเข้าบัญชีตรง ไม่ต้องรอถอน — ทางเลือกแทน TipMe พร้อม overlay สำหรับ OBS",
   },
   twitter: {
     card: "summary_large_image",
     title: "TipTang — รับทิป & โดเนทผ่าน PromptPay ฟรี",
     description:
-      "รับทิป/โดเนทผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม ทางเลือกแทน TipMe พร้อม overlay สำหรับ OBS",
+      "รับทิป/โดเนทผ่านพร้อมเพย์ ฟรี 0% เงินเข้าบัญชีตรง ไม่ต้องรอถอน — ทางเลือกแทน TipMe พร้อม overlay สำหรับ OBS",
   },
 };
 
