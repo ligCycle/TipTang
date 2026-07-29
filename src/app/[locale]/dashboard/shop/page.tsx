@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ShopManager } from "@/components/ShopManager";
+import { SHOP_ENABLED } from "@/lib/features";
 
 export default async function ShopPage({
   params,
@@ -11,6 +13,8 @@ export default async function ShopPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  // Shop is hidden for now — no direct access while disabled.
+  if (!SHOP_ENABLED) redirect(`/${locale}/dashboard`);
   const t = await getTranslations("shop");
   const tc = await getTranslations("common");
 

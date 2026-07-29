@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { TipForm } from "@/components/TipForm";
 import { ShopCheckout } from "@/components/ShopCheckout";
+import { SHOP_ENABLED } from "@/lib/features";
 import { formatBaht } from "@/lib/format";
 import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 
@@ -113,8 +114,8 @@ export default async function ProfilePage({
       orderBy: { _sum: { amount: "desc" } },
       take: 5,
     }),
-    // Shop items (only when the creator can receive payment).
-    canTip
+    // Shop items (only when the creator can receive payment + shop is enabled).
+    canTip && SHOP_ENABLED
       ? prisma.shopItem.findMany({
           where: { creatorId: creator.id, active: true, isArchived: false },
           orderBy: { createdAt: "desc" },

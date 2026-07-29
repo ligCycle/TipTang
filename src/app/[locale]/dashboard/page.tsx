@@ -9,6 +9,7 @@ import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OverlaySettings } from "@/components/OverlaySettings";
 import { ReportForm } from "@/components/ReportForm";
+import { SHOP_ENABLED } from "@/lib/features";
 
 export default async function DashboardPage({
   params,
@@ -102,12 +103,14 @@ export default async function DashboardPage({
           >
             📖 {tCommon("guide")}
           </Link>
-          <Link
-            href={`/${locale}/dashboard/shop`}
-            className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
-          >
-            🛒 {tShop("dashboardTitle")}
-          </Link>
+          {SHOP_ENABLED && (
+            <Link
+              href={`/${locale}/dashboard/shop`}
+              className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
+            >
+              🛒 {tShop("dashboardTitle")}
+            </Link>
+          )}
           <Link
             href={`/${locale}/dashboard/settings`}
             className="rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
