@@ -12,19 +12,19 @@ export type SocialKey =
 
 export type SocialLinks = Partial<Record<SocialKey, string>>;
 
+// Brand logos live in <SocialIcon> (keyed by `key`), not here.
 export const SOCIAL_PLATFORMS: {
   key: SocialKey;
   label: string;
-  icon: string;
   placeholder: string;
 }[] = [
-  { key: "instagram", label: "Instagram", icon: "📸", placeholder: "https://instagram.com/yourname" },
-  { key: "youtube", label: "YouTube", icon: "▶️", placeholder: "https://youtube.com/@yourname" },
-  { key: "tiktok", label: "TikTok", icon: "🎵", placeholder: "https://tiktok.com/@yourname" },
-  { key: "facebook", label: "Facebook", icon: "👍", placeholder: "https://facebook.com/yourpage" },
-  { key: "x", label: "X (Twitter)", icon: "𝕏", placeholder: "https://x.com/yourname" },
-  { key: "discord", label: "Discord", icon: "💬", placeholder: "https://discord.gg/invite" },
-  { key: "website", label: "Website", icon: "🌐", placeholder: "https://yoursite.com" },
+  { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/yourname" },
+  { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@yourname" },
+  { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@yourname" },
+  { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/yourpage" },
+  { key: "x", label: "X (Twitter)", placeholder: "https://x.com/yourname" },
+  { key: "discord", label: "Discord", placeholder: "https://discord.gg/invite" },
+  { key: "website", label: "Website", placeholder: "https://yoursite.com" },
 ];
 
 const KEYS = new Set<string>(SOCIAL_PLATFORMS.map((p) => p.key));

@@ -7,6 +7,7 @@ import { ShopCheckout } from "@/components/ShopCheckout";
 import { SHOP_ENABLED } from "@/lib/features";
 import { formatBaht } from "@/lib/format";
 import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
+import { SocialIcon } from "@/components/SocialIcon";
 
 export async function generateMetadata({
   params,
@@ -239,9 +240,10 @@ export default async function ProfilePage({
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   title={p.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-lg transition hover:scale-110 hover:bg-brand-200"
+                  aria-label={p.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-white shadow-sm transition hover:scale-110 hover:shadow"
                 >
-                  {p.icon}
+                  <SocialIcon platform={p.key} />
                 </a>
               ))}
             </div>

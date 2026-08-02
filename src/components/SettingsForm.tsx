@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ImageCropper } from "./ImageCropper";
 import { ColorField } from "./ColorField";
 import { SOCIAL_PLATFORMS, type SocialLinks } from "@/lib/socials";
+import { SocialIcon } from "@/components/SocialIcon";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 
 type Initial = {
@@ -304,10 +305,13 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             {SOCIAL_PLATFORMS.map((p) => (
               <label key={p.key} className="flex items-center gap-2">
                 <span
-                  className="w-24 shrink-0 text-sm text-brand-900/70"
+                  className="flex w-24 shrink-0 items-center gap-1.5 text-sm text-brand-900/70"
                   title={p.label}
                 >
-                  {p.icon} {p.label}
+                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded bg-white ring-1 ring-black/5">
+                    <SocialIcon platform={p.key} className="h-3.5 w-3.5" />
+                  </span>
+                  {p.label}
                 </span>
                 <input
                   type="url"
