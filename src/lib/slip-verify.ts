@@ -24,13 +24,41 @@ export type SlipVerifyResult =
   | { ok: true; transRef: string; amount: number; receiverRaw: string };
 
 const PROVIDER = process.env.SLIP_VERIFY_PROVIDER; // "easyslip" | "slipok" | "gemini"
+// Optional free fallback (e.g. "gemini") used ONLY when the primary provider is
+// unavailable — out of quota / API error / no key. Lets us run a real bank-side
+// check while quota lasts, then fall back to the free OCR tier instead of just
+// dropping every slip to manual review.
+const FALLBACK = process.env.SLIP_VERIFY_FALLBACK;
+
+async function runProvider(
+  name: string | undefined,
+  file: File,
+): Promise<SlipVerifyResult> {
+  if (name === "easyslip") return viaEasySlip(file);
+  if (name === "slipok") return viaSlipOk(file);
+  if (name === "gemini") return viaGemini(file);
+  return { ok: false, reason: "disabled" };
+}
 
 export async function verifySlip(file: File): Promise<SlipVerifyResult> {
   try {
-    if (PROVIDER === "easyslip") return await viaEasySlip(file);
-    if (PROVIDER === "slipok") return await viaSlipOk(file);
-    if (PROVIDER === "gemini") return await viaGemini(file);
-    return { ok: false, reason: "disabled" };
+    const primary = await runProvider(PROVIDER, file);
+    // A success OR a `duplicate` is a DEFINITIVE answer from the real bank-side
+    // check — use it as-is. NEVER fall back on `duplicate`: the real API knows
+    // the slip was already used; Gemini can't, so falling back would let a
+    // reused slip slip through. (transRef is also unique in the DB as a backstop.)
+    if (primary.ok || primary.reason === "duplicate") return primary;
+    // Primary out of quota / errored / not configured → try the free fallback.
+    // We do NOT fall back on `invalid`/`timeout` — trust the real API's verdict
+    // (invalid) and avoid stacking two timeouts past the serverless limit.
+    if (
+      FALLBACK &&
+      FALLBACK !== PROVIDER &&
+      (primary.reason === "error" || primary.reason === "disabled")
+    ) {
+      return await runProvider(FALLBACK, file);
+    }
+    return primary;
   } catch {
     return { ok: false, reason: "error" };
   }
@@ -47,8 +75,11 @@ async function viaEasySlip(file: File): Promise<SlipVerifyResult> {
     headers: { Authorization: `Bearer ${token}` },
     body: fd,
   });
+  // HTTP-level failure = provider unavailable (out of quota / rate-limited /
+  // server error) → "error" so verifySlip can fall back to the free tier.
+  if (!res.ok) return { ok: false, reason: "error" };
   const json = await res.json().catch(() => null);
-  if (!res.ok || !json?.data) return { ok: false, reason: "invalid" };
+  if (!json?.data) return { ok: false, reason: "invalid" };
 
   const d = json.data;
   const transRef = d.transRef ?? d.ref ?? d.transactionId;
@@ -71,6 +102,9 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
     headers: { "x-authorization": key },
     body: fd,
   });
+  // HTTP-level failure = provider unavailable (out of quota / rate-limited /
+  // server error), NOT a bad slip → "error" so verifySlip can fall back.
+  if (!res.ok) return { ok: false, reason: "error" };
   const json = await res.json().catch(() => null);
   // SlipOK returns success:false with code 1012 when the slip was already used.
   if (!json?.success) {
