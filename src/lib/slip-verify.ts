@@ -96,7 +96,16 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
 
   const fd = new FormData();
   fd.set("files", file);
-  fd.set("log", "true");
+  // log=false on purpose. With log=true SlipOK verifies the slip's receiver
+  // against the ONE bank account bound to the branch (returns 1014 on mismatch)
+  // and stores the slip for its own dedupe. TipTang is multi-creator — every
+  // creator has a different PromptPay — so a single "main account" check is
+  // wrong here. We send log=false so SlipOK just confirms the slip is a real
+  // bank transaction and returns the parsed data; we then verify the amount and
+  // that the receiver matches THIS creator (receiverMatches) and block reuse via
+  // our own unique transRef. See the "Compare Receiver Account" section of the
+  // SlipOK API Guide — this is the documented flow for log=false integrations.
+  fd.set("log", "false");
   const res = await fetch(`https://api.slipok.com/api/line/apikey/${branch}`, {
     method: "POST",
     headers: { "x-authorization": key },
