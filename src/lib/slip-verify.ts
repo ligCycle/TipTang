@@ -96,35 +96,39 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
 
   const fd = new FormData();
   fd.set("files", file);
-  // log=false on purpose. With log=true SlipOK verifies the slip's receiver
-  // against the ONE bank account bound to the branch (returns 1014 on mismatch)
-  // and stores the slip for its own dedupe. TipTang is multi-creator — every
-  // creator has a different PromptPay — so a single "main account" check is
-  // wrong here. We send log=false so SlipOK just confirms the slip is a real
-  // bank transaction and returns the parsed data; we then verify the amount and
-  // that the receiver matches THIS creator (receiverMatches) and block reuse via
-  // our own unique transRef. See the "Compare Receiver Account" section of the
-  // SlipOK API Guide — this is the documented flow for log=false integrations.
-  fd.set("log", "false");
+  // We intentionally do NOT send `log`. Per the SlipOK API Guide, omitting log
+  // (default false) makes SlipOK just validate the slip is a real bank
+  // transaction and return its data — WITHOUT checking the receiver against the
+  // single account bound to the branch (which triggers 1014) and without its own
+  // dedupe. TipTang is multi-creator, so we verify the receiver per-creator
+  // (receiverMatches) and block reuse via our unique transRef ourselves.
+  // NOTE: it must be OMITTED, not set to "false": form-data values are strings,
+  // and the non-empty string "false" is truthy on SlipOK's side (= log:true).
   const res = await fetch(`https://api.slipok.com/api/line/apikey/${branch}`, {
     method: "POST",
     headers: { "x-authorization": key },
     body: fd,
   });
-  // HTTP-level failure = provider unavailable (out of quota / rate-limited /
-  // server error / bad key / wrong branch), NOT a bad slip → "error" so
-  // verifySlip can fall back. Log the real cause (status + body) so a failing
-  // integration is diagnosable in the server logs instead of a silent "error".
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => "");
-    console.error("[slipok] HTTP", res.status, errBody.slice(0, 600));
+  const json = await res.json().catch(() => null);
+  // Slip already used → definitive anti-fraud verdict; never fall back.
+  if (json?.code === 1012) return { ok: false, reason: "duplicate" };
+  // Provider unavailable / misconfigured (bad key 1002, expired pkg 1003, over
+  // quota 1004, bank temporarily down 1009, or any 5xx) → "error" so verifySlip
+  // can use the free fallback. Log the cause so it's diagnosable.
+  if (res.status >= 500 || [1002, 1003, 1004, 1009].includes(json?.code)) {
+    console.error("[slipok] provider error", res.status, JSON.stringify(json)?.slice(0, 300));
     return { ok: false, reason: "error" };
   }
-  const json = await res.json().catch(() => null);
-  // SlipOK returns success:false with code 1012 when the slip was already used.
-  if (!json?.success) {
-    if (json?.code === 1012) return { ok: false, reason: "duplicate" };
-    console.error("[slipok] not success", JSON.stringify(json)?.slice(0, 600));
+  // A clean success (HTTP 200) OR a 1014 "receiver != branch account" BOTH carry
+  // the fully-validated slip under json.data. 1014 doesn't apply to us — we check
+  // the receiver per-creator, not against the branch's single bound account — so
+  // accept its data too and let receiverMatches be the real gate. Anything else
+  // (no QR / bad image / expired QR / bank-delay) is not a usable slip.
+  const validated =
+    json?.success === true ||
+    (json?.code === 1014 && json?.data?.success === true);
+  if (!validated) {
+    console.error("[slipok] invalid", JSON.stringify(json)?.slice(0, 400));
     return { ok: false, reason: "invalid" };
   }
   const d = json.data ?? {};
