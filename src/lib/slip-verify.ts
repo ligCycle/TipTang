@@ -119,15 +119,22 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
     return { ok: false, reason: "invalid" };
   }
   const d = json.data ?? {};
-  // One-time diagnostic during rollout: SlipOK's exact receiver field names vary
-  // by account/bank; log them so we can confirm receiverMatches sees the right
-  // digits (the last-4 check). Safe to remove once verified in production.
-  console.error("[slipok] ok data keys", JSON.stringify(d).slice(0, 800));
-  const transRef = d.transRef ?? d.transRefId;
+  // One-time diagnostic during rollout — safe to remove once verified.
+  console.error("[slipok] ok data", JSON.stringify(d).slice(0, 800));
+  // Response shape per SlipOK API Guide v1.13: data.transRef, data.amount, and
+  // the receiver nested under data.receiver — account.value for a bank account,
+  // proxy.value for PromptPay (both MASKED, e.g. "xxx-x-x3109-x" / "086xxx2341").
+  // Per the "Compare Receiver Account" section, match on account.value OR
+  // proxy.value OR ref1; receiverMatches() strips the masking and checks last-4.
+  const recv = d.receiver ?? {};
+  const transRef = d.transRef;
   const amount = Number(d.amount);
   const receiverRaw = JSON.stringify({
-    name: d.receiverName ?? d.receiver ?? "",
-    account: d.receivingBank ?? d.receiver ?? "",
+    displayName: recv.displayName ?? "",
+    name: recv.name ?? "",
+    account: recv.account?.value ?? "",
+    proxy: recv.proxy?.value ?? "",
+    ref1: d.ref1 ?? "",
   });
   if (!transRef || !Number.isFinite(amount)) return { ok: false, reason: "invalid" };
   return { ok: true, transRef: String(transRef), amount, receiverRaw };
