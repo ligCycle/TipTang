@@ -103,15 +103,26 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
     body: fd,
   });
   // HTTP-level failure = provider unavailable (out of quota / rate-limited /
-  // server error), NOT a bad slip → "error" so verifySlip can fall back.
-  if (!res.ok) return { ok: false, reason: "error" };
+  // server error / bad key / wrong branch), NOT a bad slip → "error" so
+  // verifySlip can fall back. Log the real cause (status + body) so a failing
+  // integration is diagnosable in the server logs instead of a silent "error".
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    console.error("[slipok] HTTP", res.status, errBody.slice(0, 600));
+    return { ok: false, reason: "error" };
+  }
   const json = await res.json().catch(() => null);
   // SlipOK returns success:false with code 1012 when the slip was already used.
   if (!json?.success) {
     if (json?.code === 1012) return { ok: false, reason: "duplicate" };
+    console.error("[slipok] not success", JSON.stringify(json)?.slice(0, 600));
     return { ok: false, reason: "invalid" };
   }
   const d = json.data ?? {};
+  // One-time diagnostic during rollout: SlipOK's exact receiver field names vary
+  // by account/bank; log them so we can confirm receiverMatches sees the right
+  // digits (the last-4 check). Safe to remove once verified in production.
+  console.error("[slipok] ok data keys", JSON.stringify(d).slice(0, 800));
   const transRef = d.transRef ?? d.transRefId;
   const amount = Number(d.amount);
   const receiverRaw = JSON.stringify({
