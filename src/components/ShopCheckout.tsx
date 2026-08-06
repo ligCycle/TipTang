@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
+import { SlipDropzone } from "@/components/SlipDropzone";
 
 export type ShopItem = {
   id: string;
@@ -71,9 +72,8 @@ export function ShopCheckout({
     }
   }
 
-  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFile(file: File | null) {
     setError(null);
-    const file = e.target.files?.[0] ?? null;
     if (!file) return;
     if (!ALLOWED.includes(file.type)) return setError(tErr("badType"));
     if (file.size > MAX_BYTES) return setError(tErr("tooLarge"));
@@ -261,26 +261,16 @@ export function ShopCheckout({
                     placeholder={t("notePlaceholder")}
                   />
                 </label>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-brand-900/80">
-                    {t("uploadSlip")}
-                  </span>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={onPickFile}
-                    className="block w-full text-sm text-brand-900/70 file:mr-3 file:rounded-full file:border-0 file:bg-brand-100 file:px-4 file:py-2 file:font-semibold file:text-brand-700"
-                  />
-                </label>
-                {slipPreview && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={slipPreview}
-                    alt="slip"
-                    className="mx-auto max-h-44 rounded-xl border border-brand-100"
-                  />
-                )}
+                <SlipDropzone
+                  previewUrl={slipPreview}
+                  fileName={slip?.name}
+                  onFile={handleFile}
+                  label={t("uploadSlip")}
+                  hint={t("uploadSlipHint")}
+                  changeLabel={t("uploadSlipChange")}
+                  inputRef={fileRef}
+                  accentColor={accentColor}
+                />
                 {error && (
                   <p className="text-sm font-medium text-red-600">{error}</p>
                 )}
