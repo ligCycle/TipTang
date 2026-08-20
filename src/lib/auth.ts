@@ -143,3 +143,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+/**
+ * Session guard for the pages under /dashboard.
+ * The guard in dashboard/layout.tsx is NOT enough on its own: Next renders the
+ * layout and the page in PARALLEL, so the page still runs — and would crash on
+ * a null session — before the layout's redirect lands. Every page checks too.
+ * Returns null when signed out; the caller redirects (same shape as requireAdmin).
+ */
+export async function requireUser() {
+  const session = await auth();
+  // `id` is only set by the session callback above when token.id is a string,
+  // so an old/odd JWT can carry a `user` with no id — that must not reach Prisma.
+  if (!session?.user?.id) return null;
+  return session.user;
+}

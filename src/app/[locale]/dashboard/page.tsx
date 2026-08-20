@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/format";
 import { TipRow } from "@/components/TipRow";
@@ -23,8 +24,9 @@ export default async function DashboardPage({
   const tCommon = await getTranslations("common");
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
 
-  const session = await auth();
-  const userId = session!.user.id;
+  const sessionUser = await requireUser();
+  if (!sessionUser) redirect(`/${locale}/login`);
+  const userId = sessionUser.id;
 
   // Fetch the profile + all tip stats in ONE parallel batch (a single DB
   // round trip instead of two back-to-back) to cut the dashboard's server

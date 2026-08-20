@@ -1,5 +1,6 @@
+import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/SettingsForm";
 import { ConnectedAccounts } from "@/components/ConnectedAccounts";
@@ -13,9 +14,11 @@ export default async function SettingsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const session = await auth();
+  const sessionUser = await requireUser();
+  if (!sessionUser) redirect(`/${locale}/login`);
+
   const user = await prisma.user.findUnique({
-    where: { id: session!.user.id },
+    where: { id: sessionUser.id },
     // promptpayId belongs to the owner — safe to load into their OWN edit form.
     select: {
       email: true,

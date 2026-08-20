@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ShopManager } from "@/components/ShopManager";
 import { SHOP_ENABLED } from "@/lib/features";
@@ -18,8 +18,9 @@ export default async function ShopPage({
   const t = await getTranslations("shop");
   const tc = await getTranslations("common");
 
-  const session = await auth();
-  const userId = session!.user.id;
+  const sessionUser = await requireUser();
+  if (!sessionUser) redirect(`/${locale}/login`);
+  const userId = sessionUser.id;
 
   const [items, orders] = await Promise.all([
     prisma.shopItem.findMany({
