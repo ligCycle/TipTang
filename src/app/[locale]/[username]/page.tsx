@@ -116,8 +116,14 @@ export default async function ProfilePage({
     // a bare "s" and collapse the letter s instead of whitespace.
     prisma.$queryRaw<{ display: string; total: string }[]>`
       SELECT
-        (array_agg("supporterName"
-           ORDER BY COALESCE("confirmedAt", "createdAt") DESC))[1] AS display,
+        -- Show the spelling they used most recently, minus any stray
+        -- leading combining mark (same reasoning as the GROUP BY below):
+        -- it is a typing slip that renders as a floating mark, so there
+        -- is no reason to print it back at them.
+        regexp_replace(
+          (array_agg("supporterName"
+             ORDER BY COALESCE("confirmedAt", "createdAt") DESC))[1],
+          '^[\\u0E31\\u0E34-\\u0E3A\\u0E47-\\u0E4E]+', '') AS display,
         SUM("amount")::text AS total
       FROM "Tip"
       WHERE "creatorId" = ${creator.id}
@@ -170,10 +176,13 @@ export default async function ProfilePage({
     imageUrl: s.imageUrl,
   }));
 
-  const topSupporters = topGroups.map((g) => ({
-    name: g.display,
-    total: Number(g.total),
-  }));
+  const topSupporters = topGroups
+    .map((g) => ({ name: g.display, total: Number(g.total) }))
+    // A name made ONLY of stray combining marks strips down to nothing.
+    // That supporter is indistinguishable from anonymous, and the query
+    // already keeps anonymous tips off the leaderboard — so drop it here
+    // too rather than rendering a blank row.
+    .filter((s) => s.name !== "");
   const medals = ["🥇", "🥈", "🥉"];
 
   const socials = normalizeSocialLinks(creator.socialLinks);
