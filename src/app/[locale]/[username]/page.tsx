@@ -124,10 +124,18 @@ export default async function ProfilePage({
         AND "status" = 'CONFIRMED'
         AND "isMessagePublic" = true
         AND btrim("supporterName") <> ''
-      GROUP BY lower(btrim(regexp_replace(
-        regexp_replace(normalize("supporterName", NFC),
-                       '\\u200B|\\u200C|\\u200D|\\uFEFF', '', 'g'),
-        '\\s+', ' ', 'g')))
+      GROUP BY lower(regexp_replace(
+        btrim(regexp_replace(
+          regexp_replace(normalize("supporterName", NFC),
+                         '\\u200B|\\u200C|\\u200D|\\uFEFF', '', 'g'),
+          '\\s+', ' ', 'g')),
+        -- Drop Thai combining marks stranded at the START of the name.
+        -- A tone mark or above/below vowel must sit ON a consonant; one in
+        -- position 0 has nothing to combine with, so it is always a typo
+        -- artifact and dropping it cannot change the word. (This is NOT the
+        -- same as folding tone marks generally, which we refuse to do.)
+        -- Leading vowels เ แ โ ใ ไ (U+0E40-44) are real and stay.
+        '^[\\u0E31\\u0E34-\\u0E3A\\u0E47-\\u0E4E]+', ''))
       -- Tie-break so equal totals keep a stable order across renders
       -- (whoever reached that total first ranks higher). Without this the
       -- leaderboard reshuffles on every refresh.
