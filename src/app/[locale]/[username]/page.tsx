@@ -102,19 +102,39 @@ export default async function ProfilePage({
       where: { creatorId: creator.id, status: "CONFIRMED" },
       _sum: { amount: true },
     }),
-    // Leaderboard: total per named supporter (opted-in = isMessagePublic).
-    prisma.tip.groupBy({
-      by: ["supporterName"],
-      where: {
-        creatorId: creator.id,
-        status: "CONFIRMED",
-        isMessagePublic: true,
-        supporterName: { not: "" },
-      },
-      _sum: { amount: true },
-      orderBy: { _sum: { amount: "desc" } },
-      take: 5,
-    }),
+    // Leaderboard: total per supporter (opted-in = isMessagePublic).
+    // Grouped on a NORMALIZED key, not the raw name: supporters have no
+    // account and retype their name on every tip, so "Skye" / "skye" /
+    // "Skye " are one person. We fold case + whitespace + invisible chars
+    // ONLY. We deliberately do NOT fold Thai tone marks — they change the
+    // word (ขาว != ข้าว), so folding them would credit one donor's money
+    // to another. Prisma groupBy can only group by a raw column, so this
+    // has to be raw SQL.
+    // NOTE the DOUBLE backslashes: this is a tagged template, so JS eats
+    // one layer first. Postgres receives \u200B / \s and reads them as
+    // regex escapes. A single backslash would silently reach Postgres as
+    // a bare "s" and collapse the letter s instead of whitespace.
+    prisma.$queryRaw<{ display: string; total: string }[]>`
+      SELECT
+        (array_agg("supporterName"
+           ORDER BY COALESCE("confirmedAt", "createdAt") DESC))[1] AS display,
+        SUM("amount")::text AS total
+      FROM "Tip"
+      WHERE "creatorId" = ${creator.id}
+        AND "status" = 'CONFIRMED'
+        AND "isMessagePublic" = true
+        AND btrim("supporterName") <> ''
+      GROUP BY lower(btrim(regexp_replace(
+        regexp_replace(normalize("supporterName", NFC),
+                       '\\u200B|\\u200C|\\u200D|\\uFEFF', '', 'g'),
+        '\\s+', ' ', 'g')))
+      -- Tie-break so equal totals keep a stable order across renders
+      -- (whoever reached that total first ranks higher). Without this the
+      -- leaderboard reshuffles on every refresh.
+      ORDER BY SUM("amount") DESC,
+               MIN(COALESCE("confirmedAt", "createdAt")) ASC
+      LIMIT 5
+    `,
     // Shop items (only when the creator can receive payment + shop is enabled).
     canTip && SHOP_ENABLED
       ? prisma.shopItem.findMany({
@@ -143,8 +163,8 @@ export default async function ProfilePage({
   }));
 
   const topSupporters = topGroups.map((g) => ({
-    name: g.supporterName,
-    total: Number(g._sum.amount ?? 0),
+    name: g.display,
+    total: Number(g.total),
   }));
   const medals = ["🥇", "🥈", "🥉"];
 
