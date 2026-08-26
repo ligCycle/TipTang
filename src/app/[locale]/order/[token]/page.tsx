@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { formatBaht } from "@/lib/format";
 import { DeliverableBox } from "@/components/DeliverableBox";
+import { Icon } from "@/components/Icon";
 
 // Private receipt — never index (also status changes over time → always fresh).
 export const dynamic = "force-dynamic";
@@ -45,8 +46,9 @@ export default async function OrderReceiptPage({
   return (
     <div className="mx-auto max-w-lg space-y-5">
       <div className="card rounded-3xl p-6">
-        <h1 className="text-xl font-extrabold text-brand-900">
-          🧾 {t("receiptTitle")}
+        <h1 className="flex items-center gap-2 text-xl font-extrabold text-brand-900">
+          <Icon name="receipt" className="h-5 w-5" />
+          {t("receiptTitle")}
         </h1>
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="min-w-0 truncate font-semibold text-brand-900">
@@ -68,29 +70,33 @@ export default async function OrderReceiptPage({
       </div>
 
       {order.status === "PENDING" && (
-        <div className="card rounded-3xl p-6 text-center text-brand-900/75">
-          ⏳ {t("receiptPending")}
+        <div className="card flex items-center justify-center gap-2 rounded-3xl p-6 text-center text-brand-900/75">
+          <Icon name="clock" />
+          {t("receiptPending")}
         </div>
       )}
 
       {order.status === "REJECTED" && (
-        <div className="card rounded-3xl p-6 text-center text-red-700">
-          ❌ {t("receiptRejected")}
+        <div className="card flex items-center justify-center gap-2 rounded-3xl p-6 text-center text-red-700">
+          <Icon name="x-circle" />
+          {t("receiptRejected")}
         </div>
       )}
 
       {paid && order.deliverableText && (
         <div className="card rounded-3xl p-6">
-          <p className="mb-3 font-semibold text-brand-900">
-            ✅ {t("receiptDigitalReady")}
+          <p className="mb-3 flex items-center gap-2 font-semibold text-brand-900">
+            <Icon name="check-circle" className="text-emerald-600" />
+            {t("receiptDigitalReady")}
           </p>
           <DeliverableBox text={order.deliverableText} />
         </div>
       )}
 
       {paid && !order.deliverableText && (
-        <div className="card rounded-3xl p-6 text-center text-brand-900/75">
-          ✅ {t("receiptCommissionDone")}
+        <div className="card flex items-center justify-center gap-2 rounded-3xl p-6 text-center text-brand-900/75">
+          <Icon name="check-circle" className="text-emerald-600" />
+          {t("receiptCommissionDone")}
         </div>
       )}
     </div>

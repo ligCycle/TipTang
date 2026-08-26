@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
 import { SlipDropzone } from "@/components/SlipDropzone";
+import { Icon } from "@/components/Icon";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -153,7 +154,7 @@ export function TipForm({
         className="card rounded-3xl p-8 text-center"
         style={cardTintStyle}
       >
-        <div className="text-5xl">🎉</div>
+        <Icon name="check-circle" className="mx-auto h-14 w-14 text-emerald-500" />
         <h2 className="mt-3 text-xl font-bold text-brand-900">
           {tSuccess("title")}
         </h2>
@@ -281,7 +282,8 @@ export function TipForm({
               download={`promptpay-${amount}.png`}
               className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-200"
             >
-              ⬇ {t("saveQr")}
+              <Icon name="download" />
+              {t("saveQr")}
             </a>
             <p className="mx-auto mt-2 max-w-sm text-sm text-brand-900/60">
               {t("scanHint")}
@@ -289,8 +291,9 @@ export function TipForm({
             <p className="mx-auto mt-1 max-w-sm text-xs text-brand-900/45">
               {t("saveQrHint")}
             </p>
-            <p className="mx-auto mt-3 max-w-sm rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
-              📱 {t("payAnyApp")}
+            <p className="mx-auto mt-3 flex max-w-sm items-center justify-center gap-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
+              <Icon name="smartphone" className="h-3.5 w-3.5" />
+              <span>{t("payAnyApp")}</span>
             </p>
           </div>
 

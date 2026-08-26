@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Icon } from "@/components/Icon";
 
 const CATEGORIES = ["bug", "payment", "suggestion", "other"] as const;
 type Category = (typeof CATEGORIES)[number];
@@ -40,8 +41,9 @@ export function ReportForm() {
     <div className="card rounded-2xl p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-brand-900">
-            🛟 {t("title")}
+          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-900">
+            <Icon name="life-buoy" className="h-5 w-5" />
+            {t("title")}
           </h2>
           <p className="mt-1 text-sm text-brand-900/65">{t("desc")}</p>
         </div>
@@ -60,8 +62,9 @@ export function ReportForm() {
 
       {open &&
         (status === "sent" ? (
-          <div className="mt-4 rounded-xl border border-green-300 bg-green-50 p-4 text-sm text-green-800">
-            ✓ {t("sent")}
+          <div className="mt-4 flex flex-wrap items-center gap-1.5 rounded-xl border border-green-300 bg-green-50 p-4 text-sm text-green-800">
+            <Icon name="check" />
+            {t("sent")}
             <button
               onClick={() => setStatus("idle")}
               className="ml-2 font-semibold underline"

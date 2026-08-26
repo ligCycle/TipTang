@@ -8,6 +8,7 @@ import { SHOP_ENABLED } from "@/lib/features";
 import { formatBaht } from "@/lib/format";
 import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
+import { Icon } from "@/components/Icon";
 
 export async function generateMetadata({
   params,
@@ -183,7 +184,6 @@ export default async function ProfilePage({
     // already keeps anonymous tips off the leaderboard — so drop it here
     // too rather than rendering a blank row.
     .filter((s) => s.name !== "");
-  const medals = ["🥇", "🥈", "🥉"];
 
   const socials = normalizeSocialLinks(creator.socialLinks);
   const goalAmount = creator.goalAmount ? Number(creator.goalAmount) : 0;
@@ -295,8 +295,9 @@ export default async function ProfilePage({
           style={{ backgroundImage: cardTint }}
         >
           <div className="mb-2 flex items-end justify-between gap-3">
-            <span className="font-semibold text-brand-900">
-              🎯 {creator.goalTitle || t("goalDefaultTitle")}
+            <span className="flex items-center gap-2 font-semibold text-brand-900">
+              <Icon name="target" />
+              {creator.goalTitle || t("goalDefaultTitle")}
             </span>
             <span className="text-sm font-bold" style={{ color: accent }}>
               {goalPct}%
@@ -323,8 +324,9 @@ export default async function ProfilePage({
       {/* Top supporters leaderboard — above the form so it's visible */}
       {topSupporters.length > 0 && (
         <section>
-          <h2 className="mb-4 text-lg font-bold text-brand-900">
-            🏆 {t("topSupporters")}
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-brand-900">
+            <Icon name="trophy" className="h-5 w-5" />
+            {t("topSupporters")}
           </h2>
           <ul className="space-y-2">
             {topSupporters.map((s, i) => (
@@ -340,7 +342,7 @@ export default async function ProfilePage({
                     className="w-7 shrink-0 text-center text-lg font-black"
                     style={{ color: accent }}
                   >
-                    {medals[i] ?? i + 1}
+                    {i + 1}
                   </span>
                   <span className="truncate font-semibold text-brand-800">
                     {s.name}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Icon } from "@/components/Icon";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -53,7 +54,7 @@ export function ThemeToggle() {
       title="Toggle dark mode"
       className="rounded-full border border-brand-900/15 bg-brand-50/60 px-2.5 py-1.5 text-sm hover:bg-brand-100"
     >
-      {theme === "dark" ? "☀️" : "🌙"}
+      <Icon name={theme === "dark" ? "sun" : "moon"} />
     </button>
   );
 }

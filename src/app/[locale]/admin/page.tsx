@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { ReviewModRow } from "@/components/ReviewModRow";
 import { ReportAdminRow } from "@/components/ReportAdminRow";
+import { Icon } from "@/components/Icon";
 
 export default async function AdminPage({
   params,
@@ -60,8 +61,9 @@ export default async function AdminPage({
 
       {/* Reports from creators */}
       <section>
-        <h2 className="mb-4 text-lg font-bold text-brand-900">
-          🛟 {tr("adminTitle")} ({openReports.length})
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-brand-900">
+          <Icon name="life-buoy" className="h-5 w-5" />
+          {tr("adminTitle")} ({openReports.length})
         </h2>
         {reportRows.length === 0 ? (
           <p className="card rounded-2xl p-6 text-center text-brand-900/60">

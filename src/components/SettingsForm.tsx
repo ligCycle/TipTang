@@ -8,6 +8,7 @@ import { ColorField } from "./ColorField";
 import { SOCIAL_PLATFORMS, type SocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
+import { Icon } from "@/components/Icon";
 
 type Initial = {
   displayName: string;
@@ -183,7 +184,11 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               </span>
             )}
             <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
-              {uploading === "avatar" ? "..." : "✎"}
+              {uploading === "avatar" ? (
+                "..."
+              ) : (
+                <Icon name="pencil" className="h-3.5 w-3.5" />
+              )}
             </span>
             <input
               type="file"
@@ -277,8 +282,9 @@ export function SettingsForm({ initial }: { initial: Initial }) {
 
         {/* Profile theme color */}
         <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-          <p className="mb-3 text-sm font-semibold text-brand-900/80">
-            🎨 {t("profileColorSection")}
+          <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-900/80">
+            <Icon name="palette" />
+            {t("profileColorSection")}
           </p>
           <ColorField
             value={form.profileColor || null}
@@ -298,8 +304,9 @@ export function SettingsForm({ initial }: { initial: Initial }) {
 
         {/* Social links */}
         <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-          <p className="mb-3 text-sm font-semibold text-brand-900/80">
-            🔗 {t("socialSection")}
+          <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-900/80">
+            <Icon name="link" />
+            {t("socialSection")}
           </p>
           <div className="space-y-2">
             {SOCIAL_PLATFORMS.map((p) => (

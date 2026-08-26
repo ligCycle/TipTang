@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
 import { SlipDropzone } from "@/components/SlipDropzone";
+import { Icon } from "@/components/Icon";
 
 export type ShopItem = {
   id: string;
@@ -120,7 +121,10 @@ export function ShopCheckout({
 
   return (
     <section>
-      <h2 className="mb-4 text-lg font-bold text-brand-900">🛒 {t("title")}</h2>
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-brand-900">
+        <Icon name="shopping-bag" className="h-5 w-5" />
+        {t("title")}
+      </h2>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((item) => (
@@ -169,13 +173,13 @@ export function ShopCheckout({
                 className="rounded-full px-2 text-brand-900/50 hover:bg-brand-100"
                 aria-label={t("close")}
               >
-                ✕
+                <Icon name="x" />
               </button>
             </div>
 
             {step === "done" ? (
               <div className="py-6 text-center">
-                <div className="text-4xl">🎉</div>
+                <Icon name="check-circle" className="mx-auto h-12 w-12 text-emerald-500" />
                 <p className="mt-3 font-semibold text-brand-900">
                   {confirmed ? t("doneConfirmedReceipt") : t("doneWithReceipt")}
                 </p>
@@ -215,8 +219,9 @@ export function ShopCheckout({
                       alt="PromptPay QR"
                       className="mx-auto h-52 w-52 rounded-2xl border border-brand-100 bg-white p-2"
                     />
-                    <p className="mx-auto max-w-sm rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
-                      📱 {t("payAnyApp")}
+                    <p className="mx-auto flex max-w-sm items-center justify-center gap-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
+                      <Icon name="smartphone" className="h-3.5 w-3.5" />
+                      <span>{t("payAnyApp")}</span>
                     </p>
                   </>
                 )}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
+import { Icon } from "@/components/Icon";
 
 type Item = {
   id: string;
@@ -179,12 +180,14 @@ export function ShopManager({
                   {item.type === "DIGITAL" && (
                     <p className="mt-1 text-xs font-medium">
                       {item.deliverableText ? (
-                        <span className="text-emerald-600">
-                          🔓 {t("deliverableSet")}
+                        <span className="inline-flex items-center gap-1 text-emerald-600">
+                          <Icon name="unlock" className="h-3.5 w-3.5" />
+                          {t("deliverableSet")}
                         </span>
                       ) : (
-                        <span className="text-amber-600">
-                          ⚠️ {t("deliverableMissing")}
+                        <span className="inline-flex items-center gap-1 text-amber-600">
+                          <Icon name="alert-triangle" className="h-3.5 w-3.5" />
+                          {t("deliverableMissing")}
                         </span>
                       )}
                     </p>

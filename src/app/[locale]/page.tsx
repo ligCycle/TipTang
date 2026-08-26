@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { Icon, type IconName } from "@/components/Icon";
 
 export async function generateMetadata({
   params,
@@ -57,10 +58,10 @@ export default async function LandingPage({
       ? approved.reduce((s, r) => s + r.rating, 0) / reviewCount
       : 0;
 
-  const steps = [
-    { title: t("step1Title"), desc: t("step1Desc"), icon: "🎨" },
-    { title: t("step2Title"), desc: t("step2Desc"), icon: "🔗" },
-    { title: t("step3Title"), desc: t("step3Desc"), icon: "💝" },
+  const steps: { title: string; desc: string; icon: IconName }[] = [
+    { title: t("step1Title"), desc: t("step1Desc"), icon: "palette" },
+    { title: t("step2Title"), desc: t("step2Desc"), icon: "link" },
+    { title: t("step3Title"), desc: t("step3Desc"), icon: "heart" },
   ];
   const features = [t("feature1"), t("feature2"), t("feature3")];
 
@@ -117,7 +118,9 @@ export default async function LandingPage({
         <div className="grid gap-4 sm:grid-cols-3">
           {steps.map((s) => (
             <div key={s.title} className="card rounded-2xl p-6 text-center">
-              <div className="text-4xl">{s.icon}</div>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-600">
+                <Icon name={s.icon} className="h-6 w-6" />
+              </div>
               <h3 className="mt-3 font-bold text-brand-800">{s.title}</h3>
               <p className="mt-1.5 text-sm text-brand-900/65">{s.desc}</p>
             </div>
@@ -133,7 +136,7 @@ export default async function LandingPage({
         <ul className="mx-auto max-w-lg space-y-3">
           {features.map((f) => (
             <li key={f} className="flex items-start gap-3 text-brand-900/80">
-              <span className="mt-0.5 text-brand-600">✓</span>
+              <Icon name="check" className="mt-0.5 h-5 w-5 text-brand-600" />
               <span>{f}</span>
             </li>
           ))}
@@ -162,7 +165,7 @@ export default async function LandingPage({
                 {t(`compareRow${n}Label`)}
               </div>
               <div className="flex items-center justify-center gap-1 p-3 text-center font-semibold text-brand-700 sm:p-4">
-                <span className="text-brand-600">✓</span>
+                <Icon name="check" className="text-brand-600" />
                 {t(`compareRow${n}Us`)}
               </div>
               <div className="p-3 text-center text-brand-900/55 sm:p-4">

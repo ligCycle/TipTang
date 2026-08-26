@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { Icon, type IconName } from "@/components/Icon";
 
 // Static content page → pre-render one HTML per locale (fast + good CWV).
 export function generateStaticParams() {
@@ -44,8 +45,9 @@ export default async function StartPage({
   return (
     <div className="space-y-8">
       {/* In-app-browser (LINE/Messenger) hint */}
-      <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        {t("browserHint")}
+      <div className="flex items-start gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <Icon name="lightbulb" className="mt-0.5" />
+        <span>{t("browserHint")}</span>
       </div>
 
       <header className="text-center">
@@ -55,18 +57,19 @@ export default async function StartPage({
 
       {/* 5 steps — one column on mobile */}
       <ol className="space-y-4">
-        <Step icon="🎨" n={1} title={t("step1Title")} desc={t("step1Desc")}>
+        <Step icon="palette" n={1} title={t("step1Title")} desc={t("step1Desc")}>
           <StepButton href="/register" label={t("step1Cta")} />
         </Step>
 
-        <Step icon="💳" n={2} title={t("step2Title")} desc={t("step2Desc")}>
+        <Step icon="credit-card" n={2} title={t("step2Title")} desc={t("step2Desc")}>
           <StepButton href="/dashboard/settings" label={t("step2Cta")} />
           <p className="mt-1.5 text-xs text-brand-900/45">{t("step2Hint")}</p>
         </Step>
 
-        <Step icon="📺" n={3} title={t("step3Title")} desc={t("step3Desc")}>
-          <p className="mt-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs text-brand-900/70">
-            💡 {t("obsLeadIn")}
+        <Step icon="monitor" n={3} title={t("step3Title")} desc={t("step3Desc")}>
+          <p className="mt-2 flex items-start gap-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs text-brand-900/70">
+            <Icon name="lightbulb" className="mt-px h-3.5 w-3.5" />
+            <span>{t("obsLeadIn")}</span>
           </p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-brand-900/70">
             {obsSteps.map((s, i) => (
@@ -77,18 +80,21 @@ export default async function StartPage({
           </ol>
         </Step>
 
-        <Step icon="🔗" n={4} title={t("step4Title")} desc={t("step4Desc")} />
+        <Step icon="link" n={4} title={t("step4Title")} desc={t("step4Desc")} />
 
-        <Step icon="🎉" n={5} title={t("step5Title")} desc={t("step5Desc")} />
+        <Step icon="check-circle" n={5} title={t("step5Title")} desc={t("step5Desc")} />
       </ol>
 
       {/* Why TipTang */}
       <div className="card rounded-2xl p-5">
         <h2 className="font-bold text-brand-900">{t("whyTitle")}</h2>
         <ul className="mt-2 space-y-1.5 text-sm text-brand-900/75">
-          <li>✅ {t("why1")}</li>
-          <li>✅ {t("why2")}</li>
-          <li>✅ {t("why3")}</li>
+          {[t("why1"), t("why2"), t("why3")].map((why) => (
+            <li key={why} className="flex items-start gap-2">
+              <Icon name="check" className="mt-0.5 text-brand-600" />
+              <span>{why}</span>
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -112,7 +118,7 @@ function Step({
   desc,
   children,
 }: {
-  icon: string;
+  icon: IconName;
   n: number;
   title: string;
   desc: string;
@@ -121,8 +127,8 @@ function Step({
   return (
     <li className="card rounded-2xl p-5">
       <div className="flex items-start gap-4">
-        <span className="shrink-0 text-3xl" aria-hidden>
-          {icon}
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-600">
+          <Icon name={icon} className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-bold text-brand-900">

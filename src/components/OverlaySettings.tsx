@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { ALERT_STYLES } from "@/lib/alertStyles";
+import { Icon } from "@/components/Icon";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string };
@@ -455,7 +456,10 @@ export function OverlaySettings() {
         className="flex w-full items-center justify-between gap-3 text-left"
       >
         <div>
-          <h2 className="text-lg font-bold text-brand-900">🔴 {t("obsTitle")}</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-900">
+            <Icon name="monitor" className="h-5 w-5" />
+            {t("obsTitle")}
+          </h2>
           {!collapsed && (
             <p className="mt-1 text-sm text-brand-900/65">{t("obsDesc")}</p>
           )}
@@ -478,8 +482,9 @@ export function OverlaySettings() {
         <div className="mt-4 space-y-6">
           {/* ===== Alert card ===== */}
           <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
-            <h3 className="text-base font-bold text-brand-900">
-              🔔 {t("obsAlertSection")}
+            <h3 className="flex items-center gap-2 text-base font-bold text-brand-900">
+              <Icon name="bell" className="h-4 w-4" />
+              {t("obsAlertSection")}
             </h3>
             <p className="mb-3 mt-0.5 text-xs text-brand-900/55">
               {t("obsAlertSectionDesc")}
@@ -516,7 +521,8 @@ export function OverlaySettings() {
 
               {/* Step-by-step OBS setup guide */}
               <details className="mt-3 rounded-xl border border-brand-200 bg-brand-50/70">
-                <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold text-brand-800">
+                <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-sm font-semibold text-brand-800">
+                  <Icon name="book-open" />
                   {t("obsGuideTitle")}
                 </summary>
                 <ol className="list-decimal space-y-1.5 pb-3 pl-9 pr-3 text-xs text-brand-900/70">
@@ -526,8 +532,9 @@ export function OverlaySettings() {
                   <li>{t("obsGuideStep4")}</li>
                   <li>{t("obsGuideStep5")}</li>
                 </ol>
-                <p className="px-3 pb-3 text-xs text-brand-600">
-                  💡 {t("obsGuideNote")}
+                <p className="flex items-start gap-2 px-3 pb-3 text-xs text-brand-600">
+                  <Icon name="lightbulb" className="mt-px h-3.5 w-3.5" />
+                  <span>{t("obsGuideNote")}</span>
                 </p>
               </details>
             </div>
@@ -569,8 +576,9 @@ export function OverlaySettings() {
                     }}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-extrabold drop-shadow">
-                        💸 {t("obsPreviewName")}
+                      <span className="flex items-center gap-1.5 text-sm font-extrabold drop-shadow">
+                        <Icon name="user" className="h-3.5 w-3.5" />
+                        {t("obsPreviewName")}
                       </span>
                       <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-sm font-black">
                         ฿100
@@ -585,8 +593,9 @@ export function OverlaySettings() {
 
               {/* Alert animation style */}
               <div className="rounded-xl bg-brand-50 p-3">
-                <p className="mb-1 text-sm font-medium text-brand-900/80">
-                  ✨ {t("obsAlertStyle")}
+                <p className="mb-1 flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                  <Icon name="sparkles" />
+                  {t("obsAlertStyle")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {ALERT_STYLES.map((s) => {
@@ -614,8 +623,9 @@ export function OverlaySettings() {
 
               {/* Big-tip celebration */}
               <div className="rounded-xl bg-brand-50 p-3">
-                <p className="mb-1 text-sm font-medium text-brand-900/80">
-                  🎉 {t("obsBigTip")}
+                <p className="mb-1 flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                  <Icon name="gift" />
+                  {t("obsBigTip")}
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <input
@@ -644,8 +654,9 @@ export function OverlaySettings() {
               {/* Sound */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center gap-3">
-                  <span className="text-sm font-medium text-brand-900/80">
-                    🔉 {t("obsSound")}
+                  <span className="flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                    <Icon name="volume" />
+                    {t("obsSound")}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -687,8 +698,9 @@ export function OverlaySettings() {
               {/* Random library — sounds */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-brand-900/80">
-                    🔀 {t("obsSoundLibrary")}
+                  <span className="flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                    <Icon name="shuffle" />
+                    {t("obsSoundLibrary")}
                   </span>
                   <label className="btn-secondary cursor-pointer px-3 py-1 text-xs">
                     {libUploading === "sound" ? t("obsUploading") : t("obsAddToLibrary")}
@@ -733,8 +745,9 @@ export function OverlaySettings() {
               {/* Random library — stickers */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-brand-900/80">
-                    🔀 {t("obsStickerLibrary")}
+                  <span className="flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                    <Icon name="shuffle" />
+                    {t("obsStickerLibrary")}
                   </span>
                   <label className="btn-secondary cursor-pointer px-3 py-1 text-xs">
                     {libUploading === "sticker"
@@ -763,7 +776,7 @@ export function OverlaySettings() {
                           className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
                           aria-label={t("obsRemove")}
                         >
-                          ✕
+                          <Icon name="x" className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
@@ -776,8 +789,9 @@ export function OverlaySettings() {
               {/* Image / GIF */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center gap-3">
-                  <span className="text-sm font-medium text-brand-900/80">
-                    🖼️ {t("obsImage")}
+                  <span className="flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                    <Icon name="image" />
+                    {t("obsImage")}
                   </span>
                   {config.imageUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -819,8 +833,9 @@ export function OverlaySettings() {
               {/* Video (takes priority) */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center gap-3">
-                  <span className="text-sm font-medium text-brand-900/80">
-                    🎬 {t("obsVideo")}
+                  <span className="flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                    <Icon name="video" />
+                    {t("obsVideo")}
                   </span>
                   {config.videoUrl && (
                     <video
@@ -863,8 +878,9 @@ export function OverlaySettings() {
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-brand-900/80">
-                      🔊 {t("obsTts")}
+                    <p className="flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                      <Icon name="mic" />
+                      {t("obsTts")}
                     </p>
                     <p className="mt-0.5 text-xs text-brand-900/55">
                       {t("obsTtsHint")}
@@ -907,8 +923,9 @@ export function OverlaySettings() {
             {/* On/off toggle */}
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-base font-bold text-brand-900">
-                  🎯 {t("obsGoalTitle")}
+                <p className="flex items-center gap-2 text-base font-bold text-brand-900">
+                  <Icon name="target" className="h-4 w-4" />
+                  {t("obsGoalTitle")}
                 </p>
                 <p className="mt-0.5 text-xs text-brand-900/55">
                   {t("obsGoalToggleHint")}
@@ -1049,8 +1066,9 @@ export function OverlaySettings() {
           <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-base font-bold text-brand-900">
-                  ⏱️ {t("obsTimerTitle")}
+                <p className="flex items-center gap-2 text-base font-bold text-brand-900">
+                  <Icon name="clock" className="h-4 w-4" />
+                  {t("obsTimerTitle")}
                 </p>
                 <p className="mt-0.5 text-xs text-brand-900/55">
                   {t("obsTimerToggleHint")}

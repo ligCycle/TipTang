@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/Icon";
 
 // Reusable color control: preset swatches + native picker + hex field.
 // Used by both the alert-card color and the goal-bar color so they match.
@@ -43,8 +44,9 @@ export function ColorField({
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-medium text-brand-900/80">
-          🎨 {label}
+        <span className="flex items-center gap-2 text-sm font-medium text-brand-900/80">
+          <Icon name="palette" />
+          {label}
         </span>
         {value ? (
           <button

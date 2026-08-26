@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Icon } from "@/components/Icon";
 
 export function ClearRejectedButton({ count }: { count: number }) {
   const t = useTranslations("dashboard");
@@ -28,9 +29,10 @@ export function ClearRejectedButton({ count }: { count: number }) {
     <button
       onClick={clearAll}
       disabled={loading}
-      className="rounded-full border border-rose-200 px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
     >
-      🗑 {t("clearRejected")}
+      <Icon name="trash" className="h-3.5 w-3.5" />
+      {t("clearRejected")}
     </button>
   );
 }

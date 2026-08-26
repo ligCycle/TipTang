@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ShopManager } from "@/components/ShopManager";
 import { SHOP_ENABLED } from "@/lib/features";
+import { Icon } from "@/components/Icon";
 
 export default async function ShopPage({
   params,
@@ -58,8 +59,9 @@ export default async function ShopPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold text-brand-900">
-          🛒 {t("dashboardTitle")}
+        <h1 className="flex items-center gap-2 text-2xl font-extrabold text-brand-900">
+          <Icon name="shopping-bag" className="h-6 w-6" />
+          {t("dashboardTitle")}
         </h1>
         <Link
           href={`/${locale}/dashboard`}

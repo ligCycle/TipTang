@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { formatBaht, formatDate } from "@/lib/format";
+import { Icon, type IconName } from "@/components/Icon";
 
 type Tip = {
   id: string;
@@ -26,6 +27,16 @@ const VERIFY_STYLES: Record<string, string> = {
   receiver: "bg-amber-100 text-amber-800",
   notslip: "bg-rose-100 text-rose-700",
   unreadable: "bg-gray-200 text-gray-600",
+};
+
+// The matching icon per verdict. The pill already carries the colour, so the
+// icon just inherits it.
+const VERIFY_ICONS: Record<string, IconName> = {
+  match: "check-circle",
+  amount: "alert-triangle",
+  receiver: "alert-triangle",
+  notslip: "alert-triangle",
+  unreadable: "help-circle",
 };
 
 const STATUS_STYLES: Record<Tip["status"], string> = {
@@ -51,15 +62,15 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
   const verifyLabel = (() => {
     switch (tip.verifyCode) {
       case "match":
-        return `✅ ${t("verifyMatch")}`;
+        return t("verifyMatch");
       case "amount":
-        return `⚠️ ${t("verifyAmount")}${tip.verifyDetail ? ` (${tip.verifyDetail})` : ""}`;
+        return `${t("verifyAmount")}${tip.verifyDetail ? ` (${tip.verifyDetail})` : ""}`;
       case "receiver":
-        return `⚠️ ${t("verifyReceiver")}`;
+        return t("verifyReceiver");
       case "notslip":
-        return `⚠️ ${t("verifyNotSlip")}`;
+        return t("verifyNotSlip");
       case "unreadable":
-        return `❓ ${t("verifyUnreadable")}`;
+        return t("verifyUnreadable");
       default:
         return "";
     }
@@ -110,16 +121,18 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           {tip.autoVerified ? (
             <span
               title="auto-verified"
-              className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700"
+              className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700"
             >
-              ⚡ auto
+              <Icon name="zap" className="h-3 w-3" />
+              auto
             </span>
           ) : (
             tip.verifyCode &&
             VERIFY_STYLES[tip.verifyCode] && (
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${VERIFY_STYLES[tip.verifyCode]}`}
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${VERIFY_STYLES[tip.verifyCode]}`}
               >
+                <Icon name={VERIFY_ICONS[tip.verifyCode]} className="h-3 w-3" />
                 {verifyLabel}
               </span>
             )

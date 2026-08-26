@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { signIn } from "next-auth/react";
+import { Icon } from "@/components/Icon";
 
 function GoogleIcon() {
   return (
@@ -42,7 +43,8 @@ export function ConnectedAccounts({
         </span>
         {googleConnected ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
-            ✓ {t("connected")}
+            <Icon name="check" className="h-3.5 w-3.5" />
+            {t("connected")}
           </span>
         ) : (
           <button

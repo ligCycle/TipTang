@@ -105,9 +105,9 @@ export async function sendTipNotificationEmail(opts: {
     opts;
   const who = supporterName || "ผู้ไม่ประสงค์ออกนาม";
   const statusTh = confirmed
-    ? "ยืนยันอัตโนมัติแล้ว ✅"
-    : "รอคุณยืนยันสลิป ⏳";
-  const subject = `💸 ได้รับทิป ${amount} จาก ${who}`;
+    ? "ยืนยันอัตโนมัติแล้ว"
+    : "รอคุณยืนยันสลิป";
+  const subject = `ได้รับทิป ${amount} จาก ${who}`;
   const lines = [
     `สวัสดี ${creatorName},`,
     ``,
