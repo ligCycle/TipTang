@@ -92,7 +92,7 @@ export default async function ProfilePage({
         isMessagePublic: true,
       },
       orderBy: { confirmedAt: "desc" },
-      take: 20,
+      take: 100,
       select: {
         id: true,
         supporterName: true,
@@ -208,6 +208,25 @@ export default async function ProfilePage({
   };
 
   const accentGradient = `linear-gradient(135deg, ${accent}, color-mix(in srgb, ${accent}, black 25%))`;
+
+  // How many recent supporters show before the list folds. Matches the
+  // leaderboard so the two sidebar lists have the same visual weight.
+  const RECENT_VISIBLE = 5;
+  const renderTip = (tip: (typeof tips)[number]) => (
+    <li key={tip.id} className="py-3">
+      <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1 truncate font-medium text-brand-800">
+          {tip.supporterName || t("namePlaceholder")}
+        </span>
+        <span className="shrink-0 text-sm font-semibold tabular-nums text-brand-700">
+          {formatBaht(Number(tip.amount), currencyLocale)}
+        </span>
+      </div>
+      {tip.message && (
+        <p className="mt-1 text-sm text-brand-900/70">{tip.message}</p>
+      )}
+    </li>
+  );
 
   return (
     <div
@@ -386,23 +405,34 @@ export default async function ProfilePage({
           {tips.length === 0 ? (
             <p className="py-2 text-sm text-brand-900/50">{t("noSupporters")}</p>
           ) : (
-            <ul className="divide-y divide-brand-900/10">
-              {tips.map((tip) => (
-                <li key={tip.id} className="py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="min-w-0 flex-1 truncate font-medium text-brand-800">
-                      {tip.supporterName || t("namePlaceholder")}
+            <>
+              <ul className="divide-y divide-brand-900/10">
+                {tips.slice(0, RECENT_VISIBLE).map(renderTip)}
+              </ul>
+              {/* The rest folds behind a native <details>: no JS, no state,
+                  works before hydration. Labels swap via group-open. */}
+              {tips.length > RECENT_VISIBLE && (
+                <details className="group">
+                  <summary className="flex cursor-pointer select-none list-none items-center gap-2 py-3 text-sm font-medium text-brand-700 hover:text-brand-900 [&::-webkit-details-marker]:hidden">
+                    {/* Rotate a wrapping span, not the <svg>: the individual
+                        `rotate` property is ignored on an svg root in
+                        some engines (seen in Chromium here; Safari too). */}
+                    <span className="inline-flex transition-transform group-open:rotate-180">
+                      <Icon name="chevron-down" />
                     </span>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-brand-700">
-                      {formatBaht(Number(tip.amount), currencyLocale)}
+                    <span className="group-open:hidden">
+                      {t("showMoreSupporters")}
                     </span>
-                  </div>
-                  {tip.message && (
-                    <p className="mt-1 text-sm text-brand-900/70">{tip.message}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
+                    <span className="hidden group-open:inline">
+                      {t("showLessSupporters")}
+                    </span>
+                  </summary>
+                  <ul className="divide-y divide-brand-900/10 border-t border-brand-900/10">
+                    {tips.slice(RECENT_VISIBLE).map(renderTip)}
+                  </ul>
+                </details>
+              )}
+            </>
           )}
         </section>
       </aside>

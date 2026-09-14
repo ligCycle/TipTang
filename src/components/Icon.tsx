@@ -22,6 +22,7 @@ export type IconName =
   | "book-open"
   | "check"
   | "check-circle"
+  | "chevron-down"
   | "clock"
   | "credit-card"
   | "download"
@@ -82,6 +83,7 @@ const paths: Record<IconName, ReactElement> = {
       <path d="m9 12 2 2 4-4" />
     </>
   ),
+  "chevron-down": <path d="m6 9 6 6 6-6" />,
   clock: (
     <>
       <circle cx="12" cy="12" r="10" />

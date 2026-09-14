@@ -122,6 +122,8 @@
     "topSupporters": "อันดับผู้สนับสนุน",
     "recentSupporters": "ผู้สนับสนุนล่าสุด",
     "noSupporters": "ยังไม่มีผู้สนับสนุน มาเป็นคนแรกกันเถอะ!",
+    "showMoreSupporters": "ดูเพิ่มเติม",
+    "showLessSupporters": "ซ่อน",
     "notConfigured": "ครีเอเตอร์ยังไม่ได้ตั้งค่า PromptPay",
     "changeAmount": "เปลี่ยนจำนวน",
     "quickAmount": "จำนวนยอดนิยม"

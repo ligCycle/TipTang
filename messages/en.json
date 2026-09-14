@@ -122,6 +122,8 @@
     "topSupporters": "Top supporters",
     "recentSupporters": "Recent supporters",
     "noSupporters": "No supporters yet — be the first!",
+    "showMoreSupporters": "Show more",
+    "showLessSupporters": "Show less",
     "notConfigured": "This creator hasn't set up PromptPay yet",
     "changeAmount": "Change amount",
     "quickAmount": "Popular amounts"
