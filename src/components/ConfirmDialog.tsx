@@ -67,7 +67,10 @@ export function ConfirmDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget && !busy) onCancel();
       }}
-      className="card w-[min(92vw,26rem)] rounded-2xl border-0 p-0 text-brand-900 backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+      // m-auto is what centres a modal <dialog>: the browser's own stylesheet
+      // sets it, but Tailwind's preflight zeroes every element's margin and
+      // silently undoes it, parking the box in the top-left corner.
+      className="card m-auto w-[min(92vw,26rem)] rounded-2xl border-0 p-0 text-brand-900 backdrop:bg-black/50 backdrop:backdrop-blur-sm"
     >
       <div className="p-6">
         <p className="text-base font-semibold leading-relaxed">{message}</p>
