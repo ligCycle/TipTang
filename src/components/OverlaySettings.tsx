@@ -7,6 +7,7 @@ import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { ALERT_STYLES } from "@/lib/alertStyles";
 import { Icon } from "@/components/Icon";
 import { formatDate } from "@/lib/format";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string };
@@ -68,6 +69,7 @@ export function OverlaySettings() {
   const [goalSaved, setGoalSaved] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
   const [resettingGoal, setResettingGoal] = useState(false);
+  const [goalResetOpen, setGoalResetOpen] = useState(false);
   const [goalRefresh, setGoalRefresh] = useState(0);
   const [libUploading, setLibUploading] = useState<"sound" | "sticker" | null>(
     null,
@@ -239,9 +241,9 @@ export function OverlaySettings() {
     }
   }
 
+  // Runs after the creator confirms in the dialog (it lands on stream within
+  // seconds, so the button itself only opens the dialog).
   async function resetGoal() {
-    // This shows on the live stream within seconds — make them mean it.
-    if (!window.confirm(t("obsGoalResetConfirm"))) return;
     setResettingGoal(true);
     try {
       const fd = new FormData();
@@ -254,6 +256,7 @@ export function OverlaySettings() {
       }
     } finally {
       setResettingGoal(false);
+      setGoalResetOpen(false);
     }
   }
 
@@ -1016,13 +1019,21 @@ export function OverlaySettings() {
                   {config.hasGoal && (
                     <button
                       type="button"
-                      onClick={resetGoal}
+                      onClick={() => setGoalResetOpen(true)}
                       disabled={resettingGoal || savingGoal}
                       className="btn-secondary mt-2 w-full py-2 text-sm"
                     >
                       {resettingGoal ? t("obsGoalResetting") : t("obsGoalReset")}
                     </button>
                   )}
+                  <ConfirmDialog
+                    open={goalResetOpen}
+                    message={t("obsGoalResetConfirm")}
+                    confirmLabel={t("obsGoalReset")}
+                    busy={resettingGoal}
+                    onConfirm={resetGoal}
+                    onCancel={() => setGoalResetOpen(false)}
+                  />
                   {config.goalStartedAt && (
                     <p className="mt-2 text-center text-xs text-brand-900/55">
                       {t("obsGoalSince", {
