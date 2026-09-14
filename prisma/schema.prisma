@@ -153,6 +153,11 @@ model User {
   goalAmount   Decimal? @db.Decimal(10, 2)
   // Whether the goal-bar OBS overlay is shown on stream (creator can toggle).
   goalOverlayEnabled Boolean @default(true)
+  // When the current goal round started ("start a new round" button). Only
+  // tips confirmed at/after this moment count toward the goal. Null = never
+  // reset, so every confirmed tip counts — the behaviour before this field
+  // existed, which keeps existing creators unaffected.
+  goalStartedAt DateTime?
   // Goal-bar color (hex); null = follow alertColor, then default brand pink.
   goalColor    String?
   // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
