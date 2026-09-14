@@ -103,6 +103,29 @@ body {
   cursor: not-allowed;
 }
 
+/* Destructive actions (delete). Same shape as .btn-primary, rose instead of
+   brand, so every "this can't be undone" button reads the same way. */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  background: var(--color-rose-600);
+  padding: 0.7rem 1.4rem;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 8px 20px -8px rgba(225, 29, 72, 0.6);
+  transition: background 0.15s, opacity 0.15s;
+}
+.btn-danger:hover {
+  background: var(--color-rose-700);
+}
+.btn-danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ===== Dark theme ===== */
 /* Invert the brand ramp (low = dark surfaces, high = light text) so every
    brand color utility adapts at once, keeping mid tones vivid. */
