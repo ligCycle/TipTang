@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
 import { Icon } from "@/components/Icon";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type Item = {
   id: string;
@@ -42,6 +43,8 @@ export function ShopManager({
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
+  // Item waiting for the creator to confirm deletion; null = dialog closed.
+  const [pendingArchive, setPendingArchive] = useState<Item | null>(null);
   const [type, setType] = useState<"DIGITAL" | "COMMISSION">("DIGITAL");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -111,10 +114,16 @@ export function ShopManager({
     patchItem(item.id, fd);
   }
   function archive(item: Item) {
-    if (!confirm(t("confirmDelete"))) return;
+    setPendingArchive(item);
+  }
+
+  // Runs after the creator confirms in the dialog.
+  function confirmArchive() {
+    if (!pendingArchive) return;
     const fd = new FormData();
     fd.set("intent", "archive");
-    patchItem(item.id, fd);
+    patchItem(pendingArchive.id, fd);
+    setPendingArchive(null);
   }
 
   async function orderAction(id: string, action: string) {
@@ -411,6 +420,14 @@ export function ShopManager({
           </form>
         </div>
       )}
+      <ConfirmDialog
+        open={pendingArchive !== null}
+        message={t("confirmDelete")}
+        confirmLabel={t("delete")}
+        danger
+        onConfirm={confirmArchive}
+        onCancel={() => setPendingArchive(null)}
+      />
     </div>
   );
 }
