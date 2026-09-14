@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { ALERT_STYLES } from "@/lib/alertStyles";
 import { Icon } from "@/components/Icon";
+import { formatDate } from "@/lib/format";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string };
@@ -22,6 +23,7 @@ type Config = {
   goalEnabled: boolean;
   goalTitle: string;
   goalAmount: string;
+  goalStartedAt: string | null; // ISO from the API; null = never reset
   goalColor: string | null;
   librarySounds: LibItem[];
   libraryStickers: LibItem[];
@@ -53,6 +55,8 @@ const FIELD: Record<Kind, keyof Config> = {
 
 export function OverlaySettings() {
   const t = useTranslations("dashboard");
+  const locale = useLocale();
+  const dateLocale = locale === "th" ? "th-TH" : "en-US";
   const [config, setConfig] = useState<Config | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -63,6 +67,7 @@ export function OverlaySettings() {
   const [goalAmount, setGoalAmount] = useState("");
   const [goalSaved, setGoalSaved] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
+  const [resettingGoal, setResettingGoal] = useState(false);
   const [goalRefresh, setGoalRefresh] = useState(0);
   const [libUploading, setLibUploading] = useState<"sound" | "sticker" | null>(
     null,
@@ -110,6 +115,7 @@ export function OverlaySettings() {
           goalEnabled: d.goalEnabled !== false,
           goalTitle: d.goalTitle ?? "",
           goalAmount: d.goalAmount ?? "",
+          goalStartedAt: d.goalStartedAt ?? null,
           goalColor: d.goalColor ?? null,
           librarySounds: d.librarySounds ?? [],
           libraryStickers: d.libraryStickers ?? [],
@@ -230,6 +236,24 @@ export function OverlaySettings() {
       }
     } finally {
       setSavingGoal(false);
+    }
+  }
+
+  async function resetGoal() {
+    // This shows on the live stream within seconds — make them mean it.
+    if (!window.confirm(t("obsGoalResetConfirm"))) return;
+    setResettingGoal(true);
+    try {
+      const fd = new FormData();
+      fd.set("kind", "goalReset");
+      const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && typeof d.goalStartedAt === "string") {
+        setConfig((c) => (c ? { ...c, goalStartedAt: d.goalStartedAt } : c));
+        setGoalRefresh((n) => n + 1); // reload the preview iframe, like saveGoal
+      }
+    } finally {
+      setResettingGoal(false);
     }
   }
 
@@ -989,6 +1013,23 @@ export function OverlaySettings() {
                         ? t("obsGoalSaved")
                         : t("obsGoalSave")}
                   </button>
+                  {config.hasGoal && (
+                    <button
+                      type="button"
+                      onClick={resetGoal}
+                      disabled={resettingGoal || savingGoal}
+                      className="btn-secondary mt-2 w-full py-2 text-sm"
+                    >
+                      {resettingGoal ? t("obsGoalResetting") : t("obsGoalReset")}
+                    </button>
+                  )}
+                  {config.goalStartedAt && (
+                    <p className="mt-2 text-center text-xs text-brand-900/55">
+                      {t("obsGoalSince", {
+                        date: formatDate(config.goalStartedAt, dateLocale),
+                      })}
+                    </p>
+                  )}
                 </div>
 
                 {/* Goal-bar color (defaults to the alert color) */}
