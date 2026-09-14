@@ -77,7 +77,7 @@ export function GoalOverlayClient({
           <div
             className="flex h-full items-center justify-end rounded-full pr-2 transition-all duration-700 ease-out"
             style={{
-              width: `${Math.max(goal.pct, 4)}%`,
+              width: `${Math.min(100, Math.max(goal.pct, 4))}%`,
               backgroundImage: `linear-gradient(to right, ${from}, ${to})`,
             }}
           >

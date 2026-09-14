@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { goalRaised, goalPercent } from "@/lib/goal";
 import { TipForm } from "@/components/TipForm";
 import { ShopCheckout } from "@/components/ShopCheckout";
 import { SHOP_ENABLED } from "@/lib/features";
@@ -70,6 +71,7 @@ export default async function ProfilePage({
       promptpayId: true,
       goalTitle: true,
       goalAmount: true,
+      goalStartedAt: true,
       socialLinks: true,
       profileColor: true,
     },
@@ -82,7 +84,7 @@ export default async function ProfilePage({
 
   const canTip = Boolean(creator.promptpayId && creator.promptpayId.length > 0);
 
-  const [tips, confirmedAgg, topGroups, shopItemsRaw] = await Promise.all([
+  const [tips, raised, topGroups, shopItemsRaw] = await Promise.all([
     prisma.tip.findMany({
       where: {
         creatorId: creator.id,
@@ -99,10 +101,9 @@ export default async function ProfilePage({
         confirmedAt: true,
       },
     }),
-    prisma.tip.aggregate({
-      where: { creatorId: creator.id, status: "CONFIRMED" },
-      _sum: { amount: true },
-    }),
+    // Goal bar: tips since the creator last started a new round (all-time
+    // when they never have). Not the same as the all-time total on purpose.
+    goalRaised(creator.id, creator.goalStartedAt),
     // Leaderboard: total per supporter (opted-in = isMessagePublic).
     // Grouped on a NORMALIZED key, not the raw name: supporters have no
     // account and retype their name on every tip, so "Skye" / "skye" /
@@ -187,9 +188,7 @@ export default async function ProfilePage({
 
   const socials = normalizeSocialLinks(creator.socialLinks);
   const goalAmount = creator.goalAmount ? Number(creator.goalAmount) : 0;
-  const raised = Number(confirmedAgg._sum.amount ?? 0);
-  const goalPct =
-    goalAmount > 0 ? Math.min(100, Math.round((raised / goalAmount) * 100)) : 0;
+  const goalPct = goalPercent(raised, goalAmount);
 
   const initial = creator.displayName.charAt(0).toUpperCase();
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
@@ -307,7 +306,7 @@ export default async function ProfilePage({
             <div
               className="h-full rounded-full transition-all"
               style={{
-                width: `${goalPct}%`,
+                width: `${Math.min(100, goalPct)}%`,
                 backgroundImage: `linear-gradient(to right, ${accent}, color-mix(in srgb, ${accent}, black 20%))`,
               }}
             />
