@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { goalRaised, goalPercent } from "@/lib/goal";
 
 // Polled by the OBS goal-bar overlay. Validates the secret key and returns the
 // creator's current fundraising goal + amount raised (confirmed tips).
@@ -21,6 +22,7 @@ export async function GET(
       overlayKey: true,
       goalTitle: true,
       goalAmount: true,
+      goalStartedAt: true,
       goalOverlayEnabled: true,
     },
   });
@@ -28,14 +30,9 @@ export async function GET(
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const agg = await prisma.tip.aggregate({
-    where: { creatorId: user.id, status: "CONFIRMED" },
-    _sum: { amount: true },
-  });
-
   const goal = user.goalAmount ? Number(user.goalAmount) : 0;
-  const raised = Number(agg._sum.amount ?? 0);
-  const pct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+  const raised = await goalRaised(user.id, user.goalStartedAt);
+  const pct = goalPercent(raised, goal);
 
   return NextResponse.json({
     enabled: user.goalOverlayEnabled,
