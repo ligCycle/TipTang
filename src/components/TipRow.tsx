@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { formatBaht, formatDate } from "@/lib/format";
 import { Icon, type IconName } from "@/components/Icon";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type Tip = {
   id: string;
@@ -50,6 +51,7 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
   const tp = useTranslations("profile");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
 
   const statusLabel = {
@@ -90,8 +92,8 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
     }
   }
 
+  // Runs after the creator confirms in the dialog.
   async function del() {
-    if (!window.confirm(t("deleteConfirm"))) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/tips/${tip.id}`, { method: "DELETE" });
@@ -101,8 +103,10 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
         return;
       }
       setLoading(false);
+      setDeleteOpen(false);
     } catch {
       setLoading(false);
+      setDeleteOpen(false);
     }
   }
 
@@ -151,13 +155,24 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
         </span>
         <div className="flex items-center gap-2">
           {tip.status !== "CONFIRMED" && (
-            <button
-              onClick={del}
-              disabled={loading}
-              className="rounded-full border border-rose-200 px-3 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
-            >
-              {t("delete")}
-            </button>
+            <>
+              <button
+                onClick={() => setDeleteOpen(true)}
+                disabled={loading}
+                className="rounded-full border border-rose-200 px-3 py-1 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+              >
+                {t("delete")}
+              </button>
+              <ConfirmDialog
+                open={deleteOpen}
+                message={t("deleteConfirm")}
+                confirmLabel={t("delete")}
+                danger
+                busy={loading}
+                onConfirm={del}
+                onCancel={() => setDeleteOpen(false)}
+              />
+            </>
           )}
           {tip.slipUrl && (
             <a
