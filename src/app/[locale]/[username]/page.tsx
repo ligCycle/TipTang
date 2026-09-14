@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { goalRaised, goalPercent } from "@/lib/goal";
+import { topSupporters as rankSupporters } from "@/lib/leaderboard";
 import { TipForm } from "@/components/TipForm";
 import { ShopCheckout } from "@/components/ShopCheckout";
 import { SHOP_ENABLED } from "@/lib/features";
@@ -84,7 +85,7 @@ export default async function ProfilePage({
 
   const canTip = Boolean(creator.promptpayId && creator.promptpayId.length > 0);
 
-  const [tips, raised, topGroups, shopItemsRaw] = await Promise.all([
+  const [tips, raised, topSupportersList, shopItemsRaw] = await Promise.all([
     prisma.tip.findMany({
       where: {
         creatorId: creator.id,
@@ -104,53 +105,9 @@ export default async function ProfilePage({
     // Goal bar: tips since the creator last started a new round (all-time
     // when they never have). Not the same as the all-time total on purpose.
     goalRaised(creator.id, creator.goalStartedAt),
-    // Leaderboard: total per supporter (opted-in = isMessagePublic).
-    // Grouped on a NORMALIZED key, not the raw name: supporters have no
-    // account and retype their name on every tip, so "Skye" / "skye" /
-    // "Skye " are one person. We fold case + whitespace + invisible chars
-    // ONLY. We deliberately do NOT fold Thai tone marks — they change the
-    // word (ขาว != ข้าว), so folding them would credit one donor's money
-    // to another. Prisma groupBy can only group by a raw column, so this
-    // has to be raw SQL.
-    // NOTE the DOUBLE backslashes: this is a tagged template, so JS eats
-    // one layer first. Postgres receives \u200B / \s and reads them as
-    // regex escapes. A single backslash would silently reach Postgres as
-    // a bare "s" and collapse the letter s instead of whitespace.
-    prisma.$queryRaw<{ display: string; total: string }[]>`
-      SELECT
-        -- Show the spelling they used most recently, minus any stray
-        -- leading combining mark (same reasoning as the GROUP BY below):
-        -- it is a typing slip that renders as a floating mark, so there
-        -- is no reason to print it back at them.
-        regexp_replace(
-          (array_agg("supporterName"
-             ORDER BY COALESCE("confirmedAt", "createdAt") DESC))[1],
-          '^[\\u0E31\\u0E34-\\u0E3A\\u0E47-\\u0E4E]+', '') AS display,
-        SUM("amount")::text AS total
-      FROM "Tip"
-      WHERE "creatorId" = ${creator.id}
-        AND "status" = 'CONFIRMED'
-        AND "isMessagePublic" = true
-        AND btrim("supporterName") <> ''
-      GROUP BY lower(regexp_replace(
-        btrim(regexp_replace(
-          regexp_replace(normalize("supporterName", NFC),
-                         '\\u200B|\\u200C|\\u200D|\\uFEFF', '', 'g'),
-          '\\s+', ' ', 'g')),
-        -- Drop Thai combining marks stranded at the START of the name.
-        -- A tone mark or above/below vowel must sit ON a consonant; one in
-        -- position 0 has nothing to combine with, so it is always a typo
-        -- artifact and dropping it cannot change the word. (This is NOT the
-        -- same as folding tone marks generally, which we refuse to do.)
-        -- Leading vowels เ แ โ ใ ไ (U+0E40-44) are real and stay.
-        '^[\\u0E31\\u0E34-\\u0E3A\\u0E47-\\u0E4E]+', ''))
-      -- Tie-break so equal totals keep a stable order across renders
-      -- (whoever reached that total first ranks higher). Without this the
-      -- leaderboard reshuffles on every refresh.
-      ORDER BY SUM("amount") DESC,
-               MIN(COALESCE("confirmedAt", "createdAt")) ASC
-      LIMIT 5
-    `,
+    // Leaderboard: opted-in supporters only (isMessagePublic). See
+    // src/lib/leaderboard.ts for why the grouping is done in SQL.
+    rankSupporters(creator.id, { limit: 5, publicOnly: true }),
     // Shop items (only when the creator can receive payment + shop is enabled).
     canTip && SHOP_ENABLED
       ? prisma.shopItem.findMany({
@@ -178,13 +135,7 @@ export default async function ProfilePage({
     imageUrl: s.imageUrl,
   }));
 
-  const topSupporters = topGroups
-    .map((g) => ({ name: g.display, total: Number(g.total) }))
-    // A name made ONLY of stray combining marks strips down to nothing.
-    // That supporter is indistinguishable from anonymous, and the query
-    // already keeps anonymous tips off the leaderboard — so drop it here
-    // too rather than rendering a blank row.
-    .filter((s) => s.name !== "");
+  const topSupporters = topSupportersList;
 
   const socials = normalizeSocialLinks(creator.socialLinks);
   const goalAmount = creator.goalAmount ? Number(creator.goalAmount) : 0;
