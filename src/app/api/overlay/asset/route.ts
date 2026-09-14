@@ -87,6 +87,20 @@ export async function POST(req: Request) {
     });
   }
 
+  // "Start a new round": the goal bar counts only tips confirmed from this
+  // moment on. Nothing is deleted or edited — old tips stay in the list, the
+  // leaderboard, and the totals; only where the goal bar starts counting moves.
+  // No revalidatePath here on purpose: the profile page is dynamic and the
+  // on-stream bar polls /api/overlay/[username]/goal every 5s.
+  if (kind === "goalReset") {
+    const startedAt = new Date();
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { goalStartedAt: startedAt },
+    });
+    return NextResponse.json({ ok: true, goalStartedAt: startedAt.toISOString() });
+  }
+
   // Goal-bar overlay on/off toggle.
   if (kind === "goalToggle") {
     const enabled = form?.get("enabled") === "1";
