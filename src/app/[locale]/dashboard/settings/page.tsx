@@ -3,7 +3,6 @@ import { setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/SettingsForm";
-import { ConnectedAccounts } from "@/components/ConnectedAccounts";
 import { normalizeSocialLinks } from "@/lib/socials";
 
 export default async function SettingsPage({
@@ -41,7 +40,7 @@ export default async function SettingsPage({
   );
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="mx-auto max-w-xl">
       <SettingsForm
         initial={{
           displayName: user.displayName,
@@ -54,11 +53,11 @@ export default async function SettingsPage({
           socialLinks: normalizeSocialLinks(user.socialLinks),
           profileColor: user.profileColor ?? "",
         }}
-      />
-      <ConnectedAccounts
-        googleConnected={Boolean(user.googleId)}
-        accountEmail={user.email}
-        googleAuthEnabled={googleAuthEnabled}
+        account={{
+          googleConnected: Boolean(user.googleId),
+          accountEmail: user.email,
+          googleAuthEnabled,
+        }}
       />
     </div>
   );

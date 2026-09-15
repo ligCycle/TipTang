@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ImageCropper } from "./ImageCropper";
 import { ColorField } from "./ColorField";
+import { ConnectedAccounts } from "./ConnectedAccounts";
 import { SOCIAL_PLATFORMS, type SocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
-import { Icon } from "@/components/Icon";
+import { Icon, type IconName } from "@/components/Icon";
 
 type Initial = {
   displayName: string;
@@ -22,14 +23,75 @@ type Initial = {
   profileColor: string;
 };
 
+type Account = {
+  googleConnected: boolean;
+  accountEmail: string;
+  googleAuthEnabled: boolean;
+};
+
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
-export function SettingsForm({ initial }: { initial: Initial }) {
+// Every input/textarea gets scroll-mb-24 so that when a phone keyboard
+// opens and the browser scrolls the focused field into view, it leaves
+// room underneath for the sticky save bar instead of hiding the field.
+const inputClass = "input scroll-mb-24";
+const labelClass = "mb-1 block text-sm font-medium text-brand-900/80";
+const hintClass = "mt-1 block text-xs text-brand-900/50";
+
+/**
+ * The fields the Save button actually sends, in a FIXED key order, so two
+ * snapshots can be compared as strings. Images are deliberately left out:
+ * they upload and persist on their own, so they never count as unsaved.
+ */
+function snapshot(f: Initial): string {
+  return JSON.stringify({
+    displayName: f.displayName,
+    username: f.username,
+    bio: f.bio,
+    promptpayId: f.promptpayId,
+    autoConfirmTips: f.autoConfirmTips,
+    profileColor: f.profileColor,
+    socialLinks: SOCIAL_PLATFORMS.map((p) => f.socialLinks[p.key] ?? ""),
+  });
+}
+
+function Section({
+  icon,
+  title,
+  hint,
+  children,
+}: {
+  icon: IconName;
+  title: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="py-6 first:pt-0">
+      <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-900/60">
+        <Icon name={icon} />
+        {title}
+      </h2>
+      {hint && <p className="mt-1 text-sm text-brand-900/60">{hint}</p>}
+      <div className="mt-4 space-y-4">{children}</div>
+    </section>
+  );
+}
+
+export function SettingsForm({
+  initial,
+  account,
+}: {
+  initial: Initial;
+  account: Account;
+}) {
   const t = useTranslations("settings");
   const tc = useTranslations("common");
   const router = useRouter();
   const [form, setForm] = useState(initial);
+  // What the database currently holds. Updated after every successful save.
+  const [savedForm, setSavedForm] = useState(initial);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
     "idle",
   );
@@ -39,6 +101,20 @@ export function SettingsForm({ initial }: { initial: Initial }) {
     kind: "avatar" | "cover";
     file: File;
   } | null>(null);
+
+  const dirty = snapshot(form) !== snapshot(savedForm);
+
+  // Warn on tab close / reload while there are unsaved edits. This does
+  // NOT fire for in-app <Link> navigation — the App Router has no hook for
+  // that — which is why the save bar stays visible instead.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   // Pick a file -> validate -> open the cropper (upload happens after cropping).
   function onPick(
@@ -103,6 +179,18 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         socialLinks: { ...f.socialLinks, [key]: e.target.value },
       }));
 
+  // Put the text fields back to what is saved; keep any image uploaded
+  // since (it is already in the DB).
+  function discard() {
+    setForm((f) => ({
+      ...savedForm,
+      avatarUrl: f.avatarUrl,
+      coverUrl: f.coverUrl,
+    }));
+    setError(null);
+    setStatus("idle");
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("saving");
@@ -123,6 +211,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         setStatus("error");
         return;
       }
+      setSavedForm(form);
       setStatus("saved");
       router.refresh();
       setTimeout(() => setStatus("idle"), 1500);
@@ -131,8 +220,10 @@ export function SettingsForm({ initial }: { initial: Initial }) {
     }
   }
 
+  const showBar = dirty || status !== "idle";
+
   return (
-    <div className="card rounded-3xl p-8">
+    <div>
       {cropping && (
         <ImageCropper
           file={cropping.file}
@@ -142,124 +233,114 @@ export function SettingsForm({ initial }: { initial: Initial }) {
           onCropped={(blob) => doUpload(cropping.kind, blob)}
         />
       )}
-      <h1 className="mb-6 text-2xl font-bold text-brand-900">{t("title")}</h1>
+      <h1 className="mb-6 text-2xl font-extrabold text-brand-900">{t("title")}</h1>
 
-      {/* Cover + avatar upload */}
-      <div className="mb-6">
-        <span className="mb-1 block text-sm font-medium text-brand-900/80">
-          {t("cover")}
-        </span>
-        <label className="group relative block h-32 cursor-pointer overflow-hidden rounded-2xl border border-brand-200 bg-brand-100">
-          {form.coverUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={form.coverUrl}
-              alt="cover"
-              className="h-full w-full object-cover"
-            />
-          )}
-          <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-sm font-semibold text-white opacity-0 transition group-hover:opacity-100">
-            {uploading === "cover" ? t("uploading") : t("changeImage")}
-          </span>
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(e) => onPick("cover", e)}
-            className="hidden"
-          />
-        </label>
-
-        <div className="-mt-8 ml-4 flex items-end gap-3">
-          <label className="group relative block h-20 w-20 cursor-pointer overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-brand-400 to-brand-600 shadow">
-            {form.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={form.avatarUrl}
-                alt="avatar"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
-                {form.displayName.charAt(0).toUpperCase()}
-              </span>
-            )}
-            <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
-              {uploading === "avatar" ? (
-                "..."
-              ) : (
-                <Icon name="pencil" className="h-3.5 w-3.5" />
+      <form onSubmit={onSubmit} className="divide-y divide-brand-900/10">
+        <Section icon="user" title={t("sectionProfile")}>
+          {/* Cover + avatar upload — persist immediately, not via Save */}
+          <div>
+            <span className={labelClass}>{t("cover")}</span>
+            <label className="group relative block h-32 cursor-pointer overflow-hidden rounded-2xl border border-brand-200 bg-brand-100">
+              {form.coverUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={form.coverUrl}
+                  alt="cover"
+                  className="h-full w-full object-cover"
+                />
               )}
-            </span>
+              <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-sm font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                {uploading === "cover" ? t("uploading") : t("changeImage")}
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => onPick("cover", e)}
+                className="hidden"
+              />
+            </label>
+
+            <div className="-mt-8 ml-4 flex items-end gap-3">
+              <label className="group relative block h-20 w-20 cursor-pointer overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-brand-400 to-brand-600 shadow">
+                {form.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={form.avatarUrl}
+                    alt="avatar"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
+                    {form.displayName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                  {uploading === "avatar" ? (
+                    "..."
+                  ) : (
+                    <Icon name="pencil" className="h-3.5 w-3.5" />
+                  )}
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => onPick("avatar", e)}
+                  className="hidden"
+                />
+              </label>
+              <span className="pb-1 text-xs text-brand-900/50">
+                {t("avatar")} · {t("imageHint")}
+              </span>
+            </div>
+          </div>
+
+          <label className="block">
+            <span className={labelClass}>{t("displayName")}</span>
             <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(e) => onPick("avatar", e)}
-              className="hidden"
+              required
+              value={form.displayName}
+              onChange={update("displayName")}
+              className={inputClass}
             />
           </label>
-          <span className="pb-1 text-xs text-brand-900/50">
-            {t("avatar")} · {t("imageHint")}
-          </span>
-        </div>
-      </div>
 
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-brand-900/80">
-            {t("displayName")}
-          </span>
-          <input
-            required
-            value={form.displayName}
-            onChange={update("displayName")}
-            className="input"
-          />
-        </label>
+          <label className="block">
+            <span className={labelClass}>{t("username")}</span>
+            <input
+              required
+              value={form.username}
+              onChange={updateUsername}
+              minLength={3}
+              maxLength={30}
+              className={inputClass}
+            />
+          </label>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-brand-900/80">
-            {t("username")}
-          </span>
-          <input
-            required
-            value={form.username}
-            onChange={updateUsername}
-            minLength={3}
-            maxLength={30}
-            className="input"
-          />
-        </label>
+          <label className="block">
+            <span className={labelClass}>{t("bio")}</span>
+            <textarea
+              value={form.bio}
+              onChange={update("bio")}
+              placeholder={t("bioPlaceholder")}
+              maxLength={300}
+              rows={3}
+              className={`${inputClass} resize-none`}
+            />
+          </label>
+        </Section>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-brand-900/80">
-            {t("bio")}
-          </span>
-          <textarea
-            value={form.bio}
-            onChange={update("bio")}
-            placeholder={t("bioPlaceholder")}
-            maxLength={300}
-            rows={3}
-            className="input resize-none"
-          />
-        </label>
+        <Section icon="credit-card" title={t("sectionPayment")}>
+          <label className="block">
+            <span className={labelClass}>{t("promptpayId")}</span>
+            <input
+              value={form.promptpayId}
+              onChange={update("promptpayId")}
+              placeholder="0812345678"
+              className={inputClass}
+            />
+            <span className={hintClass}>{t("promptpayHint")}</span>
+          </label>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-brand-900/80">
-            {t("promptpayId")}
-          </span>
-          <input
-            value={form.promptpayId}
-            onChange={update("promptpayId")}
-            placeholder="0812345678"
-            className="input"
-          />
-          <span className="mt-1 block text-xs text-brand-900/50">
-            {t("promptpayHint")}
-          </span>
-        </label>
-
-        <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
           <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
@@ -278,77 +359,107 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               </span>
             </span>
           </label>
-        </div>
+        </Section>
 
-        {/* Profile theme color */}
-        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-          <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-900/80">
-            <Icon name="palette" />
-            {t("profileColorSection")}
-          </p>
-          <ColorField
-            value={form.profileColor || null}
-            fallback={DEFAULT_COLOR}
-            presets={PRESET_COLORS}
-            label={t("profileColor")}
-            codeLabel={t("profileColorCode")}
-            resetLabel={t("profileColorReset")}
-            defaultLabel={t("profileColorDefault")}
-            onSave={(hex) => setForm((f) => ({ ...f, profileColor: hex }))}
-            onReset={() => setForm((f) => ({ ...f, profileColor: "" }))}
-          />
-          <p className="mt-2 text-xs text-brand-900/55">
-            {t("profileColorHint")}
-          </p>
-        </div>
-
-        {/* Social links */}
-        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
-          <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-900/80">
-            <Icon name="link" />
-            {t("socialSection")}
-          </p>
-          <div className="space-y-2">
-            {SOCIAL_PLATFORMS.map((p) => (
-              <label key={p.key} className="flex items-center gap-2">
-                <span
-                  className="flex w-24 shrink-0 items-center gap-1.5 text-sm text-brand-900/70"
-                  title={p.label}
-                >
-                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded bg-white ring-1 ring-black/5">
-                    <SocialIcon platform={p.key} className="h-3.5 w-3.5" />
-                  </span>
-                  {p.label}
-                </span>
-                <input
-                  type="url"
-                  inputMode="url"
-                  value={form.socialLinks[p.key] ?? ""}
-                  onChange={updateSocial(p.key)}
-                  placeholder={p.placeholder}
-                  className="input flex-1 text-sm"
-                />
-              </label>
-            ))}
+        <Section icon="palette" title={t("sectionDonate")}>
+          <div>
+            <p className={labelClass}>{t("profileColorSection")}</p>
+            <ColorField
+              value={form.profileColor || null}
+              fallback={DEFAULT_COLOR}
+              presets={PRESET_COLORS}
+              label={t("profileColor")}
+              codeLabel={t("profileColorCode")}
+              resetLabel={t("profileColorReset")}
+              defaultLabel={t("profileColorDefault")}
+              onSave={(hex) => setForm((f) => ({ ...f, profileColor: hex }))}
+              onReset={() => setForm((f) => ({ ...f, profileColor: "" }))}
+            />
+            <span className={hintClass}>{t("profileColorHint")}</span>
           </div>
-          <span className="mt-2 block text-xs text-brand-900/50">
-            {t("socialHint")}
-          </span>
-        </div>
 
-        {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+          <div>
+            <p className={labelClass}>{t("socialSection")}</p>
+            <div className="space-y-2">
+              {SOCIAL_PLATFORMS.map((p) => (
+                <label key={p.key} className="flex items-center gap-2">
+                  <span
+                    className="flex w-24 shrink-0 items-center gap-1.5 text-sm text-brand-900/70"
+                    title={p.label}
+                  >
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded bg-white ring-1 ring-black/5">
+                      <SocialIcon platform={p.key} className="h-3.5 w-3.5" />
+                    </span>
+                    {p.label}
+                  </span>
+                  <input
+                    type="url"
+                    inputMode="url"
+                    value={form.socialLinks[p.key] ?? ""}
+                    onChange={updateSocial(p.key)}
+                    placeholder={p.placeholder}
+                    className={`${inputClass} flex-1 text-sm`}
+                  />
+                </label>
+              ))}
+            </div>
+            <span className={hintClass}>{t("socialHint")}</span>
+          </div>
+        </Section>
 
-        <button
-          type="submit"
-          disabled={status === "saving"}
-          className="btn-primary w-full"
-        >
-          {status === "saving"
-            ? tc("saving")
-            : status === "saved"
-              ? t("saved")
-              : tc("save")}
-        </button>
+        {account.googleAuthEnabled && (
+          <Section
+            icon="link"
+            title={t("sectionAccount")}
+            hint={t("connectedAccountsHint")}
+          >
+            <ConnectedAccounts
+              googleConnected={account.googleConnected}
+              accountEmail={account.accountEmail}
+              googleAuthEnabled={account.googleAuthEnabled}
+            />
+          </Section>
+        )}
+
+        {/* Sticky save bar — last child of the form so it floats at the
+            bottom of the viewport while scrolling and settles into place
+            at the end. Only rendered while there is something to say. */}
+        {showBar && (
+          <div
+            role="status"
+            className="card sticky bottom-4 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-3 shadow-lg"
+          >
+            <span
+              className={`text-sm font-medium ${
+                error ? "text-red-600" : "text-brand-900/80"
+              }`}
+            >
+              {error
+                ? error
+                : status === "saved"
+                  ? t("saved")
+                  : t("unsavedChanges")}
+            </span>
+            <div className="flex gap-2">
+              {status !== "saving" && status !== "saved" && (
+                <button
+                  type="button"
+                  onClick={discard}
+                  className="btn-secondary px-4 py-2 text-sm"
+                >
+                  {t("discard")}
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={!dirty || status === "saving"}
+                className="btn-primary px-4 py-2 text-sm"
+              >
+                {status === "saving" ? tc("saving") : tc("save")}
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );
