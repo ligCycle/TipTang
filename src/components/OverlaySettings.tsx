@@ -59,8 +59,8 @@ export function OverlaySettings() {
   const locale = useLocale();
   const dateLocale = locale === "th" ? "th-TH" : "en-US";
   const [config, setConfig] = useState<Config | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Starts true: the config is fetched as soon as the page mounts.
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<"alert" | "goal" | "timer" | null>(null);
   const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,8 +98,7 @@ export function OverlaySettings() {
     return () => clearInterval(iv);
   }, []);
 
-  async function reveal() {
-    setLoading(true);
+  async function load() {
     try {
       const res = await fetch("/api/overlay/setup", { method: "POST" });
       const d = await res.json();
@@ -147,6 +146,13 @@ export function OverlaySettings() {
       setLoading(false);
     }
   }
+
+  // Load the overlay config on mount. Only async callbacks set state here
+  // (no synchronous setState inside the effect), which is why `loading`
+  // starts out true instead of being flipped on at the top of load().
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function copy(text: string, which: "alert" | "goal" | "timer") {
     try {
@@ -475,36 +481,17 @@ export function OverlaySettings() {
   };
 
   return (
-    <div className="card rounded-2xl p-5">
-      <button
-        type="button"
-        onClick={() => setCollapsed((v) => !v)}
-        aria-expanded={!collapsed}
-        className="flex w-full items-center justify-between gap-3 text-left"
-      >
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-900">
-            <Icon name="monitor" className="h-5 w-5" />
-            {t("obsTitle")}
-          </h2>
-          {!collapsed && (
-            <p className="mt-1 text-sm text-brand-900/65">{t("obsDesc")}</p>
-          )}
-        </div>
-        <span
-          className={`shrink-0 text-xl text-brand-900/45 transition-transform ${
-            collapsed ? "" : "rotate-180"
-          }`}
-          aria-hidden
-        >
-          ⌄
-        </span>
-      </button>
+    <div>
+      <h1 className="flex items-center gap-2 text-2xl font-extrabold text-brand-900">
+        <Icon name="monitor" className="h-6 w-6" />
+        {t("obsTitle")}
+      </h1>
+      <p className="mt-1 text-sm text-brand-900/65">{t("obsDesc")}</p>
 
-      {collapsed ? null : !config ? (
-        <button onClick={reveal} disabled={loading} className="btn-secondary mt-4">
-          {loading ? "…" : t("obsReveal")}
-        </button>
+      {!config ? (
+        <p className="mt-6 text-sm text-brand-900/60" aria-live="polite">
+          {loading ? t("processing") : t("obsLoadFailed")}
+        </p>
       ) : (
         <div className="mt-4 space-y-6">
           {/* ===== Alert card ===== */}

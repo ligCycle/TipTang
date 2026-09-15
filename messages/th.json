@@ -182,7 +182,7 @@
     "obsDesc": "เอา URL ไปใส่เป็น Browser Source ใน OBS เพื่อโชว์ทิปบนจอไลฟ์",
     "obsAlertSection": "การ์ดแจ้งเตือน — เด้งตอนมีทิป",
     "obsAlertSectionDesc": "การ์ดที่เด้งขึ้นมาไม่กี่วินาทีทุกครั้งที่คุณยืนยันทิป",
-    "obsReveal": "แสดง URL overlay",
+    "obsLoadFailed": "โหลดการตั้งค่าไม่สำเร็จ ลองรีเฟรชหน้า",
     "obsUrlLabel": "URL overlay (เก็บเป็นความลับ อย่าโชว์บนไลฟ์)",
     "obsPreview": "ทดสอบ/ดูตัวอย่าง",
     "obsHint": "OBS → Sources → + → Browser → วาง URL → กว้าง 800 สูง 300 (พื้นหลังโปร่งใสอัตโนมัติ)",
