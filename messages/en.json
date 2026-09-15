@@ -320,6 +320,11 @@
     "profileColorDefault": "default (pink)",
     "profileColorHint": "Colors your profile page (buttons, goal bar, header). Pick a darker tone so the white text on buttons stays readable."
   },
+  "notFound": {
+    "title": "Page not found",
+    "desc": "The link may be mistyped, or the creator changed their link name.",
+    "home": "Back to home"
+  },
   "errors": {
     "tooLarge": "File too large (max 5MB)",
     "badType": "Only images are allowed (JPG, PNG, WebP)",
