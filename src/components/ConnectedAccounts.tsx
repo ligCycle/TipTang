@@ -15,7 +15,8 @@ function GoogleIcon() {
   );
 }
 
-/** Settings section: shows Google link status + a Connect button. */
+/** Google link status + a Connect button. The settings page supplies the
+ *  section heading around it. */
 export function ConnectedAccounts({
   googleConnected,
   accountEmail,
@@ -30,13 +31,7 @@ export function ConnectedAccounts({
   if (!googleAuthEnabled) return null;
 
   return (
-    <div className="card mt-6 rounded-3xl p-6">
-      <h2 className="mb-1 text-lg font-bold text-brand-900">
-        {t("connectedAccounts")}
-      </h2>
-      <p className="mb-4 text-sm text-brand-900/60">
-        {t("connectedAccountsHint")}
-      </p>
+    <div>
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-brand-100 bg-brand-50/40 p-3">
         <span className="flex items-center gap-3 font-medium text-brand-900">
           <GoogleIcon /> Google
