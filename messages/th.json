@@ -120,6 +120,7 @@
     "timerReduce": "ลดเวลา",
     "timerNone": "แค่โดเนท",
     "timerRateHint": "ทุก {addBaht} บาท = +{addMin} นาที · ทุก {reduceBaht} บาท = −{reduceMin} นาที (ลดได้เมื่อโดเนทตั้งแต่ {min} บาท)",
+    "timerRateHintAddOnly": "ตอนนี้กำลัง Subathon — ทุก {addBaht} บาท = เพิ่มเวลาไลฟ์ {addMin} นาที",
     "timerReduceMin": "ลดเวลาต้องโดเนทอย่างน้อย {min} บาท",
     "generateQr": "สร้าง QR พร้อมเพย์",
     "generating": "กำลังสร้าง QR...",

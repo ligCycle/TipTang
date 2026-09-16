@@ -23,8 +23,10 @@ export function TipForm({
   username: string;
   creatorName: string;
   accentColor?: string;
-  /** Present only when the creator lets supporters pick add/reduce/none. */
+  /** Present whenever the creator runs a subathon timer; `reduceEnabled`
+   *  adds the sabotage option. */
   timerChoice?: {
+    reduceEnabled: boolean;
     minAmount: number;
     addBaht: number;
     addMin: number;
@@ -241,11 +243,17 @@ export function TipForm({
               <legend className="mb-2 block text-sm font-medium text-brand-900/80">
                 {t("timerChoiceLabel")}
               </legend>
-              <div className="grid grid-cols-3 gap-2">
+              <div
+                className={`grid gap-2 ${
+                  timerChoice.reduceEnabled ? "grid-cols-3" : "grid-cols-2"
+                }`}
+              >
                 {(
                   [
                     ["ADD", t("timerAdd")],
-                    ["REDUCE", t("timerReduce")],
+                    ...(timerChoice.reduceEnabled
+                      ? [["REDUCE", t("timerReduce")]]
+                      : []),
                     ["NONE", t("timerNone")],
                   ] as [TimerEffect, string][]
                 ).map(([value, label]) => (
@@ -266,13 +274,18 @@ export function TipForm({
                 ))}
               </div>
               <p className="mt-2 text-xs text-brand-900/55">
-                {t("timerRateHint", {
-                  addBaht: timerChoice.addBaht,
-                  addMin: timerChoice.addMin,
-                  reduceBaht: timerChoice.reduceBaht,
-                  reduceMin: timerChoice.reduceMin,
-                  min: timerChoice.minAmount,
-                })}
+                {timerChoice.reduceEnabled
+                  ? t("timerRateHint", {
+                      addBaht: timerChoice.addBaht,
+                      addMin: timerChoice.addMin,
+                      reduceBaht: timerChoice.reduceBaht,
+                      reduceMin: timerChoice.reduceMin,
+                      min: timerChoice.minAmount,
+                    })
+                  : t("timerRateHintAddOnly", {
+                      addBaht: timerChoice.addBaht,
+                      addMin: timerChoice.addMin,
+                    })}
               </p>
               {reduceTooSmall && (
                 <p className="mt-1 text-sm font-medium text-red-600">

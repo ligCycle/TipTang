@@ -120,6 +120,7 @@
     "timerReduce": "Reduce time",
     "timerNone": "Just donate",
     "timerRateHint": "Every {addBaht} THB = +{addMin} min · every {reduceBaht} THB = −{reduceMin} min (reduce needs at least {min} THB)",
+    "timerRateHintAddOnly": "Subathon is live — every {addBaht} THB adds {addMin} min to the stream",
     "timerReduceMin": "Reducing time needs a tip of at least {min} THB",
     "generateQr": "Generate PromptPay QR",
     "generating": "Generating QR...",

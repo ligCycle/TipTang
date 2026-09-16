@@ -86,18 +86,19 @@ export default async function ProfilePage({
   });
   if (!creator) notFound();
 
-  // Subathon sabotage: only offer the add/reduce/none choice when the creator
-  // runs a timer AND has opened up reducing. Rates are passed for the hint.
-  const timerChoice =
-    creator.timerEnabled && creator.timerReduceEnabled
-      ? {
+  // Subathon: whenever the creator runs a timer, tell the supporter what the
+  // tip does to it (add / just donate). "Reduce" joins only when the creator
+  // has opened up sabotage. Rates are passed for the hint.
+  const timerChoice = creator.timerEnabled
+    ? {
+          reduceEnabled: creator.timerReduceEnabled,
           minAmount: creator.timerReduceMinAmount,
           addBaht: creator.timerBahtPerUnit,
           addMin: Math.round(creator.timerSecondsPerUnit / 60),
           reduceBaht: creator.timerReduceBahtPerUnit,
           reduceMin: Math.round(creator.timerReduceSecondsPerUnit / 60),
-        }
-      : null;
+      }
+    : null;
 
   // Creator-chosen accent color for the profile (null = default brand pink).
   const accent = creator.profileColor || "#ec4899";
