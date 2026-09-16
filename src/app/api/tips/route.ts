@@ -5,7 +5,9 @@ import { sendTipNotificationEmail } from "@/lib/email";
 import { formatBaht } from "@/lib/format";
 import { tipSchema, usernameSchema } from "@/lib/validators";
 import {
-  uploadImage,
+  uploadSlip,
+  deleteSlip,
+  deleteFile,
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_BYTES,
 } from "@/lib/storage";
@@ -134,7 +136,8 @@ export async function POST(req: Request) {
     confirmedAt = new Date();
   }
 
-  const slipUrl = await uploadImage(slip, "slips");
+  // Private bucket — the dashboard reaches it via /api/tips/[id]/slip only.
+  const slipKey = await uploadSlip(slip);
 
   const tip = await prisma.tip.create({
     data: {
@@ -143,7 +146,7 @@ export async function POST(req: Request) {
       message: cleanMessage,
       amount: parsed.data.amount,
       isMessagePublic,
-      slipUrl,
+      slipKey,
       status,
       transRef,
       autoVerified,
@@ -194,8 +197,18 @@ export async function DELETE() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const result = await prisma.tip.deleteMany({
-    where: { creatorId: session.user.id, status: "REJECTED" },
+  const where = { creatorId: session.user.id, status: "REJECTED" as const };
+  // Collect the slip files first so they can be removed after the rows are.
+  const doomed = await prisma.tip.findMany({
+    where,
+    select: { slipKey: true, slipUrl: true },
+  });
+  const result = await prisma.tip.deleteMany({ where });
+  after(async () => {
+    for (const t of doomed) {
+      await deleteSlip(t.slipKey);
+      await deleteFile(t.slipUrl);
+    }
   });
   return NextResponse.json({ ok: true, count: result.count });
 }

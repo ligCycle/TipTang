@@ -7,6 +7,9 @@ import { randomUUID } from "crypto";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.SUPABASE_BUCKET || "uploads";
+// Donation slips live in a separate PRIVATE bucket: they show bank details of
+// both parties, so they are only ever read through short-lived signed URLs.
+const SLIP_BUCKET = process.env.SUPABASE_SLIP_BUCKET || "slips";
 
 // Default to Supabase when configured; fall back to local disk for offline dev.
 const DRIVER =
@@ -33,6 +36,17 @@ export const MAX_VIDEO_BYTES = 10 * 1024 * 1024; // 10 MB
 export const MAX_LIBRARY_AUDIO_BYTES = 1 * 1024 * 1024; // 1 MB
 export const MAX_LIBRARY_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
 export const MAX_LIBRARY_ITEMS = 20; // per kind, per creator
+
+function supabaseClient() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    throw new Error(
+      "Supabase storage is not configured (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).",
+    );
+  }
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { persistSession: false },
+  });
+}
 
 function extFor(file: File): string {
   const map: Record<string, string> = {
@@ -115,6 +129,64 @@ export async function deleteFile(url: string | null | undefined): Promise<void> 
       if (i === -1) return;
       const rel = url.slice(i + prefix.length);
       const safe = rel.split("/").filter((s) => s && s !== "." && s !== "..");
+      const filePath = path.join(LOCAL_DIR, ...safe);
+      if (!filePath.startsWith(LOCAL_DIR)) return;
+      await fs.unlink(filePath).catch(() => {});
+    }
+  } catch {
+    // ignore — best-effort cleanup
+  }
+}
+
+/**
+ * Store a donation slip in the PRIVATE slip bucket and return its object KEY
+ * (not a URL). The only way to view it afterwards is `signedSlipUrl()`, which
+ * the owner-checked /api/tips/[id]/slip route calls.
+ */
+export async function uploadSlip(file: File): Promise<string> {
+  const key = `slips/${randomUUID()}.${extFor(file)}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+
+  if (DRIVER === "supabase") {
+    const { error } = await supabaseClient()
+      .storage.from(SLIP_BUCKET)
+      .upload(key, bytes, { contentType: file.type, upsert: false });
+    if (error) throw new Error(`Supabase slip upload failed: ${error.message}`);
+    return key;
+  }
+
+  const filePath = path.join(LOCAL_DIR, key);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, bytes);
+  return key;
+}
+
+/**
+ * Short-lived URL for one slip. No `download` option on purpose — the object
+ * was uploaded with its real content type, so the browser shows it inline.
+ */
+export async function signedSlipUrl(key: string, expiresIn = 60): Promise<string> {
+  if (DRIVER === "supabase") {
+    const { data, error } = await supabaseClient()
+      .storage.from(SLIP_BUCKET)
+      .createSignedUrl(key, expiresIn);
+    if (error || !data?.signedUrl) {
+      throw new Error(`Supabase signed URL failed: ${error?.message ?? "no url"}`);
+    }
+    return data.signedUrl;
+  }
+  // local dev: the uploads route serves LOCAL_DIR directly
+  return `/api/uploads/${key}`;
+}
+
+/** Remove a slip by key. Best-effort — never throws. */
+export async function deleteSlip(key: string | null | undefined): Promise<void> {
+  if (!key) return;
+  try {
+    if (DRIVER === "supabase") {
+      await supabaseClient().storage.from(SLIP_BUCKET).remove([key]);
+    } else {
+      const safe = key.split("/").filter((s) => s && s !== "." && s !== "..");
       const filePath = path.join(LOCAL_DIR, ...safe);
       if (!filePath.startsWith(LOCAL_DIR)) return;
       await fs.unlink(filePath).catch(() => {});

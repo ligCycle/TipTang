@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { addSubathonTime } from "@/lib/subathon";
+import { deleteSlip, deleteFile } from "@/lib/storage";
 
 export async function PATCH(
   req: Request,
@@ -61,7 +62,7 @@ export async function DELETE(
   const { id } = await params;
   const tip = await prisma.tip.findUnique({
     where: { id },
-    select: { creatorId: true, status: true },
+    select: { creatorId: true, status: true, slipKey: true, slipUrl: true },
   });
   if (!tip) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -80,5 +81,10 @@ export async function DELETE(
   }
 
   await prisma.tip.delete({ where: { id } });
+  // The slip is personal data of both parties — it goes with the tip.
+  after(async () => {
+    await deleteSlip(tip.slipKey);
+    await deleteFile(tip.slipUrl);
+  });
   return NextResponse.json({ ok: true });
 }

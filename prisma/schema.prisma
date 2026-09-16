@@ -232,6 +232,9 @@ model Tip {
   amount          Decimal   @db.Decimal(10, 2)
   currency        String    @default("THB")
   slipUrl         String?
+  // Storage object key in the PRIVATE slip bucket; served only through
+  // /api/tips/[id]/slip. slipUrl is the legacy public URL until migrated.
+  slipKey         String?
   status          TipStatus @default(PENDING)
   isMessagePublic Boolean   @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
