@@ -127,11 +127,12 @@ body {
 }
 
 /* ===== Landing "studio" look =====
-   Ink cards are a fixed near-black with a pink undertone — deliberately NOT
-   theme-driven, because pink-on-ink is the whole point of the look. In dark
-   mode the page itself is dark, so the card gets a hairline to stay legible. */
+   Ink cards: in light mode a deep brand maroon (same family as the headings
+   and buttons, so the page reads as one palette rather than "black boxes on
+   pink"); in dark mode a shade darker than the page plus a hairline so the
+   card still separates from the background. */
 .ink {
-  background: #14090f;
+  background: linear-gradient(160deg, #7f1740 0%, #4a0d26 100%);
   color: #fff;
 }
 [data-theme="dark"] .ink {
