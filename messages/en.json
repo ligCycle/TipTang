@@ -26,14 +26,14 @@
     "ctaPrimary": "Create your tip page (free)",
     "ctaSecondary": "Log in",
     "ctaDashboard": "Go to Home",
-    "ctaMicro": "Set up in 3 minutes • Works with OBS • No card required",
+    "ctaMicro": "Set up in 5 minutes • Works with OBS • No card required",
     "heroEyebrow": "The TipMe alternative · 0% fees",
     "heroLine1": "Get tips from fans",
     "heroLine2": "via PromptPay",
     "heroLine3": "100% free, zero cut",
     "heroRating": "{avg} from {count} reviews",
     "ctaBandTitle": "Ready for your first tip?",
-    "ctaBandDesc": "Free to join, 3-minute setup, no card needed",
+    "ctaBandDesc": "Free to join, 5-minute setup, no card needed",
     "mockName": "Your channel",
     "mockMessage": "You got this",
     "mockScan": "Scan PromptPay from any bank app",
@@ -71,7 +71,7 @@
     "faqQ2": "When does the money arrive? Any withdrawal wait?",
     "faqA2": "It lands in your account the moment a fan pays, because PromptPay goes directly to your bank. No wallet holding, no withdrawal cycle.",
     "faqQ3": "Is OBS setup hard? Will switching waste my time?",
-    "faqA3": "Not hard at all. Sign up, copy your overlay link, and drop it into OBS as a Browser Source — done in 3–5 minutes, with on-screen alerts and read-aloud (TTS) ready to go."
+    "faqA3": "Not hard at all. Sign up, copy your overlay link, and drop it into OBS as a Browser Source — done in 5 minutes, with on-screen alerts and read-aloud (TTS) ready to go."
   },
   "auth": {
     "registerTitle": "Become a creator",
