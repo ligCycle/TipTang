@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { addSubathonTime } from "@/lib/subathon";
+import { applySubathonTip } from "@/lib/subathon";
 import { deleteSlip, deleteFile } from "@/lib/storage";
 
 export async function PATCH(
@@ -22,7 +22,7 @@ export async function PATCH(
 
   const tip = await prisma.tip.findUnique({
     where: { id },
-    select: { creatorId: true, status: true, amount: true },
+    select: { creatorId: true, status: true, amount: true, timerEffect: true },
   });
   if (!tip) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -44,7 +44,7 @@ export async function PATCH(
   // (guard against re-confirming an already-confirmed tip).
   if (action === "confirm" && tip.status !== "CONFIRMED") {
     const amount = Number(tip.amount);
-    after(() => addSubathonTime(session.user.id, amount));
+    after(() => applySubathonTip(session.user.id, amount, tip.timerEffect));
   }
 
   return NextResponse.json({ ok: true });

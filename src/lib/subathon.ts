@@ -1,57 +1,77 @@
 import { prisma } from "@/lib/prisma";
+import { nextTimerState } from "@/lib/subathon-math";
 
-// When a donation is confirmed, add time to the creator's subathon timer.
-// Works whether the timer is running (bumps the end time) or paused (banks the
-// seconds so no time is lost). A stopped/reset timer is left alone — the
-// subathon only accrues once the creator has started it. Best-effort: never
-// throws to the caller, and never revives a running timer that already hit 0.
-export async function addSubathonTime(creatorId: string, amount: number) {
+export type TimerEffect = "ADD" | "REDUCE" | "NONE";
+
+// When a donation is confirmed, move the creator's subathon timer: ADD time
+// (the default), REDUCE it (sabotage, on the creator's terms), or NONE. The
+// arithmetic lives in subathon-math.ts; this function only does the I/O.
+//
+// Read-modify-write happens inside one transaction with the user row locked
+// (SELECT … FOR UPDATE), so tips that land at the same moment queue up
+// instead of overwriting each other's result. Best-effort: never throws to
+// the caller, and never revives a running timer that already hit 0.
+export async function applySubathonTip(
+  creatorId: string,
+  amount: number,
+  effect: TimerEffect,
+) {
+  if (effect === "NONE") return;
   try {
-    const u = await prisma.user.findUnique({
-      where: { id: creatorId },
-      select: {
-        timerEnabled: true,
-        timerEndsAt: true,
-        timerRemaining: true,
-        timerBahtPerUnit: true,
-        timerSecondsPerUnit: true,
-        timerMaxSeconds: true,
-      },
+    await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<
+        {
+          timerEnabled: boolean;
+          timerEndsAt: Date | null;
+          timerRemaining: number | null;
+          timerBahtPerUnit: number;
+          timerSecondsPerUnit: number;
+          timerMaxSeconds: number | null;
+          timerReduceEnabled: boolean;
+          timerReduceBahtPerUnit: number;
+          timerReduceSecondsPerUnit: number;
+          timerFloorSeconds: number;
+        }[]
+      >`
+        SELECT "timerEnabled", "timerEndsAt", "timerRemaining",
+               "timerBahtPerUnit", "timerSecondsPerUnit", "timerMaxSeconds",
+               "timerReduceEnabled", "timerReduceBahtPerUnit",
+               "timerReduceSecondsPerUnit", "timerFloorSeconds"
+        FROM "User" WHERE "id" = ${creatorId} FOR UPDATE
+      `;
+      const u = rows[0];
+      if (!u?.timerEnabled) return;
+      // A reduce the creator has since switched off silently becomes nothing.
+      if (effect === "REDUCE" && !u.timerReduceEnabled) return;
+
+      const next = nextTimerState(
+        {
+          endsAtMs: u.timerEndsAt ? u.timerEndsAt.getTime() : null,
+          remaining: u.timerRemaining,
+        },
+        {
+          bahtPerUnit: u.timerBahtPerUnit,
+          secondsPerUnit: u.timerSecondsPerUnit,
+          maxSeconds: u.timerMaxSeconds,
+          reduceBahtPerUnit: u.timerReduceBahtPerUnit,
+          reduceSecondsPerUnit: u.timerReduceSecondsPerUnit,
+          floorSeconds: u.timerFloorSeconds,
+        },
+        amount,
+        effect === "REDUCE",
+        Date.now(),
+      );
+      if (!next) return;
+
+      await tx.user.update({
+        where: { id: creatorId },
+        data:
+          next.endsAtMs != null
+            ? { timerEndsAt: new Date(next.endsAtMs) }
+            : { timerRemaining: next.remaining },
+      });
     });
-    if (!u?.timerEnabled) return;
-
-    const perBaht =
-      u.timerBahtPerUnit > 0 ? u.timerSecondsPerUnit / u.timerBahtPerUnit : 0;
-    const addSec = Math.round(amount * perBaht);
-    if (addSec <= 0) return;
-
-    const now = Date.now();
-    const cap = u.timerMaxSeconds && u.timerMaxSeconds > 0 ? u.timerMaxSeconds : null;
-
-    if (u.timerEndsAt) {
-      // Running — extend the countdown target.
-      const endsMs = u.timerEndsAt.getTime();
-      if (endsMs <= now) return; // already over — don't revive
-      let newEndsMs = endsMs + addSec * 1000;
-      if (cap !== null) {
-        const capMs = now + cap * 1000;
-        if (newEndsMs > capMs) newEndsMs = capMs;
-      }
-      await prisma.user.update({
-        where: { id: creatorId },
-        data: { timerEndsAt: new Date(newEndsMs) },
-      });
-    } else if (u.timerRemaining != null) {
-      // Paused — bank the seconds so the creator doesn't lose them.
-      let rem = u.timerRemaining + addSec;
-      if (cap !== null && rem > cap) rem = cap;
-      await prisma.user.update({
-        where: { id: creatorId },
-        data: { timerRemaining: rem },
-      });
-    }
-    // else: stopped/reset — the subathon hasn't started, so nothing accrues.
   } catch (err) {
-    console.error("[subathon] addSubathonTime failed:", err);
+    console.error("[subathon] applySubathonTip failed:", err);
   }
 }

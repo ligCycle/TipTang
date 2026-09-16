@@ -94,6 +94,7 @@ export default async function DashboardPage({
           autoVerified: true,
           verifyCode: true,
           verifyDetail: true,
+          timerEffect: true,
           createdAt: true,
         },
       }),
@@ -153,6 +154,7 @@ export default async function DashboardPage({
     autoVerified: tip.autoVerified,
     verifyCode: tip.verifyCode,
     verifyDetail: tip.verifyDetail,
+    timerEffect: tip.timerEffect,
     createdAt: tip.createdAt.toISOString(),
   }));
 

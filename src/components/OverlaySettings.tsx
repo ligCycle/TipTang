@@ -81,6 +81,12 @@ export function OverlaySettings() {
   const [tMin, setTMin] = useState("1");
   const [tInit, setTInit] = useState("60");
   const [tMax, setTMax] = useState("");
+  // Sabotage (reduce) settings, same units as above.
+  const [tReduceOn, setTReduceOn] = useState(false);
+  const [tRBaht, setTRBaht] = useState("20");
+  const [tRMin, setTRMin] = useState("1");
+  const [tRMinAmt, setTRMinAmt] = useState("20");
+  const [tFloor, setTFloor] = useState("5");
   const [timerSaved, setTimerSaved] = useState(false);
   const [savingTimer, setSavingTimer] = useState(false);
   const [timerDisplay, setTimerDisplay] = useState<number | null>(null);
@@ -135,6 +141,11 @@ export function OverlaySettings() {
         setTMin(String(Math.round((d.timerSecondsPerUnit ?? 60) / 60)));
         setTInit(String(Math.round((d.timerInitialSeconds ?? 3600) / 60)));
         setTMax(d.timerMaxSeconds ? String(Math.round(d.timerMaxSeconds / 60)) : "");
+        setTReduceOn(Boolean(d.timerReduceEnabled));
+        setTRBaht(String(d.timerReduceBahtPerUnit ?? 20));
+        setTRMin(String(Math.round((d.timerReduceSecondsPerUnit ?? 60) / 60)));
+        setTRMinAmt(String(d.timerReduceMinAmount ?? 20));
+        setTFloor(String(Math.round((d.timerFloorSeconds ?? 300) / 60)));
         if (d.timerState === "running") {
           timerBaseRef.current = { rem: d.timerRemainingSeconds ?? 0, at: Date.now() };
         } else {
@@ -184,6 +195,11 @@ export function OverlaySettings() {
       fd.set("secondsPerUnit", String((Number(tMin) || 1) * 60));
       fd.set("initialSeconds", String((Number(tInit) || 0) * 60));
       fd.set("maxSeconds", tMax ? String((Number(tMax) || 0) * 60) : "");
+      fd.set("reduceEnabled", tReduceOn ? "true" : "false");
+      fd.set("reduceBahtPerUnit", tRBaht || "20");
+      fd.set("reduceSecondsPerUnit", String((Number(tRMin) || 1) * 60));
+      fd.set("reduceMinAmount", tRMinAmt || "20");
+      fd.set("floorSeconds", String((Number(tFloor) || 0) * 60));
       // Persist the staged clock color in the same request ("" = use alert color).
       fd.set("color", config?.timerColor ?? "");
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
@@ -1183,6 +1199,79 @@ export function OverlaySettings() {
                       className="input text-sm"
                     />
                   </label>
+                  {/* Sabotage: viewers may pay to reduce the clock */}
+                  <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-3">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={tReduceOn}
+                        onChange={(e) => setTReduceOn(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 accent-brand-600"
+                      />
+                      <span>
+                        <span className="block text-sm font-medium text-brand-900/80">
+                          {t("obsReduceToggle")}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-brand-900/55">
+                          {t("obsReduceHint")}
+                        </span>
+                      </span>
+                    </label>
+                    {tReduceOn && (
+                      <div className="mt-3 space-y-3">
+                        <div>
+                          <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                            {t("obsReduceRateLabel")}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-brand-900/70">
+                            <span>{t("obsTimerRateEvery")}</span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={tRBaht}
+                              onChange={(e) => setTRBaht(e.target.value)}
+                              className="input w-24 text-sm"
+                            />
+                            <span>{t("obsTimerRateBahtEq")}</span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={tRMin}
+                              onChange={(e) => setTRMin(e.target.value)}
+                              className="input w-20 text-sm"
+                            />
+                            <span>{t("obsTimerRateMin")}</span>
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="block">
+                            <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                              {t("obsReduceMinLabel")}
+                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={tRMinAmt}
+                              onChange={(e) => setTRMinAmt(e.target.value)}
+                              className="input text-sm"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-1 block text-xs font-medium text-brand-900/70">
+                              {t("obsFloorLabel")}
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={tFloor}
+                              onChange={(e) => setTFloor(e.target.value)}
+                              className="input text-sm"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <div className="border-t border-brand-900/10 pt-3">
                     <ColorField
                       value={config.timerColor}

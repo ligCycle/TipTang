@@ -12,14 +12,25 @@ const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
 type Step = "form" | "pay" | "done";
 
+type TimerEffect = "ADD" | "REDUCE" | "NONE";
+
 export function TipForm({
   username,
   creatorName,
   accentColor,
+  timerChoice = null,
 }: {
   username: string;
   creatorName: string;
   accentColor?: string;
+  /** Present only when the creator lets supporters pick add/reduce/none. */
+  timerChoice?: {
+    minAmount: number;
+    addBaht: number;
+    addMin: number;
+    reduceBaht: number;
+    reduceMin: number;
+  } | null;
 }) {
   const t = useTranslations("profile");
   const tSuccess = useTranslations("tipSuccess");
@@ -47,6 +58,13 @@ export function TipForm({
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+  // Always starts (and resets) on ADD so a hurried supporter never sabotages
+  // the stream by accident.
+  const [timerEffect, setTimerEffect] = useState<TimerEffect>("ADD");
+  const reduceTooSmall =
+    timerChoice !== null &&
+    timerEffect === "REDUCE" &&
+    amount < timerChoice.minAmount;
 
   const [qr, setQr] = useState<string | null>(null);
   const [slip, setSlip] = useState<File | null>(null);
@@ -112,6 +130,7 @@ export function TipForm({
       fd.set("supporterName", name);
       fd.set("message", message);
       fd.set("isMessagePublic", isPublic ? "true" : "false");
+      fd.set("timerEffect", timerChoice ? timerEffect : "ADD");
       fd.set("slip", slip);
 
       const res = await fetch("/api/tips", { method: "POST", body: fd });
@@ -123,6 +142,7 @@ export function TipForm({
           rate_limited: tErr("rateLimited"),
           duplicate_slip: tErr("duplicateSlip"),
           slip_required: t("slipRequired"),
+          reduce_not_allowed: tErr("reduceNotAllowed"),
         };
         setError(map[data.error] ?? tErr("notFound"));
         return;
@@ -145,6 +165,7 @@ export function TipForm({
     setName("");
     setMessage("");
     setAmountStr("50");
+    setTimerEffect("ADD");
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -215,6 +236,52 @@ export function TipForm({
             />
           </label>
 
+          {timerChoice && (
+            <fieldset>
+              <legend className="mb-2 block text-sm font-medium text-brand-900/80">
+                {t("timerChoiceLabel")}
+              </legend>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["ADD", t("timerAdd")],
+                    ["REDUCE", t("timerReduce")],
+                    ["NONE", t("timerNone")],
+                  ] as [TimerEffect, string][]
+                ).map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    onClick={() => setTimerEffect(value)}
+                    aria-pressed={timerEffect === value}
+                    style={timerEffect === value ? primaryStyle : undefined}
+                    className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                      timerEffect === value
+                        ? "bg-brand-600 text-white"
+                        : "border border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-brand-900/55">
+                {t("timerRateHint", {
+                  addBaht: timerChoice.addBaht,
+                  addMin: timerChoice.addMin,
+                  reduceBaht: timerChoice.reduceBaht,
+                  reduceMin: timerChoice.reduceMin,
+                  min: timerChoice.minAmount,
+                })}
+              </p>
+              {reduceTooSmall && (
+                <p className="mt-1 text-sm font-medium text-red-600">
+                  {t("timerReduceMin", { min: timerChoice.minAmount })}
+                </p>
+              )}
+            </fieldset>
+          )}
+
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-brand-900/80">
               {t("nameLabel")}
@@ -256,7 +323,7 @@ export function TipForm({
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || reduceTooSmall}
             style={primaryStyle}
             className="btn-primary w-full transition hover:brightness-95"
           >

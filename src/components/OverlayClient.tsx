@@ -10,6 +10,8 @@ type Alert = {
   name: string;
   amount: number;
   message: string | null;
+  /** Seconds the tip moved the subathon clock (negative = sabotage); null = none. */
+  timerDelta?: number | null;
 };
 
 // Darken a #rrggbb color by mixing toward black (amount 0..1).
@@ -161,6 +163,8 @@ export function OverlayClient({
           name: "ผู้สนับสนุนตัวอย่าง",
           amount: big ? 1000 : 100,
           message: "ทดสอบ Donation Alert 🎉",
+          // Preview both directions of the subathon badge too.
+          timerDelta: big ? -300 : 120,
         });
       };
       fire();
@@ -194,6 +198,7 @@ export function OverlayClient({
             name: t.supporterName,
             amount: t.amount,
             message: t.message,
+            timerDelta: t.timerDelta ?? null,
           });
         }
       } catch {
@@ -282,6 +287,12 @@ export function OverlayClient({
               {formatBaht(current.amount)}
             </span>
           </div>
+          {current.timerDelta != null && current.timerDelta !== 0 && (
+            <p className="mt-2 inline-flex items-center rounded-full bg-black/25 px-3 py-0.5 text-sm font-bold">
+              {current.timerDelta < 0 ? "⏬ −" : "⏫ +"}
+              {Math.max(1, Math.round(Math.abs(current.timerDelta) / 60))} นาที
+            </p>
+          )}
           {current.message && (
             <p className="mt-2 text-white/95">{current.message}</p>
           )}

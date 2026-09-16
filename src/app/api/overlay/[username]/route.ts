@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { tipSeconds } from "@/lib/subathon-math";
 
 // Polled by the OBS overlay. Validates the secret key, returns confirmed tips
 // confirmed after the `after` timestamp (so only new tips trigger alerts).
@@ -18,7 +19,15 @@ export async function GET(
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { id: true, overlayKey: true },
+    select: {
+      id: true,
+      overlayKey: true,
+      timerEnabled: true,
+      timerBahtPerUnit: true,
+      timerSecondsPerUnit: true,
+      timerReduceBahtPerUnit: true,
+      timerReduceSecondsPerUnit: true,
+    },
   });
   if (!user?.overlayKey || user.overlayKey !== key) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -40,6 +49,7 @@ export async function GET(
         message: true,
         amount: true,
         confirmedAt: true,
+        timerEffect: true,
       },
     }),
     prisma.shopOrder.findMany({
@@ -56,6 +66,15 @@ export async function GET(
     }),
   ]);
 
+  const timerDeltaFor = (effect: "ADD" | "REDUCE" | "NONE", amount: number) => {
+    if (!user.timerEnabled || effect === "NONE") return null;
+    const sec =
+      effect === "REDUCE"
+        ? tipSeconds(amount, user.timerReduceBahtPerUnit, user.timerReduceSecondsPerUnit)
+        : tipSeconds(amount, user.timerBahtPerUnit, user.timerSecondsPerUnit);
+    return effect === "REDUCE" ? -sec : sec;
+  };
+
   const merged = [
     ...tips.map((t) => ({
       id: `tip_${t.id}`,
@@ -63,6 +82,9 @@ export async function GET(
       message: t.message,
       amount: Number(t.amount),
       confirmedAt: t.confirmedAt,
+      // Seconds this tip moved the subathon clock (negative = sabotage), or
+      // null when the timer is off / the supporter chose "just donate".
+      timerDelta: timerDeltaFor(t.timerEffect, Number(t.amount)),
     })),
     ...orders.map((o) => ({
       id: `order_${o.id}`,
@@ -70,6 +92,7 @@ export async function GET(
       message: `🛒 ${o.itemTitle}`,
       amount: Number(o.amount),
       confirmedAt: o.confirmedAt,
+      timerDelta: null as number | null,
     })),
   ]
     .sort(
@@ -84,6 +107,7 @@ export async function GET(
       message: m.message,
       amount: m.amount,
       confirmedAt: m.confirmedAt?.toISOString() ?? null,
+      timerDelta: m.timerDelta,
     })),
   });
 }

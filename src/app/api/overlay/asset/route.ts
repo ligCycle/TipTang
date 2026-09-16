@@ -134,17 +134,34 @@ export async function POST(req: Request) {
     const maxSeconds =
       Number.isFinite(maxRaw) && maxRaw > 0 ? Math.min(maxRaw, 604800) : null;
 
+    // Sabotage settings ride along in the same save.
+    const reduceEnabled = form?.get("reduceEnabled") === "true";
+    const reduceBahtPerUnit = clampInt(form?.get("reduceBahtPerUnit"), 1, 100000, 20);
+    const reduceSecondsPerUnit = clampInt(form?.get("reduceSecondsPerUnit"), 1, 86400, 60);
+    const reduceMinAmount = clampInt(form?.get("reduceMinAmount"), 1, 100000, 20);
+    const floorSeconds = clampInt(form?.get("floorSeconds"), 0, 604800, 300);
+
     const data: {
       timerBahtPerUnit: number;
       timerSecondsPerUnit: number;
       timerInitialSeconds: number;
       timerMaxSeconds: number | null;
+      timerReduceEnabled: boolean;
+      timerReduceBahtPerUnit: number;
+      timerReduceSecondsPerUnit: number;
+      timerReduceMinAmount: number;
+      timerFloorSeconds: number;
       timerColor?: string | null;
     } = {
       timerBahtPerUnit: bahtPerUnit,
       timerSecondsPerUnit: secondsPerUnit,
       timerInitialSeconds: initialSeconds,
       timerMaxSeconds: maxSeconds,
+      timerReduceEnabled: reduceEnabled,
+      timerReduceBahtPerUnit: reduceBahtPerUnit,
+      timerReduceSecondsPerUnit: reduceSecondsPerUnit,
+      timerReduceMinAmount: reduceMinAmount,
+      timerFloorSeconds: floorSeconds,
     };
     // Clock color persisted together: "" clears it (use alert color), a valid
     // hex sets it, anything else leaves it unchanged.

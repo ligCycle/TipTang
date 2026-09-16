@@ -9,6 +9,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TimerEffect {
+  ADD
+  REDUCE
+  NONE
+}
+
 enum TipStatus {
   PENDING
   CONFIRMED
@@ -200,6 +206,14 @@ model User {
   timerRemaining      Int?
   // Timer clock color (hex); null = follow alertColor, then default brand pink.
   timerColor          String?
+  // Subathon "sabotage": viewers may pay to REDUCE the timer on the creator's
+  // terms. Reduce rate is separate from (and by default pricier than) the add
+  // rate; reduces can never push the clock below timerFloorSeconds.
+  timerReduceEnabled        Boolean @default(false)
+  timerReduceBahtPerUnit    Int     @default(20)
+  timerReduceSecondsPerUnit Int     @default(60)
+  timerReduceMinAmount      Int     @default(20)
+  timerFloorSeconds         Int     @default(300)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -235,6 +249,9 @@ model Tip {
   // Storage object key in the PRIVATE slip bucket; served only through
   // /api/tips/[id]/slip. slipUrl is the legacy public URL until migrated.
   slipKey         String?
+  // What this tip does to the subathon clock. ADD is the historical default
+  // (every confirmed tip added time); NONE = supporter chose "just donate".
+  timerEffect     TimerEffect @default(ADD)
   status          TipStatus @default(PENDING)
   isMessagePublic Boolean   @default(true)
   // Bank transaction reference from slip verification — unique to block reuse

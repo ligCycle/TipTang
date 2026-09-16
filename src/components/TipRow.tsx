@@ -17,6 +17,7 @@ type Tip = {
   autoVerified: boolean;
   verifyCode: string | null;
   verifyDetail: string | null;
+  timerEffect: "ADD" | "REDUCE" | "NONE";
   createdAt: string;
 };
 
@@ -122,6 +123,16 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           >
             {statusLabel}
           </span>
+          {tip.timerEffect === "REDUCE" && (
+            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+              {t("reduceBadge")}
+            </span>
+          )}
+          {tip.timerEffect === "NONE" && (
+            <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-900/60">
+              {t("noTimerBadge")}
+            </span>
+          )}
           {tip.autoVerified ? (
             <span
               title="auto-verified"

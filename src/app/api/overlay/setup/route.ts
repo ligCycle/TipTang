@@ -35,6 +35,11 @@ export async function POST() {
       timerEndsAt: true,
       timerRemaining: true,
       timerColor: true,
+      timerReduceEnabled: true,
+      timerReduceBahtPerUnit: true,
+      timerReduceSecondsPerUnit: true,
+      timerReduceMinAmount: true,
+      timerFloorSeconds: true,
     },
   });
   if (!user) {
@@ -104,5 +109,10 @@ export async function POST() {
     timerState,
     timerRemainingSeconds,
     timerColor: user.timerColor,
+    timerReduceEnabled: user.timerReduceEnabled,
+    timerReduceBahtPerUnit: user.timerReduceBahtPerUnit,
+    timerReduceSecondsPerUnit: user.timerReduceSecondsPerUnit,
+    timerReduceMinAmount: user.timerReduceMinAmount,
+    timerFloorSeconds: user.timerFloorSeconds,
   });
 }

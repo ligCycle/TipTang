@@ -75,9 +75,29 @@ export default async function ProfilePage({
       goalStartedAt: true,
       socialLinks: true,
       profileColor: true,
+      timerEnabled: true,
+      timerReduceEnabled: true,
+      timerBahtPerUnit: true,
+      timerSecondsPerUnit: true,
+      timerReduceBahtPerUnit: true,
+      timerReduceSecondsPerUnit: true,
+      timerReduceMinAmount: true,
     },
   });
   if (!creator) notFound();
+
+  // Subathon sabotage: only offer the add/reduce/none choice when the creator
+  // runs a timer AND has opened up reducing. Rates are passed for the hint.
+  const timerChoice =
+    creator.timerEnabled && creator.timerReduceEnabled
+      ? {
+          minAmount: creator.timerReduceMinAmount,
+          addBaht: creator.timerBahtPerUnit,
+          addMin: Math.round(creator.timerSecondsPerUnit / 60),
+          reduceBaht: creator.timerReduceBahtPerUnit,
+          reduceMin: Math.round(creator.timerReduceSecondsPerUnit / 60),
+        }
+      : null;
 
   // Creator-chosen accent color for the profile (null = default brand pink).
   const accent = creator.profileColor || "#ec4899";
@@ -264,6 +284,7 @@ export default async function ProfilePage({
             username={creator.username}
             creatorName={creator.displayName}
             accentColor={accent}
+            timerChoice={timerChoice}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">

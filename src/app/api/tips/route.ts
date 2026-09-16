@@ -14,7 +14,7 @@ import {
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifySlip, receiverMatches } from "@/lib/slip-verify";
 import { censorText } from "@/lib/profanity";
-import { addSubathonTime } from "@/lib/subathon";
+import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
 
 export async function POST(req: Request) {
   const limit = await rateLimit(`tip:${clientIp(req)}`, 5, 60_000);
@@ -40,11 +40,15 @@ export async function POST(req: Request) {
       autoConfirmTips: true,
       email: true,
       displayName: true,
+      timerEnabled: true,
+      timerReduceEnabled: true,
+      timerReduceMinAmount: true,
     },
   });
   if (!creator?.promptpayId) {
     return NextResponse.json({ error: "not_configured" }, { status: 404 });
   }
+
 
   const parsed = tipSchema.safeParse({
     supporterName: form.get("supporterName") ?? "",
@@ -56,6 +60,24 @@ export async function POST(req: Request) {
   }
   // Parse checkbox manually (see note in validators.ts).
   const isMessagePublic = form.get("isMessagePublic") === "true";
+
+  // What the supporter wants this tip to do to the subathon clock. ADD is the
+  // default (and what any old client sends). REDUCE is only honoured when the
+  // creator has opened it up and the amount clears their minimum — otherwise
+  // refuse loudly rather than silently turning a sabotage into a boost.
+  const effectRaw = form.get("timerEffect");
+  const timerEffect: TimerEffect =
+    effectRaw === "REDUCE" ? "REDUCE" : effectRaw === "NONE" ? "NONE" : "ADD";
+  if (
+    timerEffect === "REDUCE" &&
+    !(
+      creator.timerEnabled &&
+      creator.timerReduceEnabled &&
+      parsed.data.amount >= creator.timerReduceMinAmount
+    )
+  ) {
+    return NextResponse.json({ error: "reduce_not_allowed" }, { status: 400 });
+  }
 
   // Censor offensive words in the public-facing name + message (keeps the
   // stream/overlay/leaderboard clean).
@@ -147,6 +169,7 @@ export async function POST(req: Request) {
       amount: parsed.data.amount,
       isMessagePublic,
       slipKey,
+      timerEffect,
       status,
       transRef,
       autoVerified,
@@ -159,7 +182,7 @@ export async function POST(req: Request) {
 
   // Confirmed on arrival (auto-verified or auto-confirm) → add subathon time.
   if (status === "CONFIRMED") {
-    after(() => addSubathonTime(creator.id, parsed.data.amount));
+    after(() => applySubathonTip(creator.id, parsed.data.amount, timerEffect));
   }
 
   // Notify the creator by email after the response is sent (best-effort — never
