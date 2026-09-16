@@ -49,7 +49,7 @@ export async function HeroMock() {
       </div>
 
       {/* The payoff: a confirmed tip, floating off the card's corner */}
-      <div className="ink absolute -bottom-4 -right-2 flex -rotate-3 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-lg sm:-right-6">
+      <div className="ink absolute -bottom-4 right-3 flex -rotate-3 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-lg sm:-right-6">
         <Icon name="check-circle" className="h-4 w-4 text-emerald-400" />
         {t("mockPaid")}
       </div>
