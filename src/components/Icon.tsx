@@ -18,6 +18,7 @@ import type { ReactElement } from "react";
  */
 export type IconName =
   | "alert-triangle"
+  | "arrow-right"
   | "bell"
   | "book-open"
   | "check"
@@ -62,6 +63,12 @@ const paths: Record<IconName, ReactElement> = {
       <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
       <path d="M12 9v4" />
       <path d="M12 17h.01" />
+    </>
+  ),
+  "arrow-right": (
+    <>
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
     </>
   ),
   bell: (

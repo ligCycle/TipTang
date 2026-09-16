@@ -126,6 +126,135 @@ body {
   cursor: not-allowed;
 }
 
+/* ===== Landing "studio" look =====
+   Ink cards are a fixed near-black with a pink undertone — deliberately NOT
+   theme-driven, because pink-on-ink is the whole point of the look. In dark
+   mode the page itself is dark, so the card gets a hairline to stay legible. */
+.ink {
+  background: #14090f;
+  color: #fff;
+}
+[data-theme="dark"] .ink {
+  background: #1a0d14;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Capsule button: label + a round arrow badge at the end. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  padding: 0.375rem 0.375rem 0.375rem 1.5rem;
+  font-weight: 600;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.pill:hover {
+  transform: scale(1.03);
+}
+.pill-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.pill:hover .pill-arrow {
+  transform: translateX(3px);
+}
+/* No-arrow variant keeps the same height as an arrow pill. */
+.pill-plain {
+  padding: 0.75rem 1.75rem;
+}
+.pill-dark {
+  background: #14090f;
+  color: #fff;
+}
+.pill-dark .pill-arrow {
+  background: #fff;
+  color: #14090f;
+}
+.pill-brand {
+  background: var(--color-brand-600);
+  color: #fff;
+}
+.pill-brand .pill-arrow {
+  background: #fff;
+  color: var(--color-brand-700);
+}
+.pill-outline {
+  border: 1px solid var(--color-brand-300);
+  color: var(--color-brand-800);
+}
+[data-theme="dark"] .pill-dark {
+  background: #fff;
+  color: #14090f;
+}
+[data-theme="dark"] .pill-dark .pill-arrow {
+  background: #14090f;
+  color: #fff;
+}
+
+/* Hero headline: each line rises out of a clip on load. Per-line delay is
+   set inline by the page, so the CSS is independent of line count/order. */
+.rise > span {
+  display: block;
+  overflow: hidden;
+}
+.rise > span > span {
+  display: block;
+  transform: translateY(110%);
+  opacity: 0;
+  animation: rise 0.9s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+}
+@keyframes rise {
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* Scroll reveal. Hidden ONLY once JS has announced itself (html.js), so a
+   no-JS visitor or crawler sees everything immediately. */
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+html.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Cards that lift a little on hover. */
+.lift {
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.lift:hover {
+  transform: translateY(-4px);
+}
+
+/* One switch for all of the above. Scoped to these classes on purpose: a
+   global `transform: none` would break layout transforms elsewhere. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .rise > span > span,
+  .pill,
+  .pill-arrow,
+  .lift {
+    animation: none !important;
+    transition: none !important;
+  }
+  .reveal,
+  .rise > span > span {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* ===== Dark theme ===== */
 /* Invert the brand ramp (low = dark surfaces, high = light text) so every
    brand color utility adapts at once, keeping mid tones vivid. */
