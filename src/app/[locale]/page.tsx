@@ -178,7 +178,9 @@ export default async function LandingPage({
               </p>
             )}
           </div>
-          <div className="flex justify-center lg:col-span-5 lg:justify-end">
+          {/* lg:pr-10 leaves room for the badge that overhangs the card (sm:-right-6)
+              plus the 2° tilt, so the section's overflow-hidden never clips it. */}
+          <div className="flex justify-center lg:col-span-5 lg:justify-end lg:pr-10">
             <Reveal delay={200} className="w-full max-w-sm">
               <HeroMock />
             </Reveal>
