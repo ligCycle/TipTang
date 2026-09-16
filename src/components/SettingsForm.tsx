@@ -94,6 +94,9 @@ export function SettingsForm({
   const [form, setForm] = useState(initial);
   // What the database currently holds. Updated after every successful save.
   const [savedForm, setSavedForm] = useState(initial);
+  // Raw text of the minimum-tip field so it can be cleared while typing; the
+  // number in `form` only follows valid input and is normalised on blur.
+  const [minTipStr, setMinTipStr] = useState(String(initial.minTipAmount));
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
     "idle",
   );
@@ -189,6 +192,7 @@ export function SettingsForm({
       avatarUrl: f.avatarUrl,
       coverUrl: f.coverUrl,
     }));
+    setMinTipStr(String(savedForm.minTipAmount));
     setError(null);
     setStatus("idle");
   }
@@ -350,13 +354,16 @@ export function SettingsForm({
               min={1}
               max={100000}
               inputMode="numeric"
-              value={form.minTipAmount}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  minTipAmount: Math.max(1, Math.round(Number(e.target.value) || 1)),
-                }))
-              }
+              value={minTipStr}
+              onChange={(e) => {
+                const v = e.target.value;
+                setMinTipStr(v);
+                const n = Number(v);
+                if (Number.isInteger(n) && n >= 1 && n <= 100000) {
+                  setForm((f) => ({ ...f, minTipAmount: n }));
+                }
+              }}
+              onBlur={() => setMinTipStr(String(form.minTipAmount))}
               className={inputClass}
             />
             <span className={hintClass}>{t("minTipHint")}</span>
