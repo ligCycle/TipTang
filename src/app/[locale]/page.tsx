@@ -4,6 +4,8 @@ import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { Reveal } from "@/components/Reveal";
+import { HeroMock } from "@/components/HeroMock";
 import { Icon, type IconName } from "@/components/Icon";
 
 export async function generateMetadata({
@@ -18,6 +20,46 @@ export async function generateMetadata({
       languages: { th: "/th", en: "/en", "x-default": "/th" },
     },
   };
+}
+
+const h2Class =
+  "text-3xl font-extrabold tracking-tight text-brand-900 sm:text-4xl";
+
+function Watermark({ className }: { className: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute inset-x-0 select-none text-center font-black leading-none ${className}`}
+    >
+      TIPTANG
+    </div>
+  );
+}
+
+function Pill({
+  href,
+  variant,
+  children,
+  arrow = true,
+}: {
+  href: string;
+  variant: "dark" | "brand" | "outline";
+  children: string;
+  arrow?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`pill pill-${variant} ${arrow ? "" : "pill-plain"}`}
+    >
+      {children}
+      {arrow && (
+        <span className="pill-arrow">
+          <Icon name="arrow-right" />
+        </span>
+      )}
+    </Link>
+  );
 }
 
 export default async function LandingPage({
@@ -64,152 +106,236 @@ export default async function LandingPage({
     { title: t("step3Title"), desc: t("step3Desc"), icon: "heart" },
   ];
   const features = [t("feature1"), t("feature2"), t("feature3")];
+  const heroLines = [t("heroLine1"), t("heroLine2"), t("heroLine3")];
+  const micro = t("ctaMicro").split(" • ");
+
+  // The primary call to action is the same everywhere on the page.
+  const primaryCta = loggedIn ? (
+    <Pill href="/dashboard" variant="dark">
+      {t("ctaDashboard")}
+    </Pill>
+  ) : (
+    <Pill href="/register" variant="dark">
+      {t("ctaPrimary")}
+    </Pill>
+  );
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-20 sm:space-y-28">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* Hero */}
-      <section className="pt-8 text-center sm:pt-14">
-        <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-brand-900 sm:text-5xl">
-          {t("heroTitle")}
-        </h1>
-        <p className="mx-auto mt-5 max-w-xl text-lg text-brand-900/70">
-          {t("heroSubtitle")}
-        </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          {loggedIn ? (
-            // Already signed in — skip register/login, go straight to the dashboard.
-            <Link
-              href="/dashboard"
-              className="rounded-full bg-brand-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700"
-            >
-              {t("ctaDashboard")}
-            </Link>
-          ) : (
-            <>
-              <Link
-                href="/register"
-                className="rounded-full bg-brand-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:bg-brand-700"
-              >
-                {t("ctaPrimary")}
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-full border border-brand-300 bg-brand-50/70 px-7 py-3 text-base font-semibold text-brand-800 transition hover:bg-brand-100"
-              >
-                {t("ctaSecondary")}
-              </Link>
-            </>
-          )}
-        </div>
-        {!loggedIn && (
-          <p className="mt-3 text-sm text-brand-900/50">{t("ctaMicro")}</p>
-        )}
-      </section>
 
-      {/* How it works */}
-      <section>
-        <h2 className="mb-6 text-center text-2xl font-bold text-brand-900">
-          {t("howItWorks")}
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {steps.map((s) => (
-            <div key={s.title} className="card rounded-2xl p-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-600">
-                <Icon name={s.icon} className="h-6 w-6" />
-              </div>
-              <h3 className="mt-3 font-bold text-brand-800">{s.title}</h3>
-              <p className="mt-1.5 text-sm text-brand-900/65">{s.desc}</p>
+      {/* ===== Hero ===== */}
+      <section className="relative overflow-hidden pt-6 sm:pt-12">
+        <Watermark className="bottom-0 text-[6rem] text-brand-900/5 sm:text-[11rem]" />
+        <div className="relative grid items-center gap-10 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-brand-900/70">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-brand-500"
+                aria-hidden
+              />
+              {t("heroEyebrow")}
+            </p>
+            {/* Each line is clipped and rises on load; delay is per line
+                inline so the CSS never depends on how many lines there are. */}
+            <h1 className="rise mt-4 max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-brand-900 sm:text-5xl lg:text-6xl">
+              {heroLines.map((line, i) => (
+                <span key={line}>
+                  <span
+                    style={{ animationDelay: `${i * 120}ms` }}
+                    className={
+                      i === heroLines.length - 1 ? "text-brand-600" : ""
+                    }
+                  >
+                    {line}
+                  </span>
+                </span>
+              ))}
+            </h1>
+            <p className="mt-6 max-w-xl text-lg text-brand-900/70">
+              {t("heroSubtitle")}
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              {primaryCta}
+              {!loggedIn && (
+                <Pill href="/login" variant="outline" arrow={false}>
+                  {t("ctaSecondary")}
+                </Pill>
+              )}
             </div>
-          ))}
+            {reviewCount > 0 && (
+              <p className="mt-6 flex items-center gap-3 text-sm font-medium text-brand-900/70">
+                <span className="tracking-tight text-brand-500" aria-hidden>
+                  ★★★★★
+                </span>
+                {t("heroRating", {
+                  avg: avgRating.toFixed(1),
+                  count: reviewCount,
+                })}
+              </p>
+            )}
+          </div>
+          <div className="flex justify-center lg:col-span-5 lg:justify-end">
+            <Reveal delay={200} className="w-full max-w-sm">
+              <HeroMock />
+            </Reveal>
+          </div>
+        </div>
+
+        {/* Status bar: the three micro-promises, no new copy */}
+        <div className="relative mt-14 flex items-center justify-between gap-3 border-t border-brand-900/10 py-4 text-xs font-semibold uppercase tracking-wide text-brand-900/60">
+          <span>{micro[0]}</span>
+          <span className="hidden sm:inline">{micro[1]}</span>
+          <span>{micro[2]}</span>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="card rounded-3xl p-8">
-        <h2 className="mb-5 text-center text-2xl font-bold text-brand-900">
-          {t("featuresTitle")}
-        </h2>
-        <ul className="mx-auto max-w-lg space-y-3">
-          {features.map((f) => (
-            <li key={f} className="flex items-start gap-3 text-brand-900/80">
-              <Icon name="check" className="mt-0.5 h-5 w-5 text-brand-600" />
-              <span>{f}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* ===== How it works — three ink cards ===== */}
+      <Reveal>
+        <section>
+          <h2 className={h2Class}>{t("howItWorks")}</h2>
+          <ol className="mt-8 grid gap-4 sm:grid-cols-3">
+            {steps.map((s, i) => (
+              <li
+                key={s.title}
+                className="ink lift relative min-h-[13rem] overflow-hidden rounded-3xl p-6"
+              >
+                <span
+                  aria-hidden
+                  className="absolute right-5 top-3 text-5xl font-black text-white/10"
+                >
+                  0{i + 1}
+                </span>
+                <div className="grid h-11 w-11 place-items-center rounded-full bg-brand-500/20 text-brand-400">
+                  <Icon name={s.icon} className="h-5 w-5" />
+                </div>
+                <h3 className="mt-5 text-xl font-bold">
+                  {s.title.replace(/^\d+\.\s*/, "")}
+                </h3>
+                <p className="mt-2 text-sm text-white/60">{s.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </Reveal>
 
-      {/* Comparison — our real edge vs typical platforms */}
-      <section>
-        <h2 className="mb-6 text-center text-2xl font-bold text-brand-900">
-          {t("compareTitle")}
-        </h2>
-        <div className="overflow-hidden rounded-3xl border border-brand-200">
-          <div className="grid grid-cols-[1.4fr_1fr_1fr] bg-brand-50 text-sm font-bold text-brand-900">
-            <div className="p-3 sm:p-4" />
-            <div className="p-3 text-center sm:p-4">{t("compareUsHead")}</div>
-            <div className="p-3 text-center text-brand-900/55 sm:p-4">
-              {t("compareOthersHead")}
+      {/* ===== Why TipTang — numbered rows, no box ===== */}
+      <Reveal>
+        <section className="grid gap-8 lg:grid-cols-[1fr_2fr]">
+          <h2 className={h2Class}>{t("featuresTitle")}</h2>
+          <ol className="divide-y divide-brand-900/10">
+            {features.map((f, i) => (
+              <li
+                key={f}
+                className="flex items-start gap-4 rounded-2xl px-3 py-5 transition-colors hover:bg-brand-50"
+              >
+                <span className="w-8 shrink-0 pt-1 text-sm font-semibold text-brand-900/40">
+                  0{i + 1}
+                </span>
+                <p className="flex-1 text-lg font-semibold text-brand-900">
+                  {f}
+                </p>
+                <Icon
+                  name="check-circle"
+                  className="mt-1 h-5 w-5 shrink-0 text-brand-600"
+                />
+              </li>
+            ))}
+          </ol>
+        </section>
+      </Reveal>
+
+      {/* ===== Comparison — same data, ink header, highlighted column ===== */}
+      <Reveal>
+        <section>
+          <h2 className={h2Class}>{t("compareTitle")}</h2>
+          <div className="mt-8 overflow-hidden rounded-3xl border border-brand-900/10">
+            <div className="ink grid grid-cols-[1.4fr_1fr_1fr] text-sm font-bold">
+              <div className="p-3 sm:p-4" />
+              <div className="p-3 text-center sm:p-4">{t("compareUsHead")}</div>
+              <div className="p-3 text-center text-white/55 sm:p-4">
+                {t("compareOthersHead")}
+              </div>
+            </div>
+            {[1, 2, 3, 4].map((n) => (
+              <div
+                key={n}
+                className="grid grid-cols-[1.4fr_1fr_1fr] border-t border-brand-900/10 text-sm transition-colors hover:bg-brand-50/60"
+              >
+                <div className="p-3 font-medium text-brand-900/80 sm:p-4">
+                  {t(`compareRow${n}Label`)}
+                </div>
+                <div className="flex items-center justify-center gap-1 bg-brand-50 p-3 text-center font-bold text-brand-700 sm:p-4">
+                  <Icon name="check" className="shrink-0 text-brand-600" />
+                  {t(`compareRow${n}Us`)}
+                </div>
+                <div className="p-3 text-center text-brand-900/55 sm:p-4">
+                  {t(`compareRow${n}Others`)}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-brand-900/50">{t("compareNote")}</p>
+        </section>
+      </Reveal>
+
+      {/* ===== FAQ — hairline rows ===== */}
+      <Reveal>
+        <section>
+          <h2 className={h2Class}>{t("faqTitle")}</h2>
+          <div className="mt-6 max-w-2xl divide-y divide-brand-900/10">
+            {[1, 2, 3].map((n) => (
+              <details key={n} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-lg font-semibold text-brand-900 [&::-webkit-details-marker]:hidden">
+                  <span>{t(`faqQ${n}`)}</span>
+                  <span
+                    className="shrink-0 text-2xl leading-none text-brand-500 transition-transform group-open:rotate-45"
+                    aria-hidden
+                  >
+                    ＋
+                  </span>
+                </summary>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-brand-900/70">
+                  {t(`faqA${n}`)}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
+      </Reveal>
+
+      {/* ===== Reviews (component untouched) ===== */}
+      <Reveal>
+        <ReviewsSection
+          reviews={approved}
+          average={avgRating}
+          count={reviewCount}
+        />
+      </Reveal>
+
+      {/* ===== Closing CTA band ===== */}
+      <Reveal>
+        <section className="ink relative overflow-hidden rounded-3xl p-8 sm:p-12">
+          <Watermark className="-bottom-6 text-[7rem] text-white/5 sm:text-[11rem]" />
+          <div className="relative max-w-xl">
+            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+              {t("ctaBandTitle")}
+            </h2>
+            <p className="mt-3 text-white/60">{t("ctaBandDesc")}</p>
+            <div className="mt-8">
+              <Pill
+                href={loggedIn ? "/dashboard" : "/register"}
+                variant="brand"
+              >
+                {loggedIn ? t("ctaDashboard") : t("ctaPrimary")}
+              </Pill>
             </div>
           </div>
-          {[1, 2, 3, 4].map((n) => (
-            <div
-              key={n}
-              className="grid grid-cols-[1.4fr_1fr_1fr] border-t border-brand-100 text-sm"
-            >
-              <div className="p-3 font-medium text-brand-900/80 sm:p-4">
-                {t(`compareRow${n}Label`)}
-              </div>
-              <div className="flex items-center justify-center gap-1 p-3 text-center font-semibold text-brand-700 sm:p-4">
-                <Icon name="check" className="text-brand-600" />
-                {t(`compareRow${n}Us`)}
-              </div>
-              <div className="p-3 text-center text-brand-900/55 sm:p-4">
-                {t(`compareRow${n}Others`)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-center text-xs text-brand-900/50">
-          {t("compareNote")}
-        </p>
-      </section>
-
-      {/* FAQ — answer the "is it really free?" skepticism head-on */}
-      <section>
-        <h2 className="mb-6 text-center text-2xl font-bold text-brand-900">
-          {t("faqTitle")}
-        </h2>
-        <div className="mx-auto max-w-2xl space-y-3">
-          {[1, 2, 3].map((n) => (
-            <details key={n} className="card group rounded-2xl p-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-brand-900 [&::-webkit-details-marker]:hidden">
-                <span>{t(`faqQ${n}`)}</span>
-                <span
-                  className="shrink-0 text-xl leading-none text-brand-500 transition-transform group-open:rotate-45"
-                  aria-hidden
-                >
-                  ＋
-                </span>
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-brand-900/70">
-                {t(`faqA${n}`)}
-              </p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      {/* Reviews / social proof */}
-      <ReviewsSection
-        reviews={approved}
-        average={avgRating}
-        count={reviewCount}
-      />
+        </section>
+      </Reveal>
     </div>
   );
 }
