@@ -167,17 +167,10 @@ body {
 .pill-plain {
   padding: 0.75rem 1.75rem;
 }
-.pill-dark {
-  background: #14090f;
-  color: #fff;
-}
-.pill-dark .pill-arrow {
-  background: #fff;
-  color: #14090f;
-}
 .pill-brand {
   background: var(--color-brand-600);
   color: #fff;
+  box-shadow: 0 8px 20px -8px rgba(217, 38, 104, 0.6);
 }
 .pill-brand .pill-arrow {
   background: #fff;
@@ -186,14 +179,6 @@ body {
 .pill-outline {
   border: 1px solid var(--color-brand-300);
   color: var(--color-brand-800);
-}
-[data-theme="dark"] .pill-dark {
-  background: #fff;
-  color: #14090f;
-}
-[data-theme="dark"] .pill-dark .pill-arrow {
-  background: #14090f;
-  color: #fff;
 }
 
 /* Hero headline: each line rises out of a clip on load. Per-line delay is

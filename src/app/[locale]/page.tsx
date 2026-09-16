@@ -43,7 +43,7 @@ function Pill({
   arrow = true,
 }: {
   href: string;
-  variant: "dark" | "brand" | "outline";
+  variant: "brand" | "outline";
   children: string;
   arrow?: boolean;
 }) {
@@ -111,11 +111,11 @@ export default async function LandingPage({
 
   // The primary call to action is the same everywhere on the page.
   const primaryCta = loggedIn ? (
-    <Pill href="/dashboard" variant="dark">
+    <Pill href="/dashboard" variant="brand">
       {t("ctaDashboard")}
     </Pill>
   ) : (
-    <Pill href="/register" variant="dark">
+    <Pill href="/register" variant="brand">
       {t("ctaPrimary")}
     </Pill>
   );
