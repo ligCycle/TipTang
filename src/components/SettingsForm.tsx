@@ -19,6 +19,7 @@ type Initial = {
   avatarUrl: string;
   coverUrl: string;
   autoConfirmTips: boolean;
+  minTipAmount: number;
   socialLinks: SocialLinks;
   profileColor: string;
 };
@@ -51,6 +52,7 @@ function snapshot(f: Initial): string {
     bio: f.bio,
     promptpayId: f.promptpayId,
     autoConfirmTips: f.autoConfirmTips,
+    minTipAmount: f.minTipAmount,
     profileColor: f.profileColor,
     socialLinks: SOCIAL_PLATFORMS.map((p) => f.socialLinks[p.key] ?? ""),
   });
@@ -339,6 +341,25 @@ export function SettingsForm({
               className={inputClass}
             />
             <span className={hintClass}>{t("promptpayHint")}</span>
+          </label>
+
+          <label className="block">
+            <span className={labelClass}>{t("minTip")}</span>
+            <input
+              type="number"
+              min={1}
+              max={100000}
+              inputMode="numeric"
+              value={form.minTipAmount}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  minTipAmount: Math.max(1, Math.round(Number(e.target.value) || 1)),
+                }))
+              }
+              className={inputClass}
+            />
+            <span className={hintClass}>{t("minTipHint")}</span>
           </label>
 
           <label className="flex cursor-pointer items-start gap-3">

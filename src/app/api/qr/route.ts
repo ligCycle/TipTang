@@ -20,10 +20,13 @@ export async function POST(req: Request) {
   // Fetch the PromptPay id SERVER-SIDE only. It is never returned to the client.
   const creator = await prisma.user.findUnique({
     where: { username },
-    select: { promptpayId: true },
+    select: { promptpayId: true, minTipAmount: true },
   });
   if (!creator?.promptpayId) {
     return NextResponse.json({ error: "not_configured" }, { status: 404 });
+  }
+  if (amount < creator.minTipAmount) {
+    return NextResponse.json({ error: "below_minimum" }, { status: 400 });
   }
 
   const { dataUrl } = await generatePromptPayQr(creator.promptpayId, amount);

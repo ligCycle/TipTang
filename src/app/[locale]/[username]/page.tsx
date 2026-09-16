@@ -82,6 +82,7 @@ export default async function ProfilePage({
       timerReduceBahtPerUnit: true,
       timerReduceSecondsPerUnit: true,
       timerReduceMinAmount: true,
+      minTipAmount: true,
     },
   });
   if (!creator) notFound();
@@ -92,7 +93,8 @@ export default async function ProfilePage({
   const timerChoice = creator.timerEnabled
     ? {
           reduceEnabled: creator.timerReduceEnabled,
-          minAmount: creator.timerReduceMinAmount,
+          // Sabotage minimum is never below the general minimum tip.
+          minAmount: Math.max(creator.timerReduceMinAmount, creator.minTipAmount),
           addBaht: creator.timerBahtPerUnit,
           addMin: Math.round(creator.timerSecondsPerUnit / 60),
           reduceBaht: creator.timerReduceBahtPerUnit,
@@ -286,6 +288,7 @@ export default async function ProfilePage({
             creatorName={creator.displayName}
             accentColor={accent}
             timerChoice={timerChoice}
+            minAmount={creator.minTipAmount}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">

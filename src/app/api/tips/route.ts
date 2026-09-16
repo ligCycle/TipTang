@@ -43,6 +43,7 @@ export async function POST(req: Request) {
       timerEnabled: true,
       timerReduceEnabled: true,
       timerReduceMinAmount: true,
+      minTipAmount: true,
     },
   });
   if (!creator?.promptpayId) {
@@ -61,6 +62,12 @@ export async function POST(req: Request) {
   // Parse checkbox manually (see note in validators.ts).
   const isMessagePublic = form.get("isMessagePublic") === "true";
 
+  // Creator-chosen floor. Checked here (not in the zod schema) because it is
+  // per-creator data that only exists after the lookup above.
+  if (parsed.data.amount < creator.minTipAmount) {
+    return NextResponse.json({ error: "below_minimum" }, { status: 400 });
+  }
+
   // What the supporter wants this tip to do to the subathon clock. ADD is the
   // default (and what any old client sends). REDUCE is only honoured when the
   // creator has opened it up and the amount clears their minimum — otherwise
@@ -73,7 +80,8 @@ export async function POST(req: Request) {
     !(
       creator.timerEnabled &&
       creator.timerReduceEnabled &&
-      parsed.data.amount >= creator.timerReduceMinAmount
+      // The sabotage minimum can never sit below the general minimum.
+      parsed.data.amount >= Math.max(creator.timerReduceMinAmount, creator.minTipAmount)
     )
   ) {
     return NextResponse.json({ error: "reduce_not_allowed" }, { status: 400 });

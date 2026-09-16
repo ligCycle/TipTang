@@ -27,6 +27,7 @@ export const profileSchema = z.object({
     .optional()
     .or(z.literal("")),
   autoConfirmTips: z.boolean().optional(),
+  minTipAmount: z.coerce.number().int().min(1).max(100000).optional(),
   goalTitle: z.string().trim().max(80).optional().or(z.literal("")),
   goalAmount: z.coerce
     .number()

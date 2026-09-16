@@ -110,6 +110,7 @@
   "profile": {
     "supportTitle": "Support {name}",
     "amountLabel": "Amount (THB)",
+    "minAmountHint": "Minimum {min} THB",
     "nameLabel": "Your name",
     "namePlaceholder": "Anonymous",
     "messageLabel": "Message to the creator (optional)",
@@ -324,6 +325,8 @@
     "bioPlaceholder": "Tell people a bit about you...",
     "promptpayId": "PromptPay (phone number or national ID)",
     "promptpayHint": "10-digit phone or 13-digit national ID — used only to generate the QR, never shown publicly.",
+    "minTip": "Minimum tip (THB)",
+    "minTipHint": "Supporters cannot tip below this · 1 = no minimum",
     "autoConfirm": "Auto-confirm tips that pass verification",
     "autoConfirmHint": "On: slips the system verifies (amount + PromptPay match) are confirmed automatically; anything suspicious is held for you to confirm manually. Off: every tip waits for your manual confirmation. Either way, each slip gets a flag showing whether it looks correct or suspicious.",
     "saved": "Saved!",

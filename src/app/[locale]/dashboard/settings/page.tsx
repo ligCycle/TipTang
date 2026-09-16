@@ -29,6 +29,7 @@ export default async function SettingsPage({
       avatarUrl: true,
       coverUrl: true,
       autoConfirmTips: true,
+      minTipAmount: true,
       socialLinks: true,
       profileColor: true,
     },
@@ -50,6 +51,7 @@ export default async function SettingsPage({
           avatarUrl: user.avatarUrl ?? "",
           coverUrl: user.coverUrl ?? "",
           autoConfirmTips: user.autoConfirmTips,
+          minTipAmount: user.minTipAmount,
           socialLinks: normalizeSocialLinks(user.socialLinks),
           profileColor: user.profileColor ?? "",
         }}

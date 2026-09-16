@@ -7,6 +7,16 @@ import { SlipDropzone } from "@/components/SlipDropzone";
 import { Icon } from "@/components/Icon";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
+
+/**
+ * Quick-pick chips that respect the creator's minimum. If the standard set is
+ * mostly wiped out by a high minimum, offer multiples of the minimum instead
+ * so the row never ends up empty.
+ */
+function quickAmountsFor(min: number): number[] {
+  const kept = QUICK_AMOUNTS.filter((a) => a >= min);
+  return kept.length >= 3 ? kept : [min, min * 2, min * 5, min * 10];
+}
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
@@ -19,10 +29,13 @@ export function TipForm({
   creatorName,
   accentColor,
   timerChoice = null,
+  minAmount = 1,
 }: {
   username: string;
   creatorName: string;
   accentColor?: string;
+  /** Creator-chosen minimum tip in baht (1 = none). */
+  minAmount?: number;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -55,8 +68,11 @@ export function TipForm({
   const [step, setStep] = useState<Step>("form");
   // Keep the amount as the raw input string so clearing the field leaves it
   // empty (not a stubborn "0" that's annoying to type over); derive the number.
-  const [amountStr, setAmountStr] = useState("50");
+  const quickAmounts = quickAmountsFor(minAmount);
+  const defaultAmount = quickAmounts.includes(50) ? 50 : quickAmounts[0];
+  const [amountStr, setAmountStr] = useState(String(defaultAmount));
   const amount = amountStr.trim() === "" ? 0 : Number(amountStr);
+  const belowMinimum = amount > 0 && amount < minAmount;
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -145,6 +161,7 @@ export function TipForm({
           duplicate_slip: tErr("duplicateSlip"),
           slip_required: t("slipRequired"),
           reduce_not_allowed: tErr("reduceNotAllowed"),
+          below_minimum: t("minAmountHint", { min: minAmount }),
         };
         setError(map[data.error] ?? tErr("notFound"));
         return;
@@ -166,7 +183,7 @@ export function TipForm({
     setSlipPreview(null);
     setName("");
     setMessage("");
-    setAmountStr("50");
+    setAmountStr(String(defaultAmount));
     setTimerEffect("ADD");
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -204,7 +221,7 @@ export function TipForm({
               {t("quickAmount")}
             </span>
             <div className="flex flex-wrap gap-2">
-              {QUICK_AMOUNTS.map((a) => (
+              {quickAmounts.map((a) => (
                 <button
                   type="button"
                   key={a}
@@ -228,7 +245,7 @@ export function TipForm({
             </span>
             <input
               type="number"
-              min={1}
+              min={minAmount}
               max={100000}
               inputMode="numeric"
               value={amountStr}
@@ -236,6 +253,15 @@ export function TipForm({
               className="input"
               required
             />
+            {minAmount > 1 && (
+              <span
+                className={`mt-1 block text-xs ${
+                  belowMinimum ? "font-medium text-red-600" : "text-brand-900/55"
+                }`}
+              >
+                {t("minAmountHint", { min: minAmount })}
+              </span>
+            )}
           </label>
 
           {timerChoice && (
@@ -336,7 +362,7 @@ export function TipForm({
 
           <button
             type="submit"
-            disabled={loading || reduceTooSmall}
+            disabled={loading || reduceTooSmall || belowMinimum}
             style={primaryStyle}
             className="btn-primary w-full transition hover:brightness-95"
           >

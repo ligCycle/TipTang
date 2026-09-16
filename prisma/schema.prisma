@@ -190,6 +190,8 @@ model User {
   // When true, incoming tips are confirmed automatically (creator trusts the
   // slip / checks their bank) instead of waiting for manual confirmation.
   autoConfirmTips Boolean @default(false)
+  // Smallest tip the creator accepts (baht). 1 = no restriction.
+  minTipAmount    Int     @default(1)
   // Subathon timer (OBS overlay): confirmed donations add time to a live
   // countdown. Rate = timerSecondsPerUnit seconds added per timerBahtPerUnit baht.
   timerEnabled        Boolean   @default(false)
