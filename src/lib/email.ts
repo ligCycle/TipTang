@@ -1,9 +1,16 @@
 import "server-only";
 import nodemailer from "nodemailer";
 
+// Where replies land. Resets and tip alerts go out from the support address
+// (or, on a Gmail fallback, at least point replies at it).
+const REPLY_TO = (process.env.EMAIL_REPLY_TO ?? "support@tiptang.com").trim();
+
 /**
  * Low-level email sender.
- * Provider precedence: SMTP (e.g. Gmail) -> Resend -> dev console fallback.
+ * Provider precedence: Resend (verified tiptang.com domain) -> SMTP (Gmail
+ * app password, the original bootstrap) -> dev console fallback. Resend wins
+ * when both are configured so switching production over is a matter of
+ * adding RESEND_* on Vercel — no need to unset the SMTP variables first.
  * With no provider configured the message is logged to the server console so
  * flows stay testable in development.
  */
@@ -15,6 +22,26 @@ async function sendEmail(opts: {
   devLabel: string;
 }): Promise<void> {
   const { to, subject, text, html, devLabel } = opts;
+
+  if (process.env.RESEND_API_KEY) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: (process.env.RESEND_FROM ?? "TipTang <support@tiptang.com>").trim(),
+        to,
+        reply_to: REPLY_TO,
+        subject,
+        text,
+        html,
+      }),
+    });
+    if (!res.ok) throw new Error(`Resend failed: ${await res.text()}`);
+    return;
+  }
 
   if (process.env.SMTP_HOST) {
     // Trim env values — a stray tab/space (e.g. from copy-paste) in SMTP_HOST
@@ -31,29 +58,11 @@ async function sendEmail(opts: {
     await transport.sendMail({
       from: (process.env.SMTP_FROM ?? process.env.SMTP_USER)?.trim(),
       to,
+      replyTo: REPLY_TO,
       subject,
       text,
       html,
     });
-    return;
-  }
-
-  if (process.env.RESEND_API_KEY) {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: process.env.RESEND_FROM ?? "TipTang <onboarding@resend.dev>",
-        to,
-        subject,
-        text,
-        html,
-      }),
-    });
-    if (!res.ok) throw new Error(`Resend failed: ${await res.text()}`);
     return;
   }
 
