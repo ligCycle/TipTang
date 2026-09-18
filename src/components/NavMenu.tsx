@@ -114,10 +114,10 @@ export function NavMenu({
               onClick={() => setOpen(false)}
               className="fixed inset-0 z-[99] bg-black/20 backdrop-blur-sm sm:hidden"
             />
-            {/* `.card` surface is already dark-theme-aware (globals.css override),
-                so contrast is correct in both themes. z-[100] floats above the
-                backdrop and the sticky header. */}
-            <div className="card absolute right-0 top-full z-[100] mt-2 w-56 rounded-2xl p-2">
+            {/* `.card-solid`: opaque in both themes so the hero underneath never
+                shows through the links. z-[100] floats above the backdrop and
+                the sticky header. */}
+            <div className="card card-solid absolute right-0 top-full z-[100] mt-2 w-56 rounded-2xl p-2">
               {links.map((l) => (
                 <Link
                   key={l.href}

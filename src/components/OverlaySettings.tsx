@@ -291,7 +291,7 @@ export function OverlaySettings() {
   }
 
   function testTts() {
-    const text = "ผู้สนับสนุนตัวอย่าง ทิป 100 บาท ทดสอบเสียงอ่านโดเนต";
+    const text = "ผู้สนับสนุนตัวอย่าง ทิป 100 บาท ทดสอบเสียงอ่านโดเนท";
     try {
       const tts = new Audio(`/api/tts?lang=th&text=${encodeURIComponent(text)}`);
       tts.play().catch(() => {});

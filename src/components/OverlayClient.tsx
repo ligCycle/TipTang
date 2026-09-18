@@ -100,7 +100,10 @@ export function OverlayClient({
     if (a.message) parts.push(a.message);
     const text = parts.join(" ").slice(0, 200);
     try {
-      const tts = new Audio(`/api/tts?lang=th&text=${encodeURIComponent(text)}`);
+      // The proxy only speaks for a valid overlay key (or a logged-in creator).
+      const tts = new Audio(
+        `/api/tts?lang=th&u=${encodeURIComponent(username)}&key=${encodeURIComponent(apiKey)}&text=${encodeURIComponent(text)}`,
+      );
       tts.play().catch(() => {});
     } catch {
       // ignore

@@ -272,6 +272,15 @@ html.js .reveal.is-in {
   box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
 }
 
+/* Opaque variant for floating menus: the translucent card lets whatever sits
+   underneath (hero headline, pink CTAs) bleed through the links. */
+.card.card-solid {
+  background: #fff;
+}
+[data-theme="dark"] .card.card-solid {
+  background: #26161f;
+}
+
 [data-theme="dark"] .input {
   background: #241019;
   border-color: rgba(255, 150, 190, 0.22);

@@ -56,11 +56,20 @@ export const profileSchema = z.object({
     .or(z.literal("")),
 });
 
+// Whole baht only. The donate form already enforces step=1; the API must
+// agree, otherwise 20.555 becomes a QR for 20.56 and a Decimal(10,2) row that
+// no longer equals what the supporter typed.
+export const tipAmountSchema = z.coerce
+  .number()
+  .int()
+  .min(1)
+  .max(100000);
+
 export const tipSchema = z.object({
   // Empty name is allowed → displayed as "Anonymous".
   supporterName: z.string().trim().max(60).default(""),
   message: z.string().trim().max(300).default(""),
-  amount: z.coerce.number().positive().min(1).max(100000),
+  amount: tipAmountSchema,
 });
 // NOTE: do NOT use z.coerce.boolean() for checkbox values — Boolean("false")
 // is true. Parse isMessagePublic manually (=== "true") in the route.
@@ -104,5 +113,5 @@ export const resetSchema = z.object({
 
 export const qrSchema = z.object({
   username: usernameSchema,
-  amount: z.coerce.number().positive().min(1).max(100000),
+  amount: tipAmountSchema,
 });

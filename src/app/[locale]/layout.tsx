@@ -90,7 +90,7 @@ export default async function LocaleLayout({
                 {t("privacy")}
               </Link>
             </nav>
-            <p>TipTang · MVP</p>
+            <p>© {new Date().getFullYear()} TipTang</p>
           </footer>
           <Analytics />
         </NextIntlClientProvider>

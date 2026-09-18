@@ -1,3 +1,5 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // Text-to-speech proxy. OBS's embedded browser has no built-in speech voices,
@@ -5,7 +7,25 @@ import { rateLimit, clientIp } from "@/lib/ratelimit";
 // server-side (Google Translate TTS, client=tw-ob) and stream it back.
 // Length is capped (the endpoint rejects long text) and the language is
 // whitelisted.
+//
+// Not a public service: the caller must be an overlay (username + its secret
+// key, like /api/overlay/[username]) or a logged-in creator (the "test voice"
+// button on the overlay settings page).
 const LANGS = new Set(["th", "en"]);
+
+async function allowed(url: URL): Promise<boolean> {
+  const username = url.searchParams.get("u");
+  const key = url.searchParams.get("key");
+  if (username && key) {
+    const user = await prisma.user.findUnique({
+      where: { username },
+      select: { overlayKey: true },
+    });
+    return !!user?.overlayKey && user.overlayKey === key;
+  }
+  const session = await auth();
+  return Boolean(session?.user?.id);
+}
 
 export async function GET(req: Request) {
   const limit = await rateLimit(`tts:${clientIp(req)}`, 30, 60_000);
@@ -18,6 +38,9 @@ export async function GET(req: Request) {
   const lang = url.searchParams.get("lang") ?? "th";
   if (!text || !LANGS.has(lang)) {
     return new Response("bad_request", { status: 400 });
+  }
+  if (!(await allowed(url))) {
+    return new Response("forbidden", { status: 403 });
   }
 
   const src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(
@@ -39,7 +62,8 @@ export async function GET(req: Request) {
     return new Response(upstream.body, {
       headers: {
         "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=86400",
+        // Keyed URLs are per-creator; "private" keeps shared caches out of it.
+        "Cache-Control": "private, max-age=86400",
       },
     });
   } catch {
