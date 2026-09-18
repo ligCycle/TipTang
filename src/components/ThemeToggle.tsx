@@ -32,6 +32,9 @@ export function ThemeToggle() {
       }
     }
     document.documentElement.setAttribute("data-theme", resolved);
+    // The inline ThemeScript only runs on the server-rendered load; a
+    // remount of <html> also drops the `js` marker it set, so restore it.
+    document.documentElement.classList.add("js");
     setTheme(resolved);
     // Re-run on navigation (e.g. locale switch) so the theme never resets.
   }, [pathname]);

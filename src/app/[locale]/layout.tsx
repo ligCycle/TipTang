@@ -9,6 +9,7 @@ import { ogImages } from "@/lib/og";
 import { Link } from "@/i18n/navigation";
 import { Header } from "@/components/Header";
 import { DemoBanner } from "@/components/DemoBanner";
+import { ThemeScript } from "@/components/ThemeScript";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -48,9 +49,6 @@ export async function generateMetadata({
   };
 }
 
-// Runs before paint to set the theme, avoiding a light/dark flash (FOUC).
-const THEME_SCRIPT = `(function(){document.documentElement.classList.add('js');try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
-
 export default async function LocaleLayout({
   children,
   params,
@@ -68,7 +66,8 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className="h-full antialiased" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* Sets data-theme before first paint; server HTML only. */}
+        <ThemeScript />
       </head>
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
