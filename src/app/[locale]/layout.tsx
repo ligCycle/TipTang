@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
 import { routing } from "@/i18n/routing";
+import { ogImages } from "@/lib/og";
 import { Link } from "@/i18n/navigation";
 import { Header } from "@/components/Header";
 import { DemoBanner } from "@/components/DemoBanner";
@@ -11,6 +13,39 @@ import "../globals.css";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
+}
+
+// Site-wide title/description/social cards in the visitor's language. Pages
+// that export their own `title` get the "%s · TipTang" template; pages that
+// don't (the landing page) fall back to the full brand title. Root layout.tsx
+// keeps the Thai copy only as a fallback for routes outside [locale].
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+  const t = await getTranslations({ locale, namespace: "meta" });
+  const images = ogImages(t("ogImageAlt"));
+  return {
+    title: { default: t("title"), template: "%s · TipTang" },
+    description: t("description"),
+    openGraph: {
+      siteName: "TipTang",
+      type: "website",
+      locale: locale === "th" ? "th_TH" : "en_US",
+      title: t("title"),
+      description: t("ogDescription"),
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("ogDescription"),
+      images,
+    },
+  };
 }
 
 // Runs before paint to set the theme, avoiding a light/dark flash (FOUC).

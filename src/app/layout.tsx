@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+// Locale-aware title/description/social copy lives in [locale]/layout.tsx.
+// What's here is the base URL plus a Thai fallback for routes outside a
+// locale (/overlay/*). No `template` at this level: it would wrap the locale
+// layout's default title too ("TipTang — … · TipTang").
 export const metadata: Metadata = {
   metadataBase: new URL("https://tiptang.com"),
-  title: {
-    default: "TipTang — รับทิป & โดเนทผ่าน PromptPay ฟรี",
-    template: "%s · TipTang",
-  },
+  title: "TipTang — รับทิป & โดเนทผ่าน PromptPay ฟรี",
   description:
     "TipTang รับทิป/โดเนทผ่านพร้อมเพย์ ฟรี 0% ไม่หักค่าธรรมเนียม เงินเข้าบัญชีคุณตรง ไม่ต้องรอถอน — ทางเลือกแทน TipMe สำหรับครีเอเตอร์และสตรีมเมอร์ไทย พร้อม overlay สำหรับ OBS (แจ้งเตือน/เป้าหมาย/เสียงอ่านโดเนท)",
   keywords: [

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { formatDate } from "@/lib/format";
 
 type Report = {
   id: string;
@@ -39,10 +40,7 @@ export function ReportAdminRow({
     }
   }
 
-  const date = new Date(report.createdAt).toLocaleString(
-    locale === "th" ? "th-TH" : "en-US",
-    { dateStyle: "medium", timeStyle: "short" },
-  );
+  const date = formatDate(report.createdAt, locale === "th" ? "th-TH" : "en-US");
 
   return (
     <li className="card rounded-2xl p-4">

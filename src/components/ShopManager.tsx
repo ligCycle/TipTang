@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { formatBaht } from "@/lib/format";
+import { formatBaht, formatDate } from "@/lib/format";
 import { Icon } from "@/components/Icon";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -135,12 +135,8 @@ export function ShopManager({
     router.refresh();
   }
 
-  const fmtDate = (s: string) =>
-    new Date(s).toLocaleString(locale === "th" ? "th-TH" : "en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
   const cur = locale === "th" ? "th-TH" : "en-US";
+  const fmtDate = (s: string) => formatDate(s, cur);
 
   return (
     <div className="space-y-8">

@@ -73,10 +73,18 @@
     "faqQ3": "Is OBS setup hard? Will switching waste my time?",
     "faqA3": "Not hard at all. Sign up, copy your overlay link, and drop it into OBS as a Browser Source — done in 5 minutes, with on-screen alerts and read-aloud (TTS) ready to go."
   },
+  "meta": {
+    "title": "TipTang — Tips & donations via PromptPay, 0% fees",
+    "description": "TipTang lets Thai creators and streamers receive tips and donations via PromptPay with 0% fees. Money goes straight to your bank — no holds, no withdrawals. A TipMe alternative with OBS overlays (alerts, goal bar, TTS).",
+    "ogDescription": "Tips & donations via PromptPay, 0% fees, money straight to your bank — a TipMe alternative with OBS overlays",
+    "ogImageAlt": "TipTang — tips & donations via PromptPay, 0% fees, money straight to your bank"
+  },
   "auth": {
     "registerTitle": "Become a creator",
     "loginTitle": "Log in",
     "continueWithGoogle": "Continue with Google",
+    "signUpWithGoogle": "Sign up with Google",
+    "registerConsent": "By signing up you confirm you are 18 or older and agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
     "orDivider": "or",
     "email": "Email",
     "password": "Password",

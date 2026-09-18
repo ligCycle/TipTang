@@ -8,6 +8,7 @@ import { TipForm } from "@/components/TipForm";
 import { ShopCheckout } from "@/components/ShopCheckout";
 import { SHOP_ENABLED } from "@/lib/features";
 import { formatBaht } from "@/lib/format";
+import { ogImages } from "@/lib/og";
 import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
 import { Icon } from "@/components/Icon";
@@ -22,7 +23,10 @@ export async function generateMetadata({
     where: { username },
     select: { displayName: true, bio: true },
   });
-  if (!creator) return { title: "Not found" };
+  if (!creator) {
+    const t = await getTranslations({ locale, namespace: "notFound" });
+    return { title: t("title"), robots: { index: false } };
+  }
 
   const title =
     locale === "th"
@@ -44,8 +48,19 @@ export async function generateMetadata({
         "x-default": `/th/${username}`,
       },
     },
-    openGraph: { title: `${title} · TipTang`, description, type: "profile" },
-    twitter: { card: "summary_large_image", title, description },
+    // Explicit image: defining `openGraph` here drops the inherited one.
+    openGraph: {
+      title: `${title} · TipTang`,
+      description,
+      type: "profile",
+      images: ogImages(title),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImages(title),
+    },
   };
 }
 
