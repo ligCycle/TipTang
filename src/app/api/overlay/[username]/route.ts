@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after as runAfter } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tipSeconds } from "@/lib/subathon-math";
 
@@ -22,6 +22,7 @@ export async function GET(
     select: {
       id: true,
       overlayKey: true,
+      overlayLastSeenAt: true,
       timerEnabled: true,
       timerBahtPerUnit: true,
       timerSecondsPerUnit: true,
@@ -31,6 +32,32 @@ export async function GET(
   });
   if (!user?.overlayKey || user.overlayKey !== key) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  // Activation tracking: note that this overlay is really being polled (OBS
+  // or a browser tab), for the admin funnel. The value we just read decides
+  // whether to touch the DB at all, so the usual poll costs no extra query;
+  // the WHERE repeats the check so two OBS instances can't both write.
+  const OVERLAY_SEEN_STALE_MS = 5 * 60_000;
+  const staleBefore = new Date(Date.now() - OVERLAY_SEEN_STALE_MS);
+  if (!user.overlayLastSeenAt || user.overlayLastSeenAt < staleBefore) {
+    const userId = user.id;
+    runAfter(async () => {
+      try {
+        await prisma.user.updateMany({
+          where: {
+            id: userId,
+            OR: [
+              { overlayLastSeenAt: null },
+              { overlayLastSeenAt: { lt: staleBefore } },
+            ],
+          },
+          data: { overlayLastSeenAt: new Date() },
+        });
+      } catch (err) {
+        console.error("[overlay] overlayLastSeenAt update failed:", err);
+      }
+    });
   }
 
   const afterDate = after ? new Date(after) : null;
