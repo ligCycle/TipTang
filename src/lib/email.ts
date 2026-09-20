@@ -140,3 +140,40 @@ export async function sendTipNotificationEmail(opts: {
     devLabel: "Tip notification",
   });
 }
+
+/**
+ * One-time "you're stuck here" reminder, sent by the admin from the
+ * activation table. Thai only (creators are Thai), one call to action, and
+ * an explicit invitation to reply — the reply is the point.
+ */
+export async function sendActivationNudgeEmail(opts: {
+  to: string;
+  displayName: string;
+  template: "NO_PROMPTPAY" | "NO_OVERLAY";
+}): Promise<void> {
+  const { to, displayName, template } = opts;
+  const name = displayName.trim() || "ครีเอเตอร์";
+  const subject = "ติดตรงไหนบอกเราได้นะ — TipTang";
+
+  const body =
+    template === "NO_PROMPTPAY"
+      ? {
+          intro: `สวัสดี ${name} เห็นว่าสมัคร TipTang ไว้แล้ว แต่ยังไม่ได้ใส่พร้อมเพย์ — ใส่แค่เบอร์โทรหรือเลขบัตรเดียว ก็รับทิปเข้าบัญชีตรงได้เลย`,
+          cta: "ไปหน้าตั้งค่า",
+          url: "https://tiptang.com/th/dashboard/settings",
+        }
+      : {
+          intro: `สวัสดี ${name} พร้อมเพย์เรียบร้อยแล้ว เหลือแค่เอา URL overlay ไปใส่ใน OBS ใช้เวลาแค่ 1 นาที แล้วทิปจะเด้งบนจอไลฟ์ได้เลย`,
+          cta: "ดูวิธีตั้ง OBS",
+          url: "https://tiptang.com/th/dashboard/overlay",
+        };
+  const outro = "ถ้าติดตรงไหน ตอบเมลนี้บอกได้เลย เราอ่านทุกฉบับ";
+
+  await sendEmail({
+    to,
+    subject,
+    text: `${body.intro}\n\n${body.cta}: ${body.url}\n\n${outro}`,
+    html: `<p>${esc(body.intro)}</p><p><a href="${body.url}">${esc(body.cta)}</a></p><p>${esc(outro)}</p>`,
+    devLabel: `Activation nudge (${template})`,
+  });
+}
