@@ -155,25 +155,37 @@ export async function sendActivationNudgeEmail(opts: {
   const name = displayName.trim() || "ครีเอเตอร์";
   const subject = "ติดตรงไหนบอกเราได้นะ — TipTang";
 
+  const SETTINGS = "https://tiptang.com/th/dashboard/settings";
+  const OVERLAY = "https://tiptang.com/th/dashboard/overlay";
+  // Each template: an intro paragraph, then one link per remaining step.
   const body =
     template === "NO_PROMPTPAY"
       ? {
-          intro: `สวัสดี ${name} เห็นว่าสมัคร TipTang ไว้แล้ว แต่ยังไม่ได้ใส่พร้อมเพย์ — ใส่แค่เบอร์โทรหรือเลขบัตรเดียว ก็รับทิปเข้าบัญชีตรงได้เลย`,
-          cta: "ไปหน้าตั้งค่า",
-          url: "https://tiptang.com/th/dashboard/settings",
+          intro: `สวัสดี ${name} เห็นว่าสมัคร TipTang ไว้แล้ว แต่ยังไม่ได้ใส่พร้อมเพย์ — เหลืออีกแค่ 2 ขั้นก็รับทิปได้แล้ว: 1) ใส่เบอร์โทรหรือเลขบัตรพร้อมเพย์ในหน้าตั้งค่า เงินจะเข้าบัญชีคุณตรง ๆ 2) เอา URL overlay ไปใส่ใน OBS แล้วทิปจะเด้งบนจอไลฟ์ ทั้งหมดใช้เวลาไม่เกิน 5 นาที`,
+          links: [
+            { label: "ขั้นที่ 1 — ใส่พร้อมเพย์", url: SETTINGS },
+            { label: "ขั้นที่ 2 — ตั้ง overlay ใน OBS", url: OVERLAY },
+          ],
         }
       : {
           intro: `สวัสดี ${name} พร้อมเพย์เรียบร้อยแล้ว เหลือแค่เอา URL overlay ไปใส่ใน OBS ใช้เวลาแค่ 1 นาที แล้วทิปจะเด้งบนจอไลฟ์ได้เลย`,
-          cta: "ดูวิธีตั้ง OBS",
-          url: "https://tiptang.com/th/dashboard/overlay",
+          links: [{ label: "ดูวิธีตั้ง OBS", url: OVERLAY }],
         };
   const outro = "ถ้าติดตรงไหน ตอบเมลนี้บอกได้เลย เราอ่านทุกฉบับ";
 
   await sendEmail({
     to,
     subject,
-    text: `${body.intro}\n\n${body.cta}: ${body.url}\n\n${outro}`,
-    html: `<p>${esc(body.intro)}</p><p><a href="${body.url}">${esc(body.cta)}</a></p><p>${esc(outro)}</p>`,
+    text: [
+      body.intro,
+      ...body.links.map((l) => `${l.label}: ${l.url}`),
+      outro,
+    ].join("\n\n"),
+    html: [
+      `<p>${esc(body.intro)}</p>`,
+      ...body.links.map((l) => `<p><a href="${l.url}">${esc(l.label)}</a></p>`),
+      `<p>${esc(outro)}</p>`,
+    ].join(""),
     devLabel: `Activation nudge (${template})`,
   });
 }
