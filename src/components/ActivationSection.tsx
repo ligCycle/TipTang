@@ -158,7 +158,7 @@ export async function ActivationSection({ locale }: { locale: string }) {
                   </td>
                   <td className="px-3 py-2">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BADGE[r.stage]}`}
+                      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${BADGE[r.stage]}`}
                     >
                       {t(`stage_${r.stage}`)}
                     </span>
