@@ -123,7 +123,7 @@
     "namePlaceholder": "Anonymous",
     "messageLabel": "Message to the creator (optional)",
     "messagePlaceholder": "Leave a kind message...",
-    "showPublic": "Show my message on the profile",
+    "showPublic": "Show my name and message on the profile (leaderboard + recent supporters)",
     "timerChoiceLabel": "What should this tip do to the stream timer?",
     "timerAdd": "Add time",
     "timerReduce": "Reduce time",
