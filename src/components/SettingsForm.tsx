@@ -16,6 +16,7 @@ type Initial = {
   username: string;
   bio: string;
   promptpayId: string;
+  paypalHandle: string;
   avatarUrl: string;
   coverUrl: string;
   autoConfirmTips: boolean;
@@ -51,6 +52,7 @@ function snapshot(f: Initial): string {
     username: f.username,
     bio: f.bio,
     promptpayId: f.promptpayId,
+    paypalHandle: f.paypalHandle,
     autoConfirmTips: f.autoConfirmTips,
     minTipAmount: f.minTipAmount,
     profileColor: f.profileColor,
@@ -212,12 +214,18 @@ export function SettingsForm({
         setError(
           data.error === "username_taken"
             ? t("errorUsernameTaken")
-            : tc("loading"),
+            : data.error === "invalid_paypal"
+              ? t("paypalInvalid")
+              : tc("loading"),
         );
         setStatus("error");
         return;
       }
-      setSavedForm(form);
+      // Show the stored (normalised) handle, e.g. a pasted URL becomes the name.
+      const saved = await res.json().catch(() => ({}));
+      const next = { ...form, paypalHandle: saved.paypalHandle ?? "" };
+      setForm(next);
+      setSavedForm(next);
       setStatus("saved");
       router.refresh();
       setTimeout(() => setStatus("idle"), 1500);
@@ -345,6 +353,20 @@ export function SettingsForm({
               className={inputClass}
             />
             <span className={hintClass}>{t("promptpayHint")}</span>
+          </label>
+
+          <label className="block">
+            <span className={labelClass}>{t("paypalHandle")}</span>
+            <input
+              value={form.paypalHandle}
+              onChange={update("paypalHandle")}
+              placeholder="paypal.me/yourname"
+              maxLength={200}
+              className={inputClass}
+              autoCapitalize="off"
+              spellCheck={false}
+            />
+            <span className={hintClass}>{t("paypalHint")}</span>
           </label>
 
           <label className="block">

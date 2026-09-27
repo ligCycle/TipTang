@@ -28,6 +28,8 @@ export const profileSchema = z.object({
     .or(z.literal("")),
   autoConfirmTips: z.boolean().optional(),
   minTipAmount: z.coerce.number().int().min(1).max(100000).optional(),
+  // Raw input (name or paypal.me URL); normalised in the route.
+  paypalHandle: z.string().trim().max(200).optional().or(z.literal("")),
   goalTitle: z.string().trim().max(80).optional().or(z.literal("")),
   goalAmount: z.coerce
     .number()

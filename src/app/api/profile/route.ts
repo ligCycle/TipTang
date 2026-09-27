@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { profileSchema } from "@/lib/validators";
 import { normalizeSocialLinks } from "@/lib/socials";
+import { normalizePaypalHandle } from "@/lib/paypal";
 
 export async function PATCH(req: Request) {
   const session = await auth();
@@ -22,11 +23,19 @@ export async function PATCH(req: Request) {
     promptpayId,
     autoConfirmTips,
     minTipAmount,
+    paypalHandle,
     goalTitle,
     goalAmount,
     socialLinks,
     profileColor,
   } = parsed.data;
+
+  // undefined = field not sent (leave as is); null = cleared.
+  const paypal =
+    paypalHandle === undefined ? undefined : normalizePaypalHandle(paypalHandle);
+  if (paypal === "invalid") {
+    return NextResponse.json({ error: "invalid_paypal" }, { status: 400 });
+  }
 
   // Goal is edited from the dashboard OBS card, not here — only touch these
   // fields when the client actually sends them. Empty amount / 0 clears it.
@@ -62,6 +71,7 @@ export async function PATCH(req: Request) {
       promptpayId: promptpayId ? promptpayId : null,
       ...(autoConfirmTips === undefined ? {} : { autoConfirmTips }),
       ...(minTipAmount === undefined ? {} : { minTipAmount }),
+      ...(paypal === undefined ? {} : { paypalHandle: paypal }),
       ...goalTitleUpdate,
       ...goalAmountUpdate,
       ...(cleanSocials === undefined ? {} : { socialLinks: cleanSocials }),
@@ -71,5 +81,5 @@ export async function PATCH(req: Request) {
     },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, paypalHandle: paypal ?? null });
 }
