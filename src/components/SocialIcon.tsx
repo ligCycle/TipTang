@@ -62,6 +62,19 @@ export function SocialIcon({
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
       );
+    case "kick":
+      // Kick's green block-K on its black tile — the bare green mark is too
+      // pale to read on the light chips these icons sit on.
+      return (
+        <svg {...common}>
+          <rect width="24" height="24" rx="5" fill="#0b0e0f" />
+          <path
+            transform="translate(4.2 4.2) scale(0.65)"
+            fill="#53FC18"
+            d="M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z"
+          />
+        </svg>
+      );
     case "discord":
       return (
         <svg {...common} fill="#5865F2">

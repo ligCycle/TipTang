@@ -4,6 +4,7 @@
 export type SocialKey =
   | "instagram"
   | "youtube"
+  | "kick"
   | "tiktok"
   | "facebook"
   | "x"
@@ -20,6 +21,7 @@ export const SOCIAL_PLATFORMS: {
 }[] = [
   { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/yourname" },
   { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@yourname" },
+  { key: "kick", label: "Kick", placeholder: "https://kick.com/yourname" },
   { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@yourname" },
   { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/yourpage" },
   { key: "x", label: "X (Twitter)", placeholder: "https://x.com/yourname" },
