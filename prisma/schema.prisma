@@ -182,6 +182,8 @@ model User {
   // PayPal.me name only (no URL), for overseas supporters. Null = PayPal off.
   // Public on purpose: it is rendered as a paypal.me link on the donate page.
   paypalHandle String?
+  // Shown to supporters on the success screen after they tip. Null = none.
+  thankYouMessage String?
   // Secret key for the OBS donation-alert overlay URL.
   overlayKey   String?  @unique
   // Activation tracking (admin-only). Last time the alert overlay polled
