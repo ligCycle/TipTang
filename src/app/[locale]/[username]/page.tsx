@@ -85,6 +85,7 @@ export default async function ProfilePage({
       // promptpayId is selected only to derive `canTip` below — it is NEVER
       // passed to a client component or rendered (PDPA).
       promptpayId: true,
+      paypalHandle: true,
       goalTitle: true,
       goalAmount: true,
       goalStartedAt: true,
@@ -304,6 +305,7 @@ export default async function ProfilePage({
             accentColor={accent}
             timerChoice={timerChoice}
             minAmount={creator.minTipAmount}
+            paypalHandle={creator.paypalHandle}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">

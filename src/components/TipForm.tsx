@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
 import { SlipDropzone } from "@/components/SlipDropzone";
 import { Icon } from "@/components/Icon";
+import { PaypalPayPanel } from "@/components/PaypalPayPanel";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
 
@@ -30,12 +31,15 @@ export function TipForm({
   accentColor,
   timerChoice = null,
   minAmount = 1,
+  paypalHandle = null,
 }: {
   username: string;
   creatorName: string;
   accentColor?: string;
   /** Creator-chosen minimum tip in baht (1 = none). */
   minAmount?: number;
+  /** Creator's PayPal.me name; null = PromptPay only. */
+  paypalHandle?: string | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -79,6 +83,7 @@ export function TipForm({
   // Always starts (and resets) on ADD so a hurried supporter never sabotages
   // the stream by accident.
   const [timerEffect, setTimerEffect] = useState<TimerEffect>("ADD");
+  const [method, setMethod] = useState<"PROMPTPAY" | "PAYPAL">("PROMPTPAY");
   const reduceTooSmall =
     timerChoice !== null &&
     timerEffect === "REDUCE" &&
@@ -97,6 +102,10 @@ export function TipForm({
     e.preventDefault();
     setError(null);
     if (!Number.isFinite(amount) || amount < 1) return;
+    if (method === "PAYPAL") {
+      setStep("pay");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/qr", {
@@ -149,6 +158,7 @@ export function TipForm({
       fd.set("message", message);
       fd.set("isMessagePublic", isPublic ? "true" : "false");
       fd.set("timerEffect", timerChoice ? timerEffect : "ADD");
+      fd.set("paymentMethod", method);
       fd.set("slip", slip);
 
       const res = await fetch("/api/tips", { method: "POST", body: fd });
@@ -162,6 +172,7 @@ export function TipForm({
           slip_required: t("slipRequired"),
           reduce_not_allowed: tErr("reduceNotAllowed"),
           below_minimum: t("minAmountHint", { min: minAmount }),
+          paypal_not_enabled: t("paypalNotEnabled"),
         };
         setError(map[data.error] ?? tErr("notFound"));
         return;
@@ -194,7 +205,10 @@ export function TipForm({
         className="card rounded-3xl p-8 text-center"
         style={cardTintStyle}
       >
-        <Icon name="check-circle" className="mx-auto h-14 w-14 text-emerald-500" />
+        <Icon
+          name="check-circle"
+          className="mx-auto h-14 w-14 text-emerald-500"
+        />
         <h2 className="mt-3 text-xl font-bold text-brand-900">
           {tSuccess("title")}
         </h2>
@@ -216,6 +230,29 @@ export function TipForm({
 
       {step === "form" && (
         <form onSubmit={generateQr} className="space-y-5">
+          {paypalHandle && (
+            <div className="grid grid-cols-2 gap-2" role="radiogroup">
+              {(["PROMPTPAY", "PAYPAL"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={method === m}
+                  onClick={() => setMethod(m)}
+                  style={method === m ? primaryStyle : undefined}
+                  // Two lines allowed + smaller text on phones: truncating would hide
+                  // "(ในไทย)" / "(ต่างประเทศ)", which is the whole point of the label.
+                  className={`rounded-xl px-2 py-2 text-xs leading-tight font-semibold transition sm:px-3 sm:text-sm ${
+                    method === m
+                      ? "bg-brand-600 text-white"
+                      : "bg-brand-100 text-brand-900/70 hover:bg-brand-200"
+                  }`}
+                >
+                  {t(m === "PROMPTPAY" ? "methodPromptpay" : "methodPaypal")}
+                </button>
+              ))}
+            </div>
+          )}
           <div>
             <span className="mb-2 block text-sm font-medium text-brand-900/80">
               {t("quickAmount")}
@@ -256,7 +293,9 @@ export function TipForm({
             {minAmount > 1 && (
               <span
                 className={`mt-1 block text-xs ${
-                  belowMinimum ? "font-medium text-red-600" : "text-brand-900/55"
+                  belowMinimum
+                    ? "font-medium text-red-600"
+                    : "text-brand-900/55"
                 }`}
               >
                 {t("minAmountHint", { min: minAmount })}
@@ -371,43 +410,62 @@ export function TipForm({
         </form>
       )}
 
-      {step === "pay" && qr && (
+      {step === "pay" && (qr || method === "PAYPAL") && (
         <form onSubmit={submitTip} className="space-y-5">
-          <div className="text-center">
-            <p className="font-semibold text-brand-900">
-              {t("scanToPay", { amount: formatBaht(amount, currencyLocale) })}
-            </p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={qr}
-              alt="PromptPay QR"
-              className="mx-auto mt-3 h-60 w-60 rounded-2xl border border-brand-100 bg-white p-2"
+          {method === "PAYPAL" && paypalHandle ? (
+            <PaypalPayPanel
+              handle={paypalHandle}
+              amount={amount}
+              amountLabel={formatBaht(amount, currencyLocale)}
+              accentStyle={primaryStyle}
             />
-            <a
-              href={qr}
-              download={`promptpay-${amount}.png`}
-              className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-200"
-            >
-              <Icon name="download" />
-              {t("saveQr")}
-            </a>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-brand-900/60">
-              {t("scanHint")}
-            </p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-brand-900/45">
-              {t("saveQrHint")}
-            </p>
-            <p className="mx-auto mt-3 flex max-w-sm items-center justify-center gap-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
-              <Icon name="smartphone" className="h-3.5 w-3.5" />
-              <span>{t("payAnyApp")}</span>
-            </p>
-          </div>
+          ) : qr ? (
+            <div className="text-center">
+              <p className="font-semibold text-brand-900">
+                {t("scanToPay", { amount: formatBaht(amount, currencyLocale) })}
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qr}
+                alt="PromptPay QR"
+                className="mx-auto mt-3 h-60 w-60 rounded-2xl border border-brand-100 bg-white p-2"
+              />
+              <a
+                href={qr}
+                download={`promptpay-${amount}.png`}
+                className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-200"
+              >
+                <Icon name="download" />
+                {t("saveQr")}
+              </a>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-brand-900/60">
+                {t("scanHint")}
+              </p>
+              <p className="mx-auto mt-1 max-w-sm text-xs text-brand-900/45">
+                {t("saveQrHint")}
+              </p>
+              <div className="mx-auto mt-3 max-w-sm rounded-lg bg-brand-100/60 px-3 py-2 text-xs font-medium text-brand-900/70">
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <Icon name="smartphone" className="h-3.5 w-3.5" />
+                  {[t("payAppBanks"), "TrueMoney", "ShopeePay"].map((app) => (
+                    <span
+                      key={app}
+                      className="rounded-full bg-white/70 px-2 py-0.5 dark:bg-white/10"
+                    >
+                      {app}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-1">{t("payNoBank")}</p>
+              </div>
+            </div>
+          ) : null}
 
           <SlipDropzone
             previewUrl={slipPreview}
             fileName={slip?.name}
             onFile={handleFile}
-            label={t("uploadSlip")}
+            label={method === "PAYPAL" ? t("paypalUpload") : t("uploadSlip")}
             hint={t("uploadSlipHint")}
             changeLabel={t("uploadSlipChange")}
             inputRef={fileRef}
