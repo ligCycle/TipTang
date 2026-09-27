@@ -133,6 +133,7 @@
     "timerReduceMin": "ลดเวลาต้องโดเนทอย่างน้อย {min} บาท",
     "generateQr": "สร้าง QR พร้อมเพย์",
     "generating": "กำลังสร้าง QR...",
+    "paypalContinue": "ต่อไป: จ่ายผ่าน PayPal",
     "scanToPay": "สแกนเพื่อจ่าย {amount}",
     "scanHint": "สแกน QR โอนตามจำนวน แล้วแนบสลิปด้านล่าง",
     "saveQr": "บันทึกรูป QR",

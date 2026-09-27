@@ -405,7 +405,11 @@ export function TipForm({
             style={primaryStyle}
             className="btn-primary w-full transition hover:brightness-95"
           >
-            {loading ? t("generating") : t("generateQr")}
+            {loading
+              ? t("generating")
+              : method === "PAYPAL"
+                ? t("paypalContinue")
+                : t("generateQr")}
           </button>
         </form>
       )}

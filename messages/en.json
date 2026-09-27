@@ -133,6 +133,7 @@
     "timerReduceMin": "Reducing time needs a tip of at least {min} THB",
     "generateQr": "Generate PromptPay QR",
     "generating": "Generating QR...",
+    "paypalContinue": "Continue to PayPal",
     "scanToPay": "Scan to pay {amount}",
     "scanHint": "Scan the QR, transfer the amount, then attach the slip below.",
     "saveQr": "Save QR image",
