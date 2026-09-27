@@ -18,6 +18,7 @@ type Tip = {
   verifyCode: string | null;
   verifyDetail: string | null;
   timerEffect: "ADD" | "REDUCE" | "NONE";
+  paymentMethod: "PROMPTPAY" | "PAYPAL";
   createdAt: string;
 };
 
@@ -29,6 +30,8 @@ const VERIFY_STYLES: Record<string, string> = {
   receiver: "bg-amber-100 text-amber-800",
   notslip: "bg-rose-100 text-rose-700",
   unreadable: "bg-gray-200 text-gray-600",
+  pp_pending: "bg-amber-100 text-amber-800",
+  pp_currency: "bg-sky-100 text-sky-800",
 };
 
 // The matching icon per verdict. The pill already carries the colour, so the
@@ -39,6 +42,8 @@ const VERIFY_ICONS: Record<string, IconName> = {
   receiver: "alert-triangle",
   notslip: "alert-triangle",
   unreadable: "help-circle",
+  pp_pending: "clock",
+  pp_currency: "help-circle",
 };
 
 const STATUS_STYLES: Record<Tip["status"], string> = {
@@ -74,6 +79,10 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
         return t("verifyNotSlip");
       case "unreadable":
         return t("verifyUnreadable");
+      case "pp_pending":
+        return t("verifyPpPending");
+      case "pp_currency":
+        return t("verifyPpCurrency", { detail: tip.verifyDetail ?? "" });
       default:
         return "";
     }
@@ -131,6 +140,11 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           {tip.timerEffect === "NONE" && (
             <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-900/60">
               {t("noTimerBadge")}
+            </span>
+          )}
+          {tip.paymentMethod === "PAYPAL" && (
+            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-800">
+              {t("paypalBadge")}
             </span>
           )}
           {tip.autoVerified ? (
@@ -195,7 +209,7 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
                 loading ? "pointer-events-none opacity-50" : ""
               }`}
             >
-              {t("viewSlip")}
+              {tip.paymentMethod === "PAYPAL" ? t("viewReceipt") : t("viewSlip")}
             </a>
           )}
           {tip.status === "PENDING" && (
