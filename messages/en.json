@@ -167,7 +167,9 @@
   },
   "tipSuccess": {
     "title": "Tip sent!",
-    "message": "Thank you for your support! Your message will appear on the profile once the creator confirms your slip.",
+    "message": "Thank you for your support! Your message will appear on the profile once the creator confirms the transfer.",
+    "messagePrivate": "Thank you for your support! The creator will see your tip and confirm the transfer soon.",
+    "messageAutoPrivate": "Thank you for your support! Your slip was auto-verified and the creator has your tip.",
     "messageAuto": "Thank you for your support! Your slip was auto-verified and your message is already live on the profile.",
     "backToProfile": "Back to profile"
   },

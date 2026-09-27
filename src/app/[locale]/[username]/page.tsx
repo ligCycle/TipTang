@@ -86,6 +86,7 @@ export default async function ProfilePage({
       // passed to a client component or rendered (PDPA).
       promptpayId: true,
       paypalHandle: true,
+      thankYouMessage: true,
       goalTitle: true,
       goalAmount: true,
       goalStartedAt: true,
@@ -306,6 +307,8 @@ export default async function ProfilePage({
             timerChoice={timerChoice}
             minAmount={creator.minTipAmount}
             paypalHandle={creator.paypalHandle}
+            thankYouMessage={creator.thankYouMessage}
+            creatorAvatar={creator.avatarUrl}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">

@@ -32,6 +32,8 @@ export function TipForm({
   timerChoice = null,
   minAmount = 1,
   paypalHandle = null,
+  thankYouMessage = null,
+  creatorAvatar = null,
 }: {
   username: string;
   creatorName: string;
@@ -40,6 +42,9 @@ export function TipForm({
   minAmount?: number;
   /** Creator's PayPal.me name; null = PromptPay only. */
   paypalHandle?: string | null;
+  /** Creator's own note shown after a successful tip; plain text. */
+  thankYouMessage?: string | null;
+  creatorAvatar?: string | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -212,8 +217,43 @@ export function TipForm({
         <h2 className="mt-3 text-xl font-bold text-brand-900">
           {tSuccess("title")}
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-brand-900/70">
-          {autoVerified ? tSuccess("messageAuto") : tSuccess("message")}
+        {thankYouMessage && (
+          <figure className="mx-auto mt-5 max-w-md rounded-2xl bg-white/70 p-4 text-left shadow-sm dark:bg-white/5">
+            <figcaption className="flex items-center gap-2 text-sm font-semibold text-brand-900">
+              {creatorAvatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={creatorAvatar}
+                  alt=""
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-100 text-brand-700">
+                  {creatorName.charAt(0).toUpperCase()}
+                </span>
+              )}
+              {creatorName}
+            </figcaption>
+            {/* Plain text: React escapes it; pre-line keeps the creator's line breaks. */}
+            <blockquote className="mt-2 whitespace-pre-line break-words text-brand-900/85">
+              {thankYouMessage}
+            </blockquote>
+          </figure>
+        )}
+        <p
+          className={`mx-auto max-w-md text-brand-900/70 ${
+            thankYouMessage ? "mt-4 text-sm" : "mt-2"
+          }`}
+        >
+          {tSuccess(
+            autoVerified
+              ? isPublic
+                ? "messageAuto"
+                : "messageAutoPrivate"
+              : isPublic
+                ? "message"
+                : "messagePrivate",
+          )}
         </p>
         <button onClick={reset} className="btn-secondary mt-6">
           {tSuccess("backToProfile")}
