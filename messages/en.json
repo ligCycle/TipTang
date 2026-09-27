@@ -8,6 +8,7 @@
     "dashboard": "Home",
     "settings": "Settings",
     "guide": "Guide",
+    "updates": "What's new",
     "menu": "Menu",
     "terms": "Terms",
     "privacy": "Privacy",
@@ -547,6 +548,15 @@
     "save": "Save",
     "cancel": "Cancel",
     "formError": "Please fill in the title and price"
+  },
+  "updates": {
+    "title": "What's new in TipTang",
+    "intro": "The latest features and improvements, newest first.",
+    "metaDescription": "TipTang updates — new features for creators and supporters, like PayPal tips, a thank-you message after each tip, and subathon choices.",
+    "tagCreator": "Creators",
+    "tagSupporter": "Supporters",
+    "tagSecurity": "Security",
+    "tryIt": "Try it"
   },
   "guide": {
     "title": "Get started with TipTang in 5 minutes",

@@ -83,6 +83,9 @@ export default async function LocaleLayout({
               <Link href="/start" className="hover:text-brand-700 hover:underline">
                 {t("guide")}
               </Link>
+              <Link href="/updates" className="hover:text-brand-700 hover:underline">
+                {t("updates")}
+              </Link>
               <Link href="/terms" className="hover:text-brand-700 hover:underline">
                 {t("terms")}
               </Link>
