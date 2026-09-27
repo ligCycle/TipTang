@@ -116,7 +116,7 @@ export async function GET(
     ...orders.map((o) => ({
       id: `order_${o.id}`,
       supporterName: o.buyerName,
-      message: `🛒 ${o.itemTitle}`,
+      message: `สั่งซื้อ: ${o.itemTitle}`,
       amount: Number(o.amount),
       confirmedAt: o.confirmedAt,
       timerDelta: null as number | null,

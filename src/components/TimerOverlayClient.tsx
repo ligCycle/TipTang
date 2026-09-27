@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
 
 // Darken a #rrggbb color by mixing toward black (amount 0..1).
 function darken(hex: string, amount: number): string {
@@ -91,15 +92,16 @@ export function TimerOverlayClient({
 
   const label =
     state === "paused"
-      ? "⏸ พักอยู่"
+      ? "พักอยู่"
       : state === "running" && display <= 0
-        ? "⏱️ หมดเวลา!"
-        : "⏱️ เหลือเวลา";
+        ? "หมดเวลา!"
+        : "เหลือเวลา";
 
   return (
     <div className="p-4">
       <div className="inline-block rounded-2xl bg-black/55 px-6 py-4 text-white shadow-2xl ring-1 ring-white/15 backdrop-blur">
-        <p className="mb-1 text-center text-sm font-bold uppercase tracking-wide text-white/80 drop-shadow">
+        <p className="mb-1 flex items-center justify-center gap-1.5 text-sm font-bold uppercase tracking-wide text-white/80 drop-shadow">
+          <Icon name="clock" className="h-4 w-4" />
           {label}
         </p>
         <p

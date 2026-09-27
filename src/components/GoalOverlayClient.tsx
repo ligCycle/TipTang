@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatBaht } from "@/lib/format";
+import { Icon } from "@/components/Icon";
 
 type Goal = {
   enabled: boolean;
@@ -68,8 +69,9 @@ export function GoalOverlayClient({
     <div className="p-4">
       <div className="w-full max-w-xl rounded-2xl bg-black/55 p-4 text-white shadow-2xl ring-1 ring-white/15 backdrop-blur">
         <div className="mb-2 flex items-end justify-between gap-3">
-          <span className="text-lg font-extrabold drop-shadow">
-            🎯 {goal.title || "เป้าหมาย"}
+          <span className="inline-flex items-center gap-2 text-lg font-extrabold drop-shadow">
+            <Icon name="target" className="h-5 w-5 shrink-0" />
+            {goal.title || "เป้าหมาย"}
           </span>
           <span className="text-lg font-black drop-shadow">{goal.pct}%</span>
         </div>
@@ -81,9 +83,13 @@ export function GoalOverlayClient({
               backgroundImage: `linear-gradient(to right, ${from}, ${to})`,
             }}
           >
-            <span className="text-xs font-bold drop-shadow">
-              {formatBaht(goal.raised)}
-            </span>
+            {/* Only once the fill is wide enough to hold it — at 0% the 4%
+                sliver cut "฿0.00" down to "00". The total is shown below anyway. */}
+            {goal.pct >= 20 && (
+              <span className="text-xs font-bold drop-shadow">
+                {formatBaht(goal.raised)}
+              </span>
+            )}
           </div>
         </div>
         <p className="mt-1.5 text-right text-sm font-semibold text-white/90 drop-shadow">

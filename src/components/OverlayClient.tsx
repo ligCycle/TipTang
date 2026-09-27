@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatBaht } from "@/lib/format";
 import { isAlertStyle, DEFAULT_ALERT_STYLE } from "@/lib/alertStyles";
 import { Confetti } from "./Confetti";
+import { Icon } from "@/components/Icon";
 
 type Alert = {
   id: string;
@@ -165,7 +166,7 @@ export function OverlayClient({
           id: `test-${n++}`,
           name: "ผู้สนับสนุนตัวอย่าง",
           amount: big ? 1000 : 100,
-          message: "ทดสอบ Donation Alert 🎉",
+          message: "ทดสอบ Donation Alert",
           // Preview both directions of the subathon badge too.
           timerDelta: big ? -300 : 120,
         });
@@ -261,8 +262,10 @@ export function OverlayClient({
           }`}
         >
           {isBig && (
-            <p className="mb-2 text-center text-sm font-black uppercase tracking-widest drop-shadow">
-              🎉 SUPER TIP! 🎉
+            <p className="mb-2 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-widest drop-shadow">
+              <Icon name="sparkles" className="h-4 w-4" />
+              SUPER TIP!
+              <Icon name="sparkles" className="h-4 w-4" />
             </p>
           )}
           {videoUrl ? (
@@ -283,16 +286,20 @@ export function OverlayClient({
             )
           )}
           <div className="flex items-center justify-between gap-3">
-            <span className="text-lg font-extrabold drop-shadow">
-              💸 {current.name || "ผู้ไม่ประสงค์ออกนาม"}
+            <span className="inline-flex min-w-0 items-center gap-2 text-lg font-extrabold drop-shadow">
+              <Icon name="heart" className="h-5 w-5 shrink-0" />
+              <span className="truncate">
+                {current.name || "ผู้ไม่ประสงค์ออกนาม"}
+              </span>
             </span>
             <span className="rounded-full bg-white/25 px-3 py-1 text-lg font-black">
               {formatBaht(current.amount)}
             </span>
           </div>
           {current.timerDelta != null && current.timerDelta !== 0 && (
-            <p className="mt-2 inline-flex items-center rounded-full bg-black/25 px-3 py-0.5 text-sm font-bold">
-              {current.timerDelta < 0 ? "⏬ −" : "⏫ +"}
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/25 px-3 py-0.5 text-sm font-bold">
+              <Icon name="clock" className="h-3.5 w-3.5" />
+              {current.timerDelta < 0 ? "−" : "+"}
               {Math.max(1, Math.round(Math.abs(current.timerDelta) / 60))} นาที
             </p>
           )}
