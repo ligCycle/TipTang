@@ -392,6 +392,9 @@ export async function readPaypalReceipt(file: File): Promise<PaypalRead> {
       console.error("[paypal-receipt] JSON parse failed", text.slice(0, 600));
       return { kind: "error" };
     }
+    // responseSchema types amount as NUMBER, so this is normally already a
+    // number; the string clean-up is a fallback for "1,000"-style text only.
+    // European "1.000,50" would misparse — acceptable while links are THB.
     const amountNum = Number(String(data.amount ?? "").replace(/[, ]/g, ""));
     return {
       kind: "ok",
@@ -533,6 +536,7 @@ In the `prisma.user.update` `data`, after the `minTipAmount` spread add `...(pay
               value={form.paypalHandle}
               onChange={update("paypalHandle")}
               placeholder="paypal.me/yourname"
+              maxLength={200}
               className={inputClass}
               autoCapitalize="off"
               spellCheck={false}
@@ -717,7 +721,9 @@ and add `import { PaypalPayPanel } from "@/components/PaypalPayPanel";` to the i
                   aria-checked={method === m}
                   onClick={() => setMethod(m)}
                   style={method === m ? primaryStyle : undefined}
-                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  // Two lines allowed + smaller text on phones: truncating would hide
+                  // "(ในไทย)" / "(ต่างประเทศ)", which is the whole point of the label.
+                  className={`rounded-xl px-2 py-2 text-xs leading-tight font-semibold transition sm:px-3 sm:text-sm ${
                     method === m
                       ? "bg-brand-600 text-white"
                       : "bg-brand-100 text-brand-900/70 hover:bg-brand-200"
