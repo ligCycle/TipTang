@@ -15,6 +15,13 @@ enum TimerEffect {
   NONE
 }
 
+// How a supporter paid. PROMPTPAY = the Thai QR (default, every old tip);
+// PAYPAL = the creator's PayPal.me, for supporters abroad.
+enum PaymentMethod {
+  PROMPTPAY
+  PAYPAL
+}
+
 enum TipStatus {
   PENDING
   CONFIRMED
@@ -172,6 +179,9 @@ model User {
   profileColor String?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.
   promptpayId  String?
+  // PayPal.me name only (no URL), for overseas supporters. Null = PayPal off.
+  // Public on purpose: it is rendered as a paypal.me link on the donate page.
+  paypalHandle String?
   // Secret key for the OBS donation-alert overlay URL.
   overlayKey   String?  @unique
   // Activation tracking (admin-only). Last time the alert overlay polled
@@ -261,6 +271,7 @@ model Tip {
   // What this tip does to the subathon clock. ADD is the historical default
   // (every confirmed tip added time); NONE = supporter chose "just donate".
   timerEffect     TimerEffect @default(ADD)
+  paymentMethod   PaymentMethod @default(PROMPTPAY)
   status          TipStatus @default(PENDING)
   isMessagePublic Boolean   @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
