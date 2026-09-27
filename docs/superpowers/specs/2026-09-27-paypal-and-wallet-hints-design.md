@@ -74,7 +74,9 @@ both methods. The `pay` step differs:
   every creator.
 - **PayPal:** no `/api/qr` call. Show "จ่าย ฿{amount} ผ่าน PayPal" as a link
   (`target="_blank" rel="noopener noreferrer"`) to `paypalLink(...)`, a one-line note
-  "ยอดจะแปลงเป็นสกุลเงินของคุณในหน้า PayPal", then the same upload box labelled
+  "ยอดจะแปลงเป็นสกุลเงินของคุณในหน้า PayPal · PayPal อาจมียอดขั้นต่ำของตัวเองสำหรับการโอนข้ามประเทศ"
+  (we do not enforce a PayPal minimum ourselves — PayPal rejects too-small payments in its
+  own window, which is acceptable), then the same upload box labelled
   "แนบภาพหน้าจอยืนยันการชำระเงินของ PayPal".
 
 The client sends `paymentMethod=PAYPAL` in the existing multipart `POST /api/tips`.
@@ -105,6 +107,12 @@ Gemini call reusing the same env (`GEMINI_API_KEY`, `GEMINI_MODEL`) and timeout 
   "recipient": "Lig Stream", "transactionId": "9AB12345CD6789012" }
 ```
 
+Parsing is defensive: the request sets `responseMimeType: "application/json"` like the
+bank verifier, and the reply text still goes through `stripJsonFences()` (removes a
+leading ```` ```json ```` / ```` ``` ```` line and a trailing ```` ``` ````, then trims) before
+`JSON.parse`. A parse failure is `"unreadable"`, never a thrown error. `stripJsonFences`
+lives in `src/lib/paypal.ts` and is unit-tested.
+
 Pure comparison `judgePaypalReceipt(read, expectedAmountThb)` (unit-tested) →
 `{ verifyCode, verifyDetail, transRef }`:
 
@@ -118,7 +126,9 @@ Pure comparison `judgePaypalReceipt(read, expectedAmountThb)` (unit-tested) →
 | currency THB, amount differs | `"amount"` | `฿<read amount>` |
 | other currency | `"pp_currency"` | `<amount> <currency>` |
 
-`transRef = "PP:" + transactionId` when a transaction id was read, else `null`.
+`transRef = "PP:" + transactionId.trim().toUpperCase()` when a transaction id was read
+(normalised so the same receipt read with different casing/whitespace still collides),
+else `null`.
 Recipient is shown as detail only — PayPal receipts show a display name, not the
 PayPal.me handle, so it can't be matched reliably.
 
@@ -137,7 +147,9 @@ supporter and the creator on PayPal; TipTang does not receive or refund them.
 ## 9. Testing
 
 - Unit: `normalizePaypalHandle` (all accepted forms, invalid, empty), `paypalLink`,
-  `judgePaypalReceipt` (every row of the table, ±1 baht edge).
+  `stripJsonFences` (plain JSON, ```json fenced, bare ``` fenced, surrounding whitespace),
+  `judgePaypalReceipt` (every row of the table, ±1 baht edge, lowercase/spaced
+  transaction id normalises to the same `PP:` ref).
 - Manual on localhost (production DB):
   1. Set a PayPal handle on the founder's account; settings save bar + invalid-handle error.
   2. Donate page shows the switch; PromptPay path unchanged; chip row visible.
