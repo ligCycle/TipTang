@@ -351,6 +351,7 @@
     "paypalInvalid": "Invalid PayPal.me name — English letters or digits, up to 20 characters",
     "promptpayInvalid": "Invalid PromptPay — use a 10-digit phone or 13-digit national ID",
     "saveInvalid": "Couldn't save — please check what you entered",
+    "fixFields": "{count, plural, one {# field needs} other {# fields need}} fixing — see the red notes",
     "minTip": "Minimum tip (THB)",
     "minTipHint": "Supporters cannot tip below this · 1 = no minimum",
     "autoConfirm": "Auto-confirm tips that pass verification",

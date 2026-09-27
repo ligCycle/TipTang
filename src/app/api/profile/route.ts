@@ -14,9 +14,17 @@ export async function PATCH(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = profileSchema.safeParse(body);
   if (!parsed.success) {
-    // Name the offending field so the form can say what to fix.
-    const field = String(parsed.error.issues[0]?.path[0] ?? "");
-    return NextResponse.json({ error: "invalid", field }, { status: 400 });
+    // Name EVERY offending field so the form can mark them all at once.
+    const fields = [
+      ...new Set(parsed.error.issues.map((i) => String(i.path[0] ?? ""))),
+    ];
+    if (
+      typeof body?.paypalHandle === "string" &&
+      normalizePaypalHandle(body.paypalHandle) === "invalid"
+    ) {
+      fields.push("paypalHandle");
+    }
+    return NextResponse.json({ error: "invalid", fields }, { status: 400 });
   }
   const {
     displayName,
@@ -34,9 +42,14 @@ export async function PATCH(req: Request) {
 
   // undefined = field not sent (leave as is); null = cleared.
   const paypal =
-    paypalHandle === undefined ? undefined : normalizePaypalHandle(paypalHandle);
+    paypalHandle === undefined
+      ? undefined
+      : normalizePaypalHandle(paypalHandle);
   if (paypal === "invalid") {
-    return NextResponse.json({ error: "invalid_paypal" }, { status: 400 });
+    return NextResponse.json(
+      { error: "invalid", fields: ["paypalHandle"] },
+      { status: 400 },
+    );
   }
 
   // Goal is edited from the dashboard OBS card, not here — only touch these

@@ -10,6 +10,8 @@ import { SOCIAL_PLATFORMS, type SocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { Icon, type IconName } from "@/components/Icon";
+import { normalizePaypalHandle } from "@/lib/paypal";
+import { isValidPromptpayId } from "@/lib/promptpay-id";
 
 type Initial = {
   displayName: string;
@@ -40,6 +42,19 @@ const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 const inputClass = "input scroll-mb-24";
 const labelClass = "mb-1 block text-sm font-medium text-brand-900/80";
 const hintClass = "mt-1 block text-xs text-brand-900/50";
+const fieldErrorClass = "mt-1 block text-xs font-medium text-red-600";
+
+// Fields checked before saving, so every mistake is shown at once (under
+// its own input) instead of the server rejecting them one at a time.
+type FieldKey = "promptpayId" | "paypalHandle";
+
+function validate(f: { promptpayId: string; paypalHandle: string }) {
+  const errs: Partial<Record<FieldKey, true>> = {};
+  if (f.promptpayId && !isValidPromptpayId(f.promptpayId)) errs.promptpayId = true;
+  if (normalizePaypalHandle(f.paypalHandle) === "invalid")
+    errs.paypalHandle = true;
+  return errs;
+}
 
 /**
  * The fields the Save button actually sends, in a FIXED key order, so two
@@ -103,6 +118,9 @@ export function SettingsForm({
     "idle",
   );
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<FieldKey, true>>
+  >({});
   const [uploading, setUploading] = useState<"avatar" | "cover" | null>(null);
   const [cropping, setCropping] = useState<{
     kind: "avatar" | "cover";
@@ -196,13 +214,30 @@ export function SettingsForm({
     }));
     setMinTipStr(String(savedForm.minTipAmount));
     setError(null);
+    setFieldErrors({});
     setStatus("idle");
+  }
+
+  function showFieldErrors(errs: Partial<Record<FieldKey, true>>) {
+    const keys = Object.keys(errs) as FieldKey[];
+    setFieldErrors(errs);
+    setError(t("fixFields", { count: keys.length }));
+    setStatus("error");
+    document
+      .getElementById(`field-${keys[0]}`)
+      ?.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const errs = validate(form);
+    if (Object.keys(errs).length > 0) {
+      showFieldErrors(errs);
+      return;
+    }
     setStatus("saving");
     setError(null);
+    setFieldErrors({});
     try {
       const res = await fetch("/api/profile", {
         method: "PATCH",
@@ -211,14 +246,24 @@ export function SettingsForm({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        // Server is the final word; map any fields it names back onto inputs.
+        const serverFields = (Array.isArray(data.fields) ? data.fields : [])
+          .filter((k: string) => k === "promptpayId" || k === "paypalHandle")
+          .reduce(
+            (acc: Partial<Record<FieldKey, true>>, k: FieldKey) => ({
+              ...acc,
+              [k]: true,
+            }),
+            {},
+          );
+        if (Object.keys(serverFields).length > 0) {
+          showFieldErrors(serverFields);
+          return;
+        }
         setError(
           data.error === "username_taken"
             ? t("errorUsernameTaken")
-            : data.error === "invalid_paypal" || data.field === "paypalHandle"
-              ? t("paypalInvalid")
-              : data.field === "promptpayId"
-                ? t("promptpayInvalid")
-                : t("saveInvalid"),
+            : t("saveInvalid"),
         );
         setStatus("error");
         return;
@@ -249,7 +294,9 @@ export function SettingsForm({
           onCropped={(blob) => doUpload(cropping.kind, blob)}
         />
       )}
-      <h1 className="mb-6 text-2xl font-extrabold text-brand-900">{t("title")}</h1>
+      <h1 className="mb-6 text-2xl font-extrabold text-brand-900">
+        {t("title")}
+      </h1>
 
       <form onSubmit={onSubmit} className="divide-y divide-brand-900/10">
         <Section icon="user" title={t("sectionProfile")}>
@@ -351,31 +398,48 @@ export function SettingsForm({
             <input
               value={form.promptpayId}
               // Digits only — a PromptPay id is a phone or national-id number.
-              onChange={(e) =>
+              onChange={(e) => {
                 setForm((f) => ({
                   ...f,
                   promptpayId: e.target.value.replace(/\D/g, ""),
-                }))
-              }
+                }));
+                setFieldErrors((fe) => ({ ...fe, promptpayId: undefined }));
+              }}
               inputMode="numeric"
+              maxLength={13}
+              id="field-promptpayId"
+              aria-invalid={fieldErrors.promptpayId ? true : undefined}
               placeholder="0812345678"
               className={inputClass}
             />
-            <span className={hintClass}>{t("promptpayHint")}</span>
+            {fieldErrors.promptpayId ? (
+              <span className={fieldErrorClass}>{t("promptpayInvalid")}</span>
+            ) : (
+              <span className={hintClass}>{t("promptpayHint")}</span>
+            )}
           </label>
 
           <label className="block">
             <span className={labelClass}>{t("paypalHandle")}</span>
             <input
               value={form.paypalHandle}
-              onChange={update("paypalHandle")}
+              onChange={(e) => {
+                update("paypalHandle")(e);
+                setFieldErrors((fe) => ({ ...fe, paypalHandle: undefined }));
+              }}
+              id="field-paypalHandle"
+              aria-invalid={fieldErrors.paypalHandle ? true : undefined}
               placeholder="paypal.me/yourname"
               maxLength={200}
               className={inputClass}
               autoCapitalize="off"
               spellCheck={false}
             />
-            <span className={hintClass}>{t("paypalHint")}</span>
+            {fieldErrors.paypalHandle ? (
+              <span className={fieldErrorClass}>{t("paypalInvalid")}</span>
+            ) : (
+              <span className={hintClass}>{t("paypalHint")}</span>
+            )}
           </label>
 
           <label className="block">

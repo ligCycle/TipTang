@@ -1,4 +1,6 @@
 import { z } from "zod";
+// Explicit .ts so `node --test` can load this file without the bundler.
+import { isValidPromptpayId } from "./promptpay-id.ts";
 
 // Username: 3-30 chars, lowercase letters/numbers/underscore, used in the URL.
 export const usernameSchema = z
@@ -23,7 +25,7 @@ export const profileSchema = z.object({
   promptpayId: z
     .string()
     .trim()
-    .regex(/^(0\d{9}|\d{13})$/, "promptpay_invalid")
+    .refine(isValidPromptpayId, "promptpay_invalid")
     .optional()
     .or(z.literal("")),
   autoConfirmTips: z.boolean().optional(),
