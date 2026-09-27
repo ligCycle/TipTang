@@ -15,7 +15,7 @@ the system status line. Empty = today's success screen, unchanged.
 - **API:** `profileSchema.thankYouMessage = z.string().trim().max(300).optional().or(z.literal(""))`;
   `PATCH /api/profile` stores `null` for empty, leaves it untouched when not sent.
 - **Settings:** in the "หน้าโดเนท" section, a textarea "ข้อความขอบคุณหลังโดเนท (ไม่บังคับ)",
-  `maxLength={300}`, live counter `n/300`, placeholder "ขอบคุณมากนะ! เจอกันในไลฟ์คืนนี้ 3 ทุ่ม 💖",
+  `maxLength={300}`, live counter `n/300`, placeholder "ขอบคุณมากที่สนับสนุนนะ! 💖",
   included in `snapshot()` so the unsaved bar works.
 - **Success screen:** plain text only (React escapes it; no links, no HTML), wrapper
   `whitespace-pre-line break-words` so the creator's line breaks show. Avatar (or initial) +

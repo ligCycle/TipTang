@@ -378,7 +378,7 @@
     "profileColorDefault": "default (pink)",
     "profileColorHint": "Colors your profile page (buttons, goal bar, header). Pick a darker tone so the white text on buttons stays readable.",
     "thankYou": "Thank-you message after a tip (optional)",
-    "thankYouPlaceholder": "Thank you so much! See you on stream tonight at 9 💖",
+    "thankYouPlaceholder": "Thank you so much for the support! 💖",
     "thankYouHint": "Supporters see this right after they tip · leave empty to hide"
   },
   "notFound": {
