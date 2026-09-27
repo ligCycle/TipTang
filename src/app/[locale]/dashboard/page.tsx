@@ -16,6 +16,7 @@ import {
   type Range,
 } from "@/lib/range";
 import { TipRow } from "@/components/TipRow";
+import { UpdatesPill } from "@/components/UpdatesPill";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { CopyLink } from "@/components/CopyLink";
@@ -173,6 +174,12 @@ export default async function DashboardPage({
             <Icon name="book-open" />
             {tCommon("guide")}
           </Link>
+          <UpdatesPill
+            href={`/${locale}/updates`}
+            label={tCommon("updates")}
+            newLabel={tCommon("updatesNew")}
+            className={pillClass}
+          />
           {SHOP_ENABLED && (
             <Link href={`/${locale}/dashboard/shop`} className={pillClass}>
               <Icon name="shopping-bag" />
