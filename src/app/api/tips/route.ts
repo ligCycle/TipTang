@@ -12,7 +12,9 @@ import {
   MAX_UPLOAD_BYTES,
 } from "@/lib/storage";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
-import { verifySlip, receiverMatches } from "@/lib/slip-verify";
+import { verifySlip, receiverMatches, type SlipVerifyResult } from "@/lib/slip-verify";
+import { judgePaypalReceipt } from "@/lib/paypal";
+import { readPaypalReceipt } from "@/lib/paypal-receipt";
 import { censorText } from "@/lib/profanity";
 import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
 
@@ -44,6 +46,7 @@ export async function POST(req: Request) {
       timerReduceEnabled: true,
       timerReduceMinAmount: true,
       minTipAmount: true,
+      paypalHandle: true,
     },
   });
   if (!creator?.promptpayId) {
@@ -87,6 +90,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "reduce_not_allowed" }, { status: 400 });
   }
 
+  // PAYPAL only when the creator has a PayPal.me; anything else is PromptPay.
+  const paymentMethod: "PROMPTPAY" | "PAYPAL" =
+    form.get("paymentMethod") === "PAYPAL" ? "PAYPAL" : "PROMPTPAY";
+  if (paymentMethod === "PAYPAL" && !creator.paypalHandle) {
+    return NextResponse.json({ error: "paypal_not_enabled" }, { status: 400 });
+  }
+
   // Censor offensive words in the public-facing name + message (keeps the
   // stream/overlay/leaderboard clean).
   const cleanName = censorText(parsed.data.supporterName);
@@ -107,7 +117,11 @@ export async function POST(req: Request) {
   // Screen the slip with the verifier (Gemini/SlipOK/EasySlip — no-op unless a
   // provider is configured). We compute a verdict for EVERY slip and store it
   // as a dashboard flag; auto-confirm is reserved for a clean "match".
-  const verify = await verifySlip(slip);
+  // PayPal receipts are not bank slips — the PayPal branch below judges them.
+  const verify: SlipVerifyResult =
+    paymentMethod === "PAYPAL"
+      ? { ok: false, reason: "disabled" }
+      : await verifySlip(slip);
   if (!verify.ok && verify.reason === "duplicate") {
     return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
   }
@@ -166,6 +180,31 @@ export async function POST(req: Request) {
     confirmedAt = new Date();
   }
 
+  // PayPal: level-1 read of the receipt for the dashboard flag, duplicate
+  // guard on the transaction id, and NEVER auto-confirm (a screenshot can be
+  // edited and we can't ask PayPal whether the money moved).
+  if (paymentMethod === "PAYPAL") {
+    const judged = judgePaypalReceipt(
+      await readPaypalReceipt(slip),
+      parsed.data.amount,
+    );
+    if (judged.transRef) {
+      const dup = await prisma.tip.findUnique({
+        where: { transRef: judged.transRef },
+        select: { id: true },
+      });
+      if (dup) {
+        return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
+      }
+    }
+    status = "PENDING";
+    autoVerified = false;
+    confirmedAt = null;
+    transRef = judged.transRef;
+    verifyCode = judged.verifyCode;
+    verifyDetail = judged.verifyDetail;
+  }
+
   // Private bucket — the dashboard reaches it via /api/tips/[id]/slip only.
   const slipKey = await uploadSlip(slip);
 
@@ -178,6 +217,7 @@ export async function POST(req: Request) {
       isMessagePublic,
       slipKey,
       timerEffect,
+      paymentMethod,
       status,
       transRef,
       autoVerified,
