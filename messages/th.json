@@ -146,6 +146,7 @@
     "paypalPay": "จ่าย {amount} ผ่าน PayPal",
     "paypalNote": "ยอดจะแปลงเป็นสกุลเงินของคุณในหน้า PayPal · PayPal อาจมียอดขั้นต่ำของตัวเองสำหรับการโอนข้ามประเทศ",
     "paypalUpload": "แนบภาพหน้าจอยืนยันการชำระเงินของ PayPal",
+    "paypalUploadHint": "คลิกหรือลากภาพหน้าจอมาวางที่นี่ · JPG / PNG ไม่เกิน 5MB",
     "paypalNotEnabled": "ครีเอเตอร์ยังไม่ได้เปิดรับ PayPal",
     "uploadSlip": "อัปโหลดสลิปการโอน",
     "uploadSlipHint": "คลิกหรือลากสลิปมาวางที่นี่ · JPG / PNG ไม่เกิน 5MB",

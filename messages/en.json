@@ -146,6 +146,7 @@
     "paypalPay": "Pay {amount} with PayPal",
     "paypalNote": "PayPal converts the amount to your currency · PayPal may have its own minimum for international payments",
     "paypalUpload": "Attach a screenshot of the PayPal payment confirmation",
+    "paypalUploadHint": "Click or drop the screenshot here · JPG / PNG up to 5MB",
     "paypalNotEnabled": "This creator hasn't enabled PayPal",
     "uploadSlip": "Upload payment slip",
     "uploadSlipHint": "Click or drag your slip here · JPG/PNG up to 5MB",

@@ -470,7 +470,9 @@ export function TipForm({
             fileName={slip?.name}
             onFile={handleFile}
             label={method === "PAYPAL" ? t("paypalUpload") : t("uploadSlip")}
-            hint={t("uploadSlipHint")}
+            hint={
+              method === "PAYPAL" ? t("paypalUploadHint") : t("uploadSlipHint")
+            }
             changeLabel={t("uploadSlipChange")}
             inputRef={fileRef}
             accentColor={accentColor}
