@@ -349,6 +349,8 @@
     "paypalHandle": "PayPal.me (optional)",
     "paypalHint": "For supporters abroad · PayPal deducts its fees from what you receive (about 4–5% + currency conversion) · PayPal tips always need your manual confirmation",
     "paypalInvalid": "Invalid PayPal.me name — English letters or digits, up to 20 characters",
+    "promptpayInvalid": "Invalid PromptPay — use a 10-digit phone or 13-digit national ID",
+    "saveInvalid": "Couldn't save — please check what you entered",
     "minTip": "Minimum tip (THB)",
     "minTipHint": "Supporters cannot tip below this · 1 = no minimum",
     "autoConfirm": "Auto-confirm tips that pass verification",

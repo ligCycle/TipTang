@@ -14,7 +14,9 @@ export async function PATCH(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = profileSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "invalid" }, { status: 400 });
+    // Name the offending field so the form can say what to fix.
+    const field = String(parsed.error.issues[0]?.path[0] ?? "");
+    return NextResponse.json({ error: "invalid", field }, { status: 400 });
   }
   const {
     displayName,

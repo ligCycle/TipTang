@@ -214,9 +214,11 @@ export function SettingsForm({
         setError(
           data.error === "username_taken"
             ? t("errorUsernameTaken")
-            : data.error === "invalid_paypal"
+            : data.error === "invalid_paypal" || data.field === "paypalHandle"
               ? t("paypalInvalid")
-              : tc("loading"),
+              : data.field === "promptpayId"
+                ? t("promptpayInvalid")
+                : t("saveInvalid"),
         );
         setStatus("error");
         return;
@@ -348,7 +350,14 @@ export function SettingsForm({
             <span className={labelClass}>{t("promptpayId")}</span>
             <input
               value={form.promptpayId}
-              onChange={update("promptpayId")}
+              // Digits only — a PromptPay id is a phone or national-id number.
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  promptpayId: e.target.value.replace(/\D/g, ""),
+                }))
+              }
+              inputMode="numeric"
               placeholder="0812345678"
               className={inputClass}
             />
