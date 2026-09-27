@@ -34,6 +34,7 @@ export async function PATCH(req: Request) {
     autoConfirmTips,
     minTipAmount,
     paypalHandle,
+    thankYouMessage,
     goalTitle,
     goalAmount,
     socialLinks,
@@ -87,6 +88,9 @@ export async function PATCH(req: Request) {
       ...(autoConfirmTips === undefined ? {} : { autoConfirmTips }),
       ...(minTipAmount === undefined ? {} : { minTipAmount }),
       ...(paypal === undefined ? {} : { paypalHandle: paypal }),
+      ...(thankYouMessage === undefined
+        ? {}
+        : { thankYouMessage: thankYouMessage || null }),
       ...goalTitleUpdate,
       ...goalAmountUpdate,
       ...(cleanSocials === undefined ? {} : { socialLinks: cleanSocials }),

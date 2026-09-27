@@ -19,6 +19,7 @@ type Initial = {
   bio: string;
   promptpayId: string;
   paypalHandle: string;
+  thankYouMessage: string;
   avatarUrl: string;
   coverUrl: string;
   autoConfirmTips: boolean;
@@ -68,6 +69,7 @@ function snapshot(f: Initial): string {
     bio: f.bio,
     promptpayId: f.promptpayId,
     paypalHandle: f.paypalHandle,
+    thankYouMessage: f.thankYouMessage,
     autoConfirmTips: f.autoConfirmTips,
     minTipAmount: f.minTipAmount,
     profileColor: f.profileColor,
@@ -500,6 +502,24 @@ export function SettingsForm({
             />
             <span className={hintClass}>{t("profileColorHint")}</span>
           </div>
+
+          <label className="block">
+            <span className={labelClass}>{t("thankYou")}</span>
+            <textarea
+              value={form.thankYouMessage}
+              onChange={update("thankYouMessage")}
+              rows={3}
+              maxLength={300}
+              placeholder={t("thankYouPlaceholder")}
+              className={inputClass}
+            />
+            <span className="mt-1 flex justify-between gap-3 text-xs text-brand-900/50">
+              <span>{t("thankYouHint")}</span>
+              <span className="shrink-0 tabular-nums">
+                {form.thankYouMessage.length}/300
+              </span>
+            </span>
+          </label>
 
           <div>
             <p className={labelClass}>{t("socialSection")}</p>

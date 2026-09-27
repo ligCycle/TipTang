@@ -374,7 +374,10 @@
     "profileColorCode": "Color code (hex)",
     "profileColorReset": "Default",
     "profileColorDefault": "default (pink)",
-    "profileColorHint": "Colors your profile page (buttons, goal bar, header). Pick a darker tone so the white text on buttons stays readable."
+    "profileColorHint": "Colors your profile page (buttons, goal bar, header). Pick a darker tone so the white text on buttons stays readable.",
+    "thankYou": "Thank-you message after a tip (optional)",
+    "thankYouPlaceholder": "Thank you so much! See you on stream tonight at 9 💖",
+    "thankYouHint": "Supporters see this right after they tip · leave empty to hide"
   },
   "notFound": {
     "title": "Page not found",
