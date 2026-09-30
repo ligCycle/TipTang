@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * dashboard never links to raw storage even before they are migrated.
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await requireUser();
@@ -35,7 +35,8 @@ export async function GET(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  return NextResponse.redirect(target, {
+  // Local dev storage hands back a relative path; resolve it against the request.
+  return NextResponse.redirect(new URL(target, req.url), {
     status: 302,
     headers: { "Cache-Control": "no-store" },
   });

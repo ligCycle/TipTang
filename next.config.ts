@@ -22,7 +22,9 @@ const SECURITY_HEADERS = [
 // don't use. Dev adds 'unsafe-eval' for React Refresh.
 const CSP_REPORT_ONLY = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  // va.vercel-scripts.com: Vercel Analytics' debug script (dev); production
+  // serves it same-origin from /_vercel/insights.
+  `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com",
   "media-src 'self' blob: https://*.supabase.co",

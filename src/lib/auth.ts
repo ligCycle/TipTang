@@ -4,9 +4,9 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { createHash } from "crypto";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateUniqueUsername } from "@/lib/username";
+import { googleLinkUpdate } from "@/lib/google-link";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import {
   currentSessionVersion,
@@ -120,20 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Existing account → sign in. Link Google (set googleId) if not linked yet,
       // but DON'T touch other data (esp. avatarUrl).
       if (existing) {
-        const data: Prisma.UserUpdateInput = {};
-        if (!existing.googleId && googleId) data.googleId = googleId;
-        if (!existing.emailVerifiedAt) {
-          // Google just proved who owns this address. A password set before
-          // anyone proved it may belong to someone who registered the
-          // address first to wait for its owner (pre-account takeover):
-          // drop it and sign out their sessions. The owner can set a new
-          // one with "forgot password".
-          data.emailVerifiedAt = new Date();
-          if (existing.passwordHash) {
-            data.passwordHash = null;
-            data.sessionVersion = { increment: 1 };
-          }
-        }
+        const data = googleLinkUpdate(existing, googleId, new Date());
         if (Object.keys(data).length > 0) {
           await prisma.user
             .update({ where: { id: existing.id }, data })
