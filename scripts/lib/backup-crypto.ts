@@ -27,8 +27,10 @@ type Header = KdfParams & { kdf: string; salt: string; iv: string };
 export type KeyCheck = Header & { v: 1; ct: string; tag: string };
 
 function deriveKey(passphrase: string, salt: Buffer, k: KdfParams): Buffer {
+  // NFC: the same visible passphrase typed on another OS/keyboard (e.g. a
+  // precomposed é vs e + combining accent) must derive the same key.
   // scrypt needs 128·N·r bytes; give it double so Node's limit never trips.
-  return scryptSync(passphrase, salt, 32, {
+  return scryptSync(passphrase.normalize("NFC"), salt, 32, {
     N: k.N,
     r: k.r,
     p: k.p,
@@ -112,7 +114,10 @@ export function decryptBackup(file: Buffer, passphrase: string): Buffer {
       decipher.final(),
     ]);
   } catch {
-    throw new BackupError("รหัสผ่านไม่ถูกต้อง หรือไฟล์ backup เสียหาย");
+    throw new BackupError(
+      "รหัสผ่านไม่ถูกต้อง หรือไฟล์ backup เสียหาย " +
+        "(เช็กภาษาคีย์บอร์ด ไทย/EN และ Caps Lock แล้วลองใหม่)",
+    );
   }
 }
 

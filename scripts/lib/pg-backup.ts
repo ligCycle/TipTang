@@ -5,6 +5,8 @@ import type { ForeignKey } from "./backup-order.ts";
  * The only file that talks to Postgres. All type conversion is left to
  * Postgres: row_to_json on the way out, json_populate_recordset on the way
  * in, so timestamps, decimals, enums and JSON columns come back exactly.
+ * Sequences / identity columns are not reset on restore — the schema has none
+ * (ids are cuid strings); revisit if a serial/identity column is ever added.
  */
 
 export type Queryable = Pick<pg.Client, "query">;
@@ -78,6 +80,8 @@ export async function rowCounts(
 }
 
 async function exportTable(c: Queryable, table: string): Promise<unknown[]> {
+  // JSON numbers round-trip through JS doubles: exact for Decimal(10,2) money;
+  // revisit if a BigInt or wide Decimal column is ever added.
   const r = await c.query(
     `SELECT coalesce(json_agg(row_to_json(t)), '[]'::json) AS rows FROM ${quoteIdent(table)} t`,
   );
@@ -107,8 +111,9 @@ export async function readSnapshot(c: Queryable): Promise<Snapshot> {
     return { migrations, counts, tables };
   } finally {
     // Read-only: COMMIT and ROLLBACK are equivalent (and COMMIT on an
-    // aborted transaction just rolls it back).
-    await c.query("COMMIT");
+    // aborted transaction just rolls it back). Swallow its error so a dropped
+    // connection surfaces the original failure, not a second one.
+    await c.query("COMMIT").catch(() => {});
   }
 }
 

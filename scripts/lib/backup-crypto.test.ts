@@ -27,6 +27,15 @@ test("a Thai passphrase works", () => {
   assert.ok(decryptBackup(encryptBackup(plain, thai), thai).equals(plain));
 });
 
+test("a passphrase in NFD form opens a file made with its NFC form", () => {
+  const nfc = "café-passphrase-2569";
+  const nfd = "café-passphrase-2569";
+  assert.notEqual(nfc, nfd);
+  assert.equal(nfc, nfd.normalize("NFC"));
+  assert.ok(decryptBackup(encryptBackup(plain, nfc), nfd).equals(plain));
+  assert.ok(openKeyCheck(makeKeyCheck(nfc), nfd));
+});
+
 test("wrong passphrase throws BackupError", () => {
   const file = encryptBackup(plain, PASS);
   assert.throws(() => decryptBackup(file, "wrong passphrase!!"), BackupError);
