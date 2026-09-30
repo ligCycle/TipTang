@@ -5,8 +5,11 @@ import { Redis } from "@upstash/redis";
 // Falls back to a per-process in-memory limiter for local dev / when Upstash
 // isn't set up — good enough locally, but not effective across Vercel instances.
 
+// Redis.fromEnv() reads either naming: UPSTASH_REDIS_REST_* (Upstash console)
+// or KV_REST_API_* (Upstash added through the Vercel Marketplace).
 const hasUpstash = Boolean(
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
+  (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) ||
+    (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN),
 );
 const redis = hasUpstash ? Redis.fromEnv() : null;
 const limiters = new Map<string, Ratelimit>();
