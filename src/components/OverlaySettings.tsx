@@ -62,6 +62,8 @@ export function OverlaySettings() {
   // Starts true: the config is fetched as soon as the page mounts.
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<"alert" | "goal" | "timer" | null>(null);
+  const [rotating, setRotating] = useState(false);
+  const [rotated, setRotated] = useState<"ok" | "error" | null>(null);
   const [uploading, setUploading] = useState<Kind | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [goalTitle, setGoalTitle] = useState("");
@@ -172,6 +174,27 @@ export function OverlaySettings() {
       setTimeout(() => setCopied(null), 1500);
     } catch {
       // ignore
+    }
+  }
+
+  // New key → every overlay URL (alert, goal, timer) changes; the old ones
+  // stop working immediately.
+  async function rotateKey() {
+    if (!config || !window.confirm(t("obsRotateConfirm"))) return;
+    setRotating(true);
+    setRotated(null);
+    try {
+      const res = await fetch("/api/overlay/key", { method: "POST" });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.key) throw new Error();
+      const url = new URL(config.url);
+      url.searchParams.set("key", d.key);
+      setConfig({ ...config, url: url.toString() });
+      setRotated("ok");
+    } catch {
+      setRotated("error");
+    } finally {
+      setRotating(false);
     }
   }
 
@@ -548,6 +571,28 @@ export function OverlaySettings() {
                 </a>
               </div>
               <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <span className="text-brand-900/55">{t("obsRotateHint")}</span>
+                <button
+                  type="button"
+                  onClick={rotateKey}
+                  disabled={rotating}
+                  className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline disabled:opacity-50"
+                >
+                  <Icon name="refresh" className="h-3.5 w-3.5" />
+                  {t("obsRotate")}
+                </button>
+              </div>
+              {rotated === "ok" && (
+                <p className="mt-1 text-xs font-medium text-emerald-700" role="status">
+                  {t("obsRotated")}
+                </p>
+              )}
+              {rotated === "error" && (
+                <p className="mt-1 text-xs font-medium text-red-600" role="status">
+                  {t("obsRotateFailed")}
+                </p>
+              )}
 
               {/* Step-by-step OBS setup guide */}
               <details className="mt-3 rounded-xl border border-brand-200 bg-brand-50/70">

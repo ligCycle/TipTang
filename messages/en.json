@@ -116,7 +116,13 @@
     "resetSubmit": "Set new password",
     "resetSuccess": "Password updated! You can now log in.",
     "resetInvalid": "This link is invalid or expired. Please request a new one.",
-    "backToLogin": "Go to login"
+    "backToLogin": "Go to login",
+    "verifyTitle": "Confirm your email",
+    "verifyIntro": "Press the button below to confirm this email address is yours.",
+    "verifySubmit": "Confirm email",
+    "verifySuccess": "Your email is confirmed. Thank you!",
+    "verifyInvalid": "This link is invalid or has expired. You can request a new one in Settings.",
+    "verifyToDashboard": "Go to dashboard"
   },
   "profile": {
     "supportTitle": "Support {name}",
@@ -331,7 +337,12 @@
     "obsRemove": "Remove",
     "obsTestSound": "Test sound",
     "obsUploading": "Uploading...",
-    "obsAssetError": "Upload failed (check file type/size)"
+    "obsAssetError": "Upload failed (check file type/size)",
+    "obsRotateHint": "Showed this link on stream or shared it?",
+    "obsRotate": "Make a new link",
+    "obsRotateConfirm": "Make new overlay links? All the old ones (alert, goal, timer) stop working immediately and you'll need to paste the new ones into OBS.",
+    "obsRotated": "New links made — the old ones no longer work. Remember to update every URL in OBS.",
+    "obsRotateFailed": "Couldn't make a new link. Please try again."
   },
   "settings": {
     "title": "Settings",
@@ -382,7 +393,31 @@
     "profileColorHint": "Colors your profile page (buttons, goal bar, header). Pick a darker tone so the white text on buttons stays readable.",
     "thankYou": "Thank-you message after a tip (optional)",
     "thankYouPlaceholder": "Thank you so much for the support!",
-    "thankYouHint": "Supporters see this right after they tip · leave empty to hide"
+    "thankYouHint": "Supporters see this right after they tip · leave empty to hide",
+    "connectGoogleVerifyFirst": "Verify email first",
+    "sectionSecurity": "Account security",
+    "emailVerified": "Confirmed as your email address",
+    "emailNotVerified": "Not confirmed yet — open the link we emailed you at sign-up",
+    "emailVerifiedBadge": "Verified",
+    "verifyResend": "Resend confirmation link",
+    "verifySent": "Sent — check your inbox",
+    "verifyError": "Couldn't send the email. Please try again.",
+    "verifyLimited": "Too many requests. Please wait a moment.",
+    "signOutAllTitle": "Sign out everywhere",
+    "signOutAllHint": "Use this if you signed in on someone else's device or think someone else has access (this device too).",
+    "signOutAllButton": "Sign out all devices",
+    "signOutAllConfirm": "Sign out of every device, including this one?",
+    "deleteTitle": "Delete account",
+    "deleteHint": "Permanently deletes your profile, tip history, shop, orders, slips and files. This can't be undone, and your donate page and OBS overlay links stop working immediately.",
+    "deleteOpen": "Delete this account",
+    "deleteTypeUsername": "Type your username {username} to confirm",
+    "deletePassword": "Password",
+    "deleteConfirm": "Delete permanently",
+    "deleteCancel": "Cancel",
+    "deleteErrorUsername": "Username doesn't match",
+    "deleteErrorPassword": "Incorrect password",
+    "deleteErrorLimited": "Too many attempts. Please wait a moment.",
+    "deleteErrorGeneric": "Something went wrong. Please try again."
   },
   "notFound": {
     "title": "Page not found",

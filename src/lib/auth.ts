@@ -4,9 +4,14 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { createHash } from "crypto";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateUniqueUsername } from "@/lib/username";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
+import {
+  currentSessionVersion,
+  forgetSessionVersion,
+} from "@/lib/account-security";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -105,15 +110,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       const existing = await prisma.user.findUnique({
         where: { email },
-        select: { id: true, googleId: true },
+        select: {
+          id: true,
+          googleId: true,
+          emailVerifiedAt: true,
+          passwordHash: true,
+        },
       });
       // Existing account → sign in. Link Google (set googleId) if not linked yet,
       // but DON'T touch other data (esp. avatarUrl).
       if (existing) {
-        if (!existing.googleId && googleId) {
+        const data: Prisma.UserUpdateInput = {};
+        if (!existing.googleId && googleId) data.googleId = googleId;
+        if (!existing.emailVerifiedAt) {
+          // Google just proved who owns this address. A password set before
+          // anyone proved it may belong to someone who registered the
+          // address first to wait for its owner (pre-account takeover):
+          // drop it and sign out their sessions. The owner can set a new
+          // one with "forgot password".
+          data.emailVerifiedAt = new Date();
+          if (existing.passwordHash) {
+            data.passwordHash = null;
+            data.sessionVersion = { increment: 1 };
+          }
+        }
+        if (Object.keys(data).length > 0) {
           await prisma.user
-            .update({ where: { id: existing.id }, data: { googleId } })
+            .update({ where: { id: existing.id }, data })
             .catch(() => {});
+          forgetSessionVersion(existing.id);
         }
         return true;
       }
@@ -130,6 +155,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               passwordHash: null,
               avatarUrl,
               googleId,
+              emailVerifiedAt: new Date(),
             },
           });
           break;
@@ -146,9 +172,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    // Inject OUR user id into the token. Hit the DB ONLY on first sign-in
-    // (when `user` is present) — this callback runs on every session check, so
-    // querying every time would flood the connection pool.
+    // Inject OUR user id + session version into the token on sign-in, then
+    // on every later check make sure the version still matches (see
+    // account-security.ts — a bump signs out every device). This callback
+    // runs on every session check; the version lookup is cached briefly so
+    // it doesn't flood the connection pool.
     async jwt({ token, user, account }) {
       if (user) {
         if (account?.provider === "google") {
@@ -161,7 +189,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (db) token.id = db.id;
           }
         } else {
-          token.id = user.id as string; // credentials → already our id, no DB
+          token.id = user.id as string; // credentials → already our id
+        }
+        if (typeof token.id === "string") {
+          token.sv = (await currentSessionVersion(token.id)) ?? 0;
+        }
+        return token;
+      }
+      if (typeof token.id === "string") {
+        try {
+          const current = await currentSessionVersion(token.id);
+          // Deleted account, or signed out everywhere since this token was
+          // issued. Tokens from before versioning count as version 0.
+          if (current === null || current !== (token.sv ?? 0)) return null;
+        } catch {
+          // DB hiccup: keep the session rather than logging everyone out.
         }
       }
       return token;

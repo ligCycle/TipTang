@@ -21,10 +21,12 @@ export function ConnectedAccounts({
   googleConnected,
   accountEmail,
   googleAuthEnabled,
+  emailVerified,
 }: {
   googleConnected: boolean;
   accountEmail: string;
   googleAuthEnabled: boolean;
+  emailVerified: boolean;
 }) {
   const t = useTranslations("settings");
   // Nothing to connect if Google OAuth isn't configured on the server.
@@ -40,6 +42,12 @@ export function ConnectedAccounts({
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
             <Icon name="check" className="h-3.5 w-3.5" />
             {t("connected")}
+          </span>
+        ) : !emailVerified ? (
+          // Linking Google to an unverified account drops its password (see
+          // auth.ts), so ask for the email link first.
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+            {t("connectGoogleVerifyFirst")}
           </span>
         ) : (
           <button

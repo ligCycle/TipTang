@@ -161,3 +161,73 @@ export async function sendActivationNudgeEmail(opts: {
     devLabel: `Activation nudge (${template})`,
   });
 }
+
+/** Ask a new password sign-up to prove they own the address (24h link). */
+export async function sendVerifyEmail(
+  to: string,
+  link: string,
+  locale: string,
+): Promise<void> {
+  const th = locale === "th";
+  const subject = th ? "ยืนยันอีเมล TipTang" : "Confirm your TipTang email";
+  const intro = th
+    ? "กดลิงก์ด้านล่างเพื่อยืนยันว่าอีเมลนี้เป็นของคุณ (ลิงก์หมดอายุใน 24 ชั่วโมง) ถ้าคุณไม่ได้สมัคร TipTang ไม่ต้องทำอะไร"
+    : "Click the link below to confirm this email address is yours (expires in 24 hours). If you didn't sign up for TipTang, ignore this email.";
+  await sendEmail({
+    to,
+    subject,
+    text: `${intro}\n\n${link}`,
+    html: `<p>${esc(intro)}</p><p><a href="${link}">${link}</a></p>`,
+    devLabel: "Verify email link",
+  });
+}
+
+/**
+ * Tell the owner that something money- or access-related changed on their
+ * account, so a takeover is noticed before tips go to the wrong place.
+ * Thai only, like the other creator emails.
+ */
+export async function sendSecurityAlertEmail(opts: {
+  to: string;
+  displayName: string;
+  change: "promptpay" | "paypal" | "password";
+  detail?: string;
+  settingsUrl: string;
+  forgotUrl: string;
+}): Promise<void> {
+  const { to, displayName, change, detail, settingsUrl, forgotUrl } = opts;
+  const name = displayName.trim() || "ครีเอเตอร์";
+  const what = {
+    promptpay: `เลขพร้อมเพย์สำหรับรับทิปถูกเปลี่ยนเป็น ${detail ?? "—"}`,
+    paypal: `ชื่อ PayPal.me ถูกเปลี่ยนเป็น ${detail ?? "—"}`,
+    password: "รหัสผ่านของบัญชีถูกเปลี่ยน และทุกเครื่องถูกออกจากระบบแล้ว",
+  }[change];
+  const when = new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date());
+  const subject = "แจ้งเตือนความปลอดภัยบัญชี TipTang";
+  const intro = `สวัสดี ${name} — ${what} (${when})`;
+  const ok = "ถ้าเป็นคุณเอง ไม่ต้องทำอะไร";
+  const notYou =
+    "ถ้าไม่ใช่คุณ ให้ตั้งรหัสผ่านใหม่ทันที (ทุกเครื่องจะถูกออกจากระบบ) แล้วตรวจเลขรับเงินในหน้าตั้งค่า หรือตอบเมลนี้ให้เราช่วย";
+  await sendEmail({
+    to,
+    subject,
+    text: [
+      intro,
+      ok,
+      notYou,
+      `ตั้งรหัสผ่านใหม่: ${forgotUrl}`,
+      `หน้าตั้งค่า: ${settingsUrl}`,
+    ].join("\n\n"),
+    html: [
+      `<p>${esc(intro)}</p>`,
+      `<p>${esc(ok)}</p>`,
+      `<p><strong>${esc(notYou)}</strong></p>`,
+      `<p><a href="${forgotUrl}">ตั้งรหัสผ่านใหม่</a> · <a href="${settingsUrl}">หน้าตั้งค่า</a></p>`,
+    ].join(""),
+    devLabel: `Security alert (${change})`,
+  });
+}

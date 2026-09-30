@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { forgotSchema } from "@/lib/validators";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { linkBase } from "@/lib/site";
 
 export async function POST(req: Request) {
   const limit = await rateLimit(`forgot:${clientIp(req)}`, 5, 60_000);
@@ -38,10 +39,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const host =
-      req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-    const proto = req.headers.get("x-forwarded-proto") ?? "http";
-    const link = `${proto}://${host}/${locale}/reset-password?token=${raw}`;
+    const link = `${linkBase(req)}/${locale}/reset-password?token=${raw}`;
 
     try {
       await sendPasswordResetEmail(email, link, locale);

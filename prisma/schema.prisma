@@ -91,7 +91,11 @@ model ShopOrder {
   buyerContact String
   note         String?
   amount       Decimal     @db.Decimal(10, 2)
+  // Legacy public URL (orders before 2026-09-30). New slips go to the
+  // private bucket under slipKey, served via /api/shop/orders/[id]/slip.
   slipUrl      String?
+  slipKey      String?
+  slipPurgedAt DateTime?
   status       OrderStatus @default(PENDING)
   transRef     String?     @unique
   // Snapshot of the item's deliverable at purchase time (survives later item
@@ -156,6 +160,14 @@ model User {
   // Linked Google account id (the OAuth "sub"). Set when the user signs in with
   // Google; drives the "Google connected" status on the settings page.
   googleId     String?  @unique
+  // When the owner proved they control `email` (verification link, password
+  // reset link, or Google sign-in). Null = a password account nobody has
+  // proven yet: if Google later signs in with this email, the password is
+  // dropped, because whoever set it may not own the address.
+  emailVerifiedAt DateTime?
+  // Bumped to sign out every device (password reset, "sign out everywhere").
+  // Session tokens carry the version they were issued with.
+  sessionVersion Int @default(0)
   username     String   @unique
   displayName  String
   bio          String?
@@ -240,6 +252,7 @@ model User {
 
   tips          Tip[]
   resetTokens   PasswordResetToken[]
+  verifyTokens  EmailVerificationToken[]
   reports       Report[]
   alertAssets   AlertAsset[]
   shopItems     ShopItem[]
@@ -247,6 +260,19 @@ model User {
 }
 
 model PasswordResetToken {
+  id        String   @id @default(cuid())
+  // SHA-256 hash of the token (raw token is emailed, never stored).
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Email ownership proof for password sign-ups (24h, single use).
+model EmailVerificationToken {
   id        String   @id @default(cuid())
   // SHA-256 hash of the token (raw token is emailed, never stored).
   tokenHash String   @unique
@@ -270,6 +296,9 @@ model Tip {
   // Storage object key in the PRIVATE slip bucket; served only through
   // /api/tips/[id]/slip. slipUrl is the legacy public URL until migrated.
   slipKey         String?
+  // Set when the slip image was deleted by the retention job (the tip row and
+  // its transRef stay, so duplicate-slip checks keep working).
+  slipPurgedAt    DateTime?
   // What this tip does to the subathon clock. ADD is the historical default
   // (every confirmed tip added time); NONE = supporter chose "just donate".
   timerEffect     TimerEffect @default(ADD)

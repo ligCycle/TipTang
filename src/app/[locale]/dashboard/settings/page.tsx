@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/SettingsForm";
+import { AccountSecurity } from "@/components/AccountSecurity";
 import { normalizeSocialLinks } from "@/lib/socials";
 
 export default async function SettingsPage({
@@ -22,6 +23,8 @@ export default async function SettingsPage({
     select: {
       email: true,
       googleId: true,
+      emailVerifiedAt: true,
+      passwordHash: true,
       displayName: true,
       username: true,
       bio: true,
@@ -63,7 +66,15 @@ export default async function SettingsPage({
           googleConnected: Boolean(user.googleId),
           accountEmail: user.email,
           googleAuthEnabled,
+          emailVerified: Boolean(user.emailVerifiedAt),
         }}
+      />
+      <AccountSecurity
+        email={user.email}
+        emailVerified={Boolean(user.emailVerifiedAt)}
+        // Only whether a password exists — the hash never leaves the server.
+        hasPassword={Boolean(user.passwordHash)}
+        username={user.username}
       />
     </div>
   );

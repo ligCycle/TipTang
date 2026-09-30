@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { profileSchema } from "@/lib/validators";
 import { normalizeSocialLinks } from "@/lib/socials";
 import { normalizePaypalHandle } from "@/lib/paypal";
+import { sendSecurityAlertEmail } from "@/lib/email";
+import { maskPayout } from "@/lib/mask";
+import { linkBase } from "@/lib/site";
 
 export async function PATCH(req: Request) {
   const session = await auth();
@@ -78,13 +81,22 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "username_taken" }, { status: 409 });
   }
 
-  await prisma.user.update({
+  // Payout details decide where supporters' money goes — remember the old
+  // values so the owner can be told when they change.
+  const before = await prisma.user.findUnique({
     where: { id: session.user.id },
+    select: { promptpayId: true, paypalHandle: true },
+  });
+  const newPromptpay = promptpayId ? promptpayId : null;
+
+  const updated = await prisma.user.update({
+    where: { id: session.user.id },
+    select: { email: true, displayName: true },
     data: {
       displayName,
       username,
       bio: bio ? bio : null,
-      promptpayId: promptpayId ? promptpayId : null,
+      promptpayId: newPromptpay,
       ...(autoConfirmTips === undefined ? {} : { autoConfirmTips }),
       ...(minTipAmount === undefined ? {} : { minTipAmount }),
       ...(paypal === undefined ? {} : { paypalHandle: paypal }),
@@ -99,6 +111,36 @@ export async function PATCH(req: Request) {
         : { profileColor: profileColor ? profileColor : null }),
     },
   });
+
+  const changes: { change: "promptpay" | "paypal"; detail: string }[] = [];
+  if (before && (before.promptpayId ?? null) !== newPromptpay) {
+    changes.push({
+      change: "promptpay",
+      detail: newPromptpay ? maskPayout(newPromptpay) : "ค่าว่าง (ปิดรับพร้อมเพย์)",
+    });
+  }
+  if (before && paypal !== undefined && (before.paypalHandle ?? null) !== paypal) {
+    // The handle is public on the donate page anyway — show it whole.
+    changes.push({ change: "paypal", detail: paypal ?? "ค่าว่าง (ปิดรับ PayPal)" });
+  }
+  if (changes.length > 0) {
+    const base = linkBase(req);
+    after(async () => {
+      for (const c of changes) {
+        try {
+          await sendSecurityAlertEmail({
+            to: updated.email,
+            displayName: updated.displayName,
+            ...c,
+            settingsUrl: `${base}/th/dashboard/settings`,
+            forgotUrl: `${base}/th/forgot-password`,
+          });
+        } catch (err) {
+          console.error("[profile] payout alert email failed:", err);
+        }
+      }
+    });
+  }
 
   return NextResponse.json({ ok: true, paypalHandle: paypal ?? null });
 }

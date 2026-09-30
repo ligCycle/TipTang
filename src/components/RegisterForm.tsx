@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { signIn } from "next-auth/react";
 import { useRouter } from "@/i18n/navigation";
 
 export function RegisterForm() {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const [form, setForm] = useState({
     displayName: "",
@@ -36,7 +37,7 @@ export function RegisterForm() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, locale }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

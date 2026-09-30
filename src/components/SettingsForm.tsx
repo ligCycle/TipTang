@@ -32,6 +32,7 @@ type Account = {
   googleConnected: boolean;
   accountEmail: string;
   googleAuthEnabled: boolean;
+  emailVerified: boolean;
 };
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -560,6 +561,7 @@ export function SettingsForm({
               googleConnected={account.googleConnected}
               accountEmail={account.accountEmail}
               googleAuthEnabled={account.googleAuthEnabled}
+              emailVerified={account.emailVerified}
             />
           </Section>
         )}

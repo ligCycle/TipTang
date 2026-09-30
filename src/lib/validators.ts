@@ -15,6 +15,7 @@ export const registerSchema = z.object({
   password: z.string().min(8).max(100),
   displayName: z.string().trim().min(1).max(60),
   username: usernameSchema,
+  locale: z.enum(["th", "en"]).optional(),
 });
 
 export const profileSchema = z.object({
