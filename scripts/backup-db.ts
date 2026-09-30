@@ -36,8 +36,13 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-async function getPassphrase(keyCheckPath: string): Promise<string> {
+async function getPassphrase(keyCheckPath: string, hasBackups: boolean): Promise<string> {
   if (!existsSync(keyCheckPath)) {
+    if (hasBackups) {
+      fail(
+        "ไม่พบ key-check.json แต่มีไฟล์ backup อยู่แล้ว — ถ้าจะเริ่มรหัสผ่านใหม่ ให้ย้ายไฟล์ .tipbak เดิมไปไว้ที่อื่นก่อน (ไฟล์เดิมต้องใช้รหัสผ่านเดิมเปิด)",
+      );
+    }
     console.log(
       "ครั้งแรก: ตั้งรหัสผ่านสำหรับ backup (อย่างน้อย " +
         `${MIN_PASSPHRASE} ตัวอักษร)\n` +
@@ -52,7 +57,14 @@ async function getPassphrase(keyCheckPath: string): Promise<string> {
     await writeFile(keyCheckPath, JSON.stringify(makeKeyCheck(first), null, 2) + "\n");
     return first;
   }
-  const check = JSON.parse(await readFile(keyCheckPath, "utf8")) as KeyCheck;
+  let check: KeyCheck;
+  try {
+    const parsed: unknown = JSON.parse(await readFile(keyCheckPath, "utf8"));
+    if (typeof parsed !== "object" || parsed === null) throw new Error("not an object");
+    check = parsed as KeyCheck;
+  } catch {
+    fail("อ่าน key-check.json ไม่ได้ (ไฟล์เสียหาย)");
+  }
   const passphrase = await readPassphrase("รหัสผ่าน backup: ");
   if (!openKeyCheck(check, passphrase)) {
     fail("รหัสผ่านไม่ตรงกับ backup ชุดเดิม — ยังไม่ได้ backup อะไร");
@@ -76,7 +88,7 @@ async function main() {
       : "ยังไม่เคย backup",
   );
 
-  const passphrase = await getPassphrase(path.join(dir, "key-check.json"));
+  const passphrase = await getPassphrase(path.join(dir, "key-check.json"), last !== null);
 
   const name = backupFileName(new Date());
   const finalPath = path.join(dir, name);
@@ -99,19 +111,32 @@ async function main() {
     tables: snapshot.tables,
   };
   const tmpPath = `${finalPath}.tmp`;
-  await writeFile(tmpPath, packBackup(payload, passphrase));
-  await rename(tmpPath, finalPath);
-
-  // Prove the file on disk opens and holds every row.
+  const removeTmp = () => rm(tmpPath, { force: true }).catch(() => {});
   try {
-    const back = unpackBackup(await readFile(finalPath), passphrase);
+    await writeFile(tmpPath, packBackup(payload, passphrase));
+  } catch (err) {
+    await removeTmp();
+    throw err;
+  }
+
+  // Prove the file on disk opens and holds every row — before it gets a real
+  // backup name, so an unverified file can never look like a good backup.
+  try {
+    const back = unpackBackup(await readFile(tmpPath), passphrase);
     for (const [table, count] of Object.entries(snapshot.counts)) {
       const got = back.tables[table]?.length ?? -1;
       if (got !== count) throw new BackupError(`${table}: ในไฟล์ ${got} แถว แต่ใน DB ${count} แถว`);
     }
   } catch (err) {
-    await rm(finalPath, { force: true });
-    fail(`ตรวจไฟล์ backup ไม่ผ่าน จึงลบทิ้งแล้ว: ${(err as Error).message}`);
+    await removeTmp();
+    fail(`ตรวจไฟล์ backup ไม่ผ่าน จึงไม่ได้บันทึก: ${(err as Error).message}`);
+  }
+
+  try {
+    await rename(tmpPath, finalPath);
+  } catch (err) {
+    await removeTmp();
+    throw err;
   }
 
   const pruned = filesToPrune([...before, name]);

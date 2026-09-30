@@ -15,6 +15,7 @@ async function pipedLines(): Promise<string[]> {
 
 export async function readPassphrase(label: string): Promise<string> {
   if (!stdin.isTTY) {
+    process.stderr.write(label);
     piped ??= await pipedLines();
     return piped.shift() ?? "";
   }
