@@ -629,7 +629,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: 16 September 2026",
+    "lastUpdated": "Last updated: 30 September 2026",
     "intro": "TipTang (data controller — contact support@tiptang.com) cares about your privacy. This policy explains how we collect, use and protect your data under Thailand's Personal Data Protection Act (PDPA).",
     "s1Title": "Data we collect",
     "s1Body": "• Account info: email, password (stored hashed — never the plain password), display name, bio, profile/cover images, social links\n• If you sign in with Google: the email, name and profile picture Google provides to us (we never see your Google password)\n• The creator's PromptPay ID (sensitive — stored securely server-side, never exposed to donors or the public)\n• Donation info: supporter name/message, amount, transfer-slip image, transaction reference\n• Reviews you post on the home page: the name you give, rating and comment\n• Technical info: IP address (for rate-limiting and security, not stored permanently), a cookie that keeps you signed in, and anonymous page-view statistics via Vercel Analytics",
@@ -640,9 +640,9 @@
     "s4Title": "Disclosure & sharing",
     "s4Body": "We do not sell or rent your personal data. We may share data only as needed with the providers that run the platform: hosting and page-view statistics (Vercel), database/file storage (Supabase), email delivery, Google sign-in, and automatic slip verification — slip images are sent to Google (Gemini API) to read the amount and recipient and confirm the transaction — or when required by law.",
     "s5Title": "Your rights (PDPA)",
-    "s5Body": "You have the right to access, obtain a copy of, correct, delete, or object to / withdraw consent for the processing of your personal data, including requesting account deletion. Contact us to exercise these rights.",
+    "s5Body": "You have the right to access, obtain a copy of, correct, delete, or object to / withdraw consent for the processing of your personal data. Creators can delete their account themselves under Settings → Account security → Delete account. For the other rights, contact support@tiptang.com.",
     "s6Title": "Retention & deletion",
-    "s6Body": "We keep data only as long as needed to provide the service. When you request account deletion, we delete or anonymize your personal data, except where the law requires us to keep it.",
+    "s6Body": "We keep data only as long as needed to provide the service.\n• Payment slips and receipts: deleted automatically 90 days after the creator confirms or rejects the payment (180 days if never decided). We keep only the transaction reference, to stop the same slip being reused.\n• When an account is deleted: its profile, tip history, shop, orders, slips and uploaded files are deleted immediately, except where the law requires us to keep something.",
     "s7Title": "Contact us",
     "s7Body": "For questions about this policy or to exercise your rights, contact us at support@tiptang.com"
   },

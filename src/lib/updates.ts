@@ -24,6 +24,48 @@ export const UPDATES_SEEN_KEY = "tiptang_last_seen_update";
 
 export const UPDATES: Update[] = [
   {
+    id: "2026-09-30-account-security",
+    date: "2026-09-30",
+    tags: ["creator", "security"],
+    href: "/dashboard/settings",
+    th: {
+      title: "บัญชีปลอดภัยขึ้น",
+      body: "เราส่งอีเมลเตือนทันทีเมื่อเลขพร้อมเพย์ PayPal หรือรหัสผ่านถูกเปลี่ยน มีปุ่ม \"ออกจากระบบทุกเครื่อง\" ในหน้าตั้งค่า การตั้งรหัสผ่านใหม่จะออกจากระบบทุกเครื่องให้อัตโนมัติ และการเดารหัสผ่านซ้ำ ๆ จะถูกบล็อก",
+    },
+    en: {
+      title: "Safer accounts",
+      body: "You now get an email the moment your PromptPay, PayPal or password changes. Settings has a \"sign out everywhere\" button, resetting your password signs out every device, and repeated password guessing is blocked.",
+    },
+  },
+  {
+    id: "2026-09-30-overlay-new-link",
+    date: "2026-09-30",
+    tags: ["creator", "security"],
+    href: "/dashboard/overlay",
+    th: {
+      title: "สร้างลิงก์ OBS ใหม่ได้",
+      body: "ถ้าเผลอโชว์ลิงก์ overlay บนไลฟ์ กด \"สร้างลิงก์ใหม่\" ในหน้า OBS ลิงก์เก่าจะใช้ไม่ได้ทันที แล้วเอาลิงก์ใหม่ไปใส่ใน OBS",
+    },
+    en: {
+      title: "Make a new OBS link",
+      body: "Showed your overlay link on stream by accident? Press \"Make a new link\" on the OBS page — the old one stops working at once — then paste the new one into OBS.",
+    },
+  },
+  {
+    id: "2026-09-30-slip-retention",
+    date: "2026-09-30",
+    tags: ["creator", "supporter", "security"],
+    href: "/privacy",
+    th: {
+      title: "สลิปถูกลบอัตโนมัติหลัง 90 วัน และลบบัญชีได้เอง",
+      body: "รูปสลิปมีชื่อและเลขบัญชีของทั้งคนโอนและคนรับ เราจึงลบให้อัตโนมัติ 90 วันหลังยืนยันหรือปฏิเสธรายการ ครีเอเตอร์ลบบัญชีพร้อมข้อมูลทั้งหมดได้เองในหน้าตั้งค่า",
+    },
+    en: {
+      title: "Slips deleted after 90 days, and self-serve account deletion",
+      body: "Slips show both sides' names and account numbers, so they're now deleted automatically 90 days after a payment is confirmed or rejected. Creators can delete their account and all its data from settings.",
+    },
+  },
+  {
     id: "2026-09-27-paypal",
     date: "2026-09-27",
     tags: ["creator", "supporter"],

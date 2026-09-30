@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fileMatchesType } from "@/lib/filetype";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -300,7 +301,7 @@ export async function POST(req: Request) {
     if (file.size > max) {
       return NextResponse.json({ error: "too_large" }, { status: 413 });
     }
-    if (!types.includes(file.type)) {
+    if (!types.includes(file.type) || !(await fileMatchesType(file))) {
       return NextResponse.json({ error: "bad_type" }, { status: 415 });
     }
     const count = await prisma.alertAsset.count({
@@ -349,7 +350,7 @@ export async function POST(req: Request) {
   if (file.size > cfg.max) {
     return NextResponse.json({ error: "too_large" }, { status: 413 });
   }
-  if (!cfg.types.includes(file.type)) {
+  if (!cfg.types.includes(file.type) || !(await fileMatchesType(file))) {
     return NextResponse.json({ error: "bad_type" }, { status: 415 });
   }
 

@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { fileMatchesType } from "@/lib/filetype";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendTipNotificationEmail } from "@/lib/email";
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
   if (slip.size > MAX_UPLOAD_BYTES) {
     return NextResponse.json({ error: "too_large" }, { status: 413 });
   }
-  if (!ALLOWED_IMAGE_TYPES.includes(slip.type)) {
+  if (!ALLOWED_IMAGE_TYPES.includes(slip.type) || !(await fileMatchesType(slip))) {
     return NextResponse.json({ error: "bad_type" }, { status: 415 });
   }
 

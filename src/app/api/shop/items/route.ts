@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fileMatchesType } from "@/lib/filetype";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { shopItemSchema } from "@/lib/validators";
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json({ error: "too_large" }, { status: 413 });
     }
-    if (!ALLOWED_ALERT_IMAGE_TYPES.includes(file.type)) {
+    if (!ALLOWED_ALERT_IMAGE_TYPES.includes(file.type) || !(await fileMatchesType(file))) {
       return NextResponse.json({ error: "bad_type" }, { status: 415 });
     }
     imageUrl = await uploadImage(file, "shop");
