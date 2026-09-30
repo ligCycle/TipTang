@@ -33,8 +33,14 @@ const RANGE_LABEL: Record<Range, "rangeToday" | "range7d" | "range30d" | "rangeA
   all: "rangeAll",
 };
 
-const pillClass =
-  "inline-flex items-center gap-2 rounded-full border border-brand-300 bg-brand-50/70 px-4 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100";
+// Top-row actions: one filled button for the thing creators come here to do
+// (the OBS overlay), quiet text links for the rest. Guide and settings are
+// not repeated here — the site header already links both on every page.
+// Tighter padding below sm so the three fit on one line on a phone.
+const primaryActionClass =
+  "inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 sm:gap-2 sm:px-4";
+const quietActionClass =
+  "inline-flex items-center gap-1.5 rounded-full px-2 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100/70 sm:gap-2 sm:px-3";
 
 const sectionTitleClass =
   "flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-900/60";
@@ -188,32 +194,27 @@ export default async function DashboardPage({
         <h1 className="text-2xl font-extrabold text-brand-900">
           {t("welcome", { name: user.displayName })}
         </h1>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/${locale}/start`} className={pillClass}>
-            <Icon name="book-open" />
-            {tCommon("guide")}
+        <div className="flex flex-wrap items-center gap-1">
+          <Link
+            href={`/${locale}/dashboard/overlay`}
+            className={`${primaryActionClass} sm:mr-1`}
+          >
+            <Icon name="monitor" />
+            {t("goOverlay")}
           </Link>
           <UpdatesPill
             href={`/${locale}/updates`}
             label={tCommon("updates")}
             newLabel={tCommon("updatesNew")}
-            className={pillClass}
+            className={quietActionClass}
           />
           {SHOP_ENABLED && (
-            <Link href={`/${locale}/dashboard/shop`} className={pillClass}>
+            <Link href={`/${locale}/dashboard/shop`} className={quietActionClass}>
               <Icon name="shopping-bag" />
               {tShop("dashboardTitle")}
             </Link>
           )}
-          <Link href={`/${locale}/dashboard/overlay`} className={pillClass}>
-            <Icon name="monitor" />
-            {t("goOverlay")}
-          </Link>
-          <Link href={`/${locale}/dashboard/settings`} className={pillClass}>
-            <Icon name="settings" />
-            {t("goSettings")}
-          </Link>
-          <ReportButton className={pillClass} />
+          <ReportButton className={quietActionClass} />
         </div>
       </div>
 
