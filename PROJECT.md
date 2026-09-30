@@ -98,21 +98,44 @@ default Gemini = `gemini-2.5-flash` (OCR อ่านสลิป ไม่ใ�
 
 ## Backup ฐานข้อมูล
 
+- **เครื่องใหม่** (กู้คืนได้ด้วยไฟล์ `.tipbak` + รหัสผ่าน backup เท่านั้น ไม่ต้องใช้อย่างอื่น):
+  1. ติดตั้ง Node LTS เวอร์ชัน ≥ 22.18
+  2. `git clone` repo นี้ แล้ว `cd` เข้าไป
+  3. PowerShell: `$env:DIRECT_URL='<URL ฐานข้อมูลที่เข้าถึงได้ เช่น URL ปลายทาง>'` **ก่อน** `npm ci`
+     (postinstall รัน `prisma generate` ซึ่งต้องมี `DIRECT_URL`)
+- **URL ฐานข้อมูล:** ใช้ connection string ของ Supabase แบบเดียวกับ `DIRECT_URL` (session pooler, port 5432)
+  - ใน PowerShell ใช้ **single quote** เสมอ: `$env:X='<url>'`
+  - ถ้ารหัสผ่าน DB มีอักขระพิเศษ ต้อง percent-encode ใน URL (เช่น `@` → `%40`, `#` → `%23`)
 - **สร้าง backup** (แนะนำทุกสัปดาห์): `npm run backup` → พิมพ์รหัสผ่าน backup
   - รันใน PowerShell / Windows Terminal / terminal ในแอป — **ไม่ใช่ Git Bash** (mintty ซ่อนรหัสผ่านไม่ได้และจะค้าง)
-  - ไฟล์อยู่ที่ `C:\Users\ggtan\OneDrive\TipTang-backups\tiptang-YYYY-MM-DD-HHmm.tipbak`
+  - ไฟล์อยู่ที่ `%OneDrive%\TipTang-backups\tiptang-YYYY-MM-DD-HHmm.tipbak`
+    (ปกติ `C:\Users\ggtan\OneDrive\TipTang-backups` · ตั้ง `BACKUP_DIR` เพื่อเปลี่ยนโฟลเดอร์ ·
+    ถ้าไม่เจอ OneDrive สคริปต์จะเตือนว่าไฟล์ไม่ sync ขึ้นคลาวด์)
     (เข้ารหัส AES-256 · OneDrive sync ขึ้นคลาวด์ · เก็บ 12 ไฟล์ล่าสุด)
   - สคริปต์บอกว่า backup ครั้งก่อนกี่วันแล้ว และตรวจไฟล์ใหม่ทุกครั้ง
   - ไฟล์ถูกตรวจ (ถอดรหัส + นับแถว) ก่อนตั้งชื่อจริง — ถ้าตรวจไม่ผ่านจะไม่มีไฟล์ใหม่เกิดขึ้น
   - **ลืมรหัสผ่าน = เปิด backup ไม่ได้ทุกไฟล์** — เก็บในตัวจัดการรหัสผ่าน
   - `key-check.json` ในโฟลเดอร์เดียวกันไม่มีรหัสผ่านอยู่ข้างใน (ใช้เช็กว่าพิมพ์ตรงกับครั้งก่อน)
   - ถ้าไม่มี `key-check.json` แต่มีไฟล์ backup อยู่แล้ว สคริปต์จะไม่ยอมทำต่อ — ถ้าตั้งใจเริ่มรหัสผ่านใหม่ ให้ย้ายไฟล์ `.tipbak` เดิมไปไว้ที่อื่นก่อน
-- **เช็กว่าไฟล์เปิดได้:** `npm run restore -- --check "<ไฟล์>"` (ไม่แตะฐานข้อมูล)
-- **กู้คืน** (ลงฐานข้อมูลว่างเท่านั้น เช่น Supabase โปรเจกต์ใหม่):
-  1. `git checkout` โค้ดเวอร์ชันที่มี migration ครบเท่ากับตอน backup
-  2. PowerShell: `$env:DIRECT_URL="<URL ปลายทาง>"; npx prisma migrate deploy`
-  3. `$env:RESTORE_DATABASE_URL="<URL ปลายทาง>"; npm run restore -- "<ไฟล์>"`
-  4. เปลี่ยน `DATABASE_URL` / `DIRECT_URL` บน Vercel เป็นฐานข้อมูลใหม่ แล้ว Redeploy
+- **เช็กว่าไฟล์เปิดได้:** `npm run restore -- --check '<ไฟล์>'` (ไม่แตะฐานข้อมูล)
+- **กู้คืน** (ลงฐานข้อมูลว่างเท่านั้น เช่น Supabase โปรเจกต์ใหม่) — ทุกคำสั่งใน PowerShell, `<ปลายทาง>` = URL ฐานข้อมูลใหม่:
+  1. `npm run restore -- --check '<ไฟล์>'` → จดชื่อ migration ล่าสุดของ backup (บรรทัด "ล่าสุด …")
+  2. สร้างโครงตารางให้ตรงกับ backup: หา commit ที่มี migration ชุดนั้นพอดี แล้วรันจาก worktree
+     ```
+     git log -1 --format=%h -- 'prisma/migrations/<ชื่อ migration>'
+     git worktree add ../tiptang-restore <hash>
+     cd ../tiptang-restore
+     $env:DIRECT_URL='<ปลายทาง>'; npm ci; npx prisma migrate deploy
+     ```
+     (worktree ต้อง `npm ci` ก่อน และต้องตั้ง `DIRECT_URL` ก่อน `npm ci`) แล้ว `cd` กลับโฟลเดอร์หลัก
+  3. กลับมาที่โฟลเดอร์หลัก (โค้ดปัจจุบัน): `$env:RESTORE_DATABASE_URL='<ปลายทาง>'; npm run restore -- '<ไฟล์>'`
+  4. ยังอยู่โฟลเดอร์หลัก: `$env:DIRECT_URL='<ปลายทาง>'; npx prisma migrate deploy`
+     → ไล่ migration ที่ใหม่กว่า backup ให้ตรงกับโค้ดปัจจุบัน (Vercel build **ไม่ได้** รัน migration ให้)
+     — ต้องตั้ง `$env:DIRECT_URL` ทุกครั้ง ไม่งั้นจะไปใช้ค่าใน `.env` (= production)
+  5. เปลี่ยน `DATABASE_URL` / `DIRECT_URL` บน Vercel เป็นฐานข้อมูลใหม่ แล้ว Redeploy
+     จากนั้นลบ worktree: `git worktree remove ../tiptang-restore`
+  - ถ้า migration ล่าสุดของ backup = ล่าสุดใน `prisma/migrations` ของโค้ดปัจจุบัน ข้ามข้อ 2 และ 4 ได้:
+    `$env:DIRECT_URL='<ปลายทาง>'; npx prisma migrate deploy` ครั้งเดียวในโฟลเดอร์หลัก แล้วทำข้อ 3 และ 5
 - ไม่รวมไฟล์รูปใน Supabase Storage (avatar, สลิป, เสียงแจ้งเตือน)
 
 ---
