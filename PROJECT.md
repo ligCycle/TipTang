@@ -96,5 +96,24 @@ default Gemini = `gemini-2.5-flash` (OCR อ่านสลิป ไม่ใ�
   → ตรวจด้วย **`npx tsc --noEmit`** แล้วพึ่ง Vercel build จริง / verify บน production หลัง deploy
 - i18n: เพิ่ม key ต้องครบทั้ง `th.json` และ `en.json` (จำนวน key เท่ากัน) ไม่งั้นขึ้น raw key
 
+## Backup ฐานข้อมูล
+
+- **สร้าง backup** (แนะนำทุกสัปดาห์): `npm run backup` → พิมพ์รหัสผ่าน backup
+  - รันใน PowerShell / Windows Terminal / terminal ในแอป — **ไม่ใช่ Git Bash** (mintty ซ่อนรหัสผ่านไม่ได้และจะค้าง)
+  - ไฟล์อยู่ที่ `C:\Users\ggtan\OneDrive\TipTang-backups\tiptang-YYYY-MM-DD-HHmm.tipbak`
+    (เข้ารหัส AES-256 · OneDrive sync ขึ้นคลาวด์ · เก็บ 12 ไฟล์ล่าสุด)
+  - สคริปต์บอกว่า backup ครั้งก่อนกี่วันแล้ว และตรวจไฟล์ใหม่ทุกครั้ง
+  - ไฟล์ถูกตรวจ (ถอดรหัส + นับแถว) ก่อนตั้งชื่อจริง — ถ้าตรวจไม่ผ่านจะไม่มีไฟล์ใหม่เกิดขึ้น
+  - **ลืมรหัสผ่าน = เปิด backup ไม่ได้ทุกไฟล์** — เก็บในตัวจัดการรหัสผ่าน
+  - `key-check.json` ในโฟลเดอร์เดียวกันไม่มีรหัสผ่านอยู่ข้างใน (ใช้เช็กว่าพิมพ์ตรงกับครั้งก่อน)
+  - ถ้าไม่มี `key-check.json` แต่มีไฟล์ backup อยู่แล้ว สคริปต์จะไม่ยอมทำต่อ — ถ้าตั้งใจเริ่มรหัสผ่านใหม่ ให้ย้ายไฟล์ `.tipbak` เดิมไปไว้ที่อื่นก่อน
+- **เช็กว่าไฟล์เปิดได้:** `npm run restore -- --check "<ไฟล์>"` (ไม่แตะฐานข้อมูล)
+- **กู้คืน** (ลงฐานข้อมูลว่างเท่านั้น เช่น Supabase โปรเจกต์ใหม่):
+  1. `git checkout` โค้ดเวอร์ชันที่มี migration ครบเท่ากับตอน backup
+  2. PowerShell: `$env:DIRECT_URL="<URL ปลายทาง>"; npx prisma migrate deploy`
+  3. `$env:RESTORE_DATABASE_URL="<URL ปลายทาง>"; npm run restore -- "<ไฟล์>"`
+  4. เปลี่ยน `DATABASE_URL` / `DIRECT_URL` บน Vercel เป็นฐานข้อมูลใหม่ แล้ว Redeploy
+- ไม่รวมไฟล์รูปใน Supabase Storage (avatar, สลิป, เสียงแจ้งเตือน)
+
 ---
 สถานะ: **MVP ใช้งานจริงแล้ว** (มี user จริงกำลังทดลองใช้). โฟกัสถัดไป: outreach หาครีเอเตอร์ + ลด friction ตอน onboard
