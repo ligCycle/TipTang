@@ -25,6 +25,8 @@ type Order = {
   note: string | null;
   amount: number;
   slipUrl: string | null;
+  /** Slip image removed by the 90-day retention job. */
+  slipPurged: boolean;
   status: "PENDING" | "CONFIRMED" | "REJECTED" | "DELIVERED";
   createdAt: string;
 };
@@ -266,7 +268,7 @@ export function ShopManager({
                   >
                     {t(`status_${o.status}`)}
                   </span>
-                  {o.slipUrl && (
+                  {o.slipUrl ? (
                     <a
                       href={o.slipUrl}
                       target="_blank"
@@ -275,6 +277,10 @@ export function ShopManager({
                     >
                       {t("viewSlip")}
                     </a>
+                  ) : (
+                    o.slipPurged && (
+                      <span className="text-brand-900/50">{t("slipPurged")}</span>
+                    )
                   )}
                   <span className="flex-1" />
                   {o.status === "PENDING" && (

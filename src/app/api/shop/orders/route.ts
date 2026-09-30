@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { shopOrderSchema } from "@/lib/validators";
 import {
-  uploadImage,
+  uploadSlip,
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_BYTES,
 } from "@/lib/storage";
@@ -92,7 +92,8 @@ export async function POST(req: Request) {
     confirmedAt = new Date();
   }
 
-  const slipUrl = await uploadImage(slip, "slips");
+  // Private bucket, like tip slips: bank details of both sides are on it.
+  const slipKey = await uploadSlip(slip);
 
   // Snapshot the deliverable so the buyer keeps what they paid for even if the
   // creator later edits/archives the item.
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
     buyerContact: parsed.data.buyerContact,
     note: parsed.data.note ? censorText(parsed.data.note) : null,
     amount: price,
-    slipUrl,
+    slipKey,
     status: finalStatus,
     transRef,
     deliverableText,

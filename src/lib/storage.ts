@@ -204,3 +204,24 @@ export async function readLocalUpload(segments: string[]) {
   if (!filePath.startsWith(LOCAL_DIR)) throw new Error("Invalid path");
   return fs.readFile(filePath);
 }
+
+/**
+ * Remove many slips at once. Unlike deleteSlip this reports failure, so the
+ * retention job only marks rows as purged when their files are really gone
+ * (a failed run is simply retried the next day).
+ */
+export async function deleteSlipsBatch(keys: string[]): Promise<boolean> {
+  if (keys.length === 0) return true;
+  try {
+    if (DRIVER === "supabase") {
+      const { error } = await supabaseClient()
+        .storage.from(SLIP_BUCKET)
+        .remove(keys);
+      return !error;
+    }
+    for (const key of keys) await deleteSlip(key);
+    return true;
+  } catch {
+    return false;
+  }
+}

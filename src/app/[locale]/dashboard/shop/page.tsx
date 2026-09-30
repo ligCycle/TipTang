@@ -50,6 +50,8 @@ export default async function ShopPage({
         note: true,
         amount: true,
         slipUrl: true,
+        slipKey: true,
+        slipPurgedAt: true,
         status: true,
         createdAt: true,
       },
@@ -73,10 +75,14 @@ export default async function ShopPage({
 
       <ShopManager
         items={items.map((i) => ({ ...i, price: Number(i.price) }))}
-        orders={orders.map((o) => ({
+        orders={orders.map(({ slipKey, slipUrl, slipPurgedAt, ...o }) => ({
           ...o,
           amount: Number(o.amount),
           createdAt: o.createdAt.toISOString(),
+          // Never hand out storage URLs — the owner-checked route signs one.
+          slipUrl:
+            slipKey || slipUrl ? `/api/shop/orders/${o.id}/slip` : null,
+          slipPurged: Boolean(slipPurgedAt),
         }))}
         locale={locale}
       />

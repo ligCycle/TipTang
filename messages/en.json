@@ -342,7 +342,8 @@
     "obsRotate": "Make a new link",
     "obsRotateConfirm": "Make new overlay links? All the old ones (alert, goal, timer) stop working immediately and you'll need to paste the new ones into OBS.",
     "obsRotated": "New links made — the old ones no longer work. Remember to update every URL in OBS.",
-    "obsRotateFailed": "Couldn't make a new link. Please try again."
+    "obsRotateFailed": "Couldn't make a new link. Please try again.",
+    "slipPurged": "Slip deleted (kept for 90 days)"
   },
   "settings": {
     "title": "Settings",
@@ -584,7 +585,8 @@
     "saving": "Saving...",
     "save": "Save",
     "cancel": "Cancel",
-    "formError": "Please fill in the title and price"
+    "formError": "Please fill in the title and price",
+    "slipPurged": "Slip deleted (kept for 90 days)"
   },
   "updates": {
     "title": "What's new in TipTang",

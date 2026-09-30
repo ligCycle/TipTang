@@ -92,6 +92,7 @@ export default async function DashboardPage({
           status: true,
           slipUrl: true,
           slipKey: true,
+          slipPurgedAt: true,
           autoVerified: true,
           verifyCode: true,
           verifyDetail: true,
@@ -153,6 +154,7 @@ export default async function DashboardPage({
     // Every slip goes through the owner-checked route, legacy public URLs
     // included — so a leaked dashboard link never exposes the raw file.
     slipUrl: tip.slipKey || tip.slipUrl ? `/api/tips/${tip.id}/slip` : null,
+    slipPurged: Boolean(tip.slipPurgedAt),
     autoVerified: tip.autoVerified,
     verifyCode: tip.verifyCode,
     verifyDetail: tip.verifyDetail,

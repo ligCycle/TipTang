@@ -14,6 +14,8 @@ type Tip = {
   amount: number;
   status: "PENDING" | "CONFIRMED" | "REJECTED";
   slipUrl: string | null;
+  /** Slip image removed by the 90-day retention job. */
+  slipPurged: boolean;
   autoVerified: boolean;
   verifyCode: string | null;
   verifyDetail: string | null;
@@ -198,6 +200,11 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
                 onCancel={() => setDeleteOpen(false)}
               />
             </>
+          )}
+          {!tip.slipUrl && tip.slipPurged && (
+            <span className="px-1 text-sm text-brand-900/50">
+              {t("slipPurged")}
+            </span>
           )}
           {tip.slipUrl && (
             <a
