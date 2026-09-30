@@ -3,8 +3,9 @@
  *
  *   npm run backup
  *
- * Writes tiptang-YYYY-MM-DD-HHmm.tipbak to C:\Users\<you>\OneDrive\TipTang-backups
- * (or BACKUP_DIR), checks it by decrypting it again, and keeps the 12 newest.
+ * Writes tiptang-YYYY-MM-DD-HHmm.tipbak to %OneDrive%\TipTang-backups
+ * (falls back to ~/OneDrive; BACKUP_DIR overrides), checks it by decrypting
+ * it again, and keeps the 12 newest.
  * The passphrase is typed each time and never stored; key-check.json only
  * proves it's the same one as last time. Lose the passphrase = lose every backup.
  * Restore: see scripts/restore-db.ts.
@@ -75,8 +76,16 @@ async function getPassphrase(keyCheckPath: string, hasBackups: boolean): Promise
 async function main() {
   const url = process.env.DIRECT_URL;
   if (!url) fail("ไม่พบ DIRECT_URL — รันผ่าน npm run backup (ซึ่งโหลด .env ให้)");
-  const dir =
-    process.env.BACKUP_DIR ?? path.join(os.homedir(), "OneDrive", "TipTang-backups");
+  // %OneDrive% is Windows' own pointer to the synced folder (it isn't always
+  // ~/OneDrive, e.g. "OneDrive - Personal" or a moved folder).
+  const oneDrive = process.env.OneDrive || path.join(os.homedir(), "OneDrive");
+  const dir = process.env.BACKUP_DIR ?? path.join(oneDrive, "TipTang-backups");
+  if (!process.env.BACKUP_DIR && !existsSync(oneDrive)) {
+    console.warn(
+      `⚠ ไม่พบโฟลเดอร์ OneDrive (${oneDrive}) — backup จะอยู่แค่ในเครื่องนี้ ไม่ sync ขึ้นคลาวด์ ` +
+        "(ตั้ง BACKUP_DIR เพื่อเลือกโฟลเดอร์เอง)",
+    );
+  }
   await mkdir(dir, { recursive: true });
 
   const before = await readdir(dir);
@@ -139,7 +148,8 @@ async function main() {
     throw err;
   }
 
-  const pruned = filesToPrune([...before, name]);
+  // Never delete the file just written, whatever the pruning rule decides.
+  const pruned = filesToPrune([...before, name]).filter((n) => n !== name);
   for (const old of pruned) await rm(path.join(dir, old), { force: true });
 
   const size = (await readFile(finalPath)).length;

@@ -1,12 +1,18 @@
 /**
  * Load a .tipbak backup into an EMPTY, already-migrated database.
  *
- *   npm run restore -- --check "<file>"   # decrypt + show contents, touches no DB
- *   npm run restore -- "<file>"           # needs RESTORE_DATABASE_URL
+ *   npm run restore -- --check '<file>'   # decrypt + show contents, touches no DB
+ *   npm run restore -- '<file>'           # needs RESTORE_DATABASE_URL
  *
- * PowerShell:
- *   $env:DIRECT_URL="<target url>"; npx prisma migrate deploy
- *   $env:RESTORE_DATABASE_URL="<target url>"; npm run restore -- "<file>"
+ * PowerShell (single quotes, so $ and other characters in the URL stay literal):
+ *   $env:DIRECT_URL='<target url>'; npx prisma migrate deploy
+ *   $env:RESTORE_DATABASE_URL='<target url>'; npm run restore -- '<file>'
+ *
+ * <target url> = the target Supabase project's connection string of the same
+ * kind as DIRECT_URL (session pooler, port 5432). Special characters in the DB
+ * password must be percent-encoded in the URL (e.g. @ → %40, # → %23).
+ * The migrate deploy must run from code whose migrations match the backup's
+ * exactly — full bad-day steps are in PROJECT.md ("กู้คืน").
  *
  * The target is never taken from .env. It refuses unless the target's
  * migrations match the backup's, every table exists, and every table is
@@ -45,7 +51,7 @@ async function main() {
   const args = process.argv.slice(2);
   const checkOnly = args.includes("--check");
   const file = args.find((a) => !a.startsWith("--"));
-  if (!file) fail('ระบุไฟล์: npm run restore -- [--check] "<ไฟล์ .tipbak>"');
+  if (!file) fail("ระบุไฟล์: npm run restore -- [--check] '<ไฟล์ .tipbak>'");
 
   const passphrase = await readPassphrase("รหัสผ่าน backup: ");
   let payload: BackupPayload;
@@ -71,9 +77,20 @@ async function main() {
 
     const migrations = await appliedMigrations(client);
     if (JSON.stringify(migrations) !== JSON.stringify(payload.migrations)) {
+      const want = payload.migrations;
+      let i = 0;
+      while (i < want.length && i < migrations.length && want[i] === migrations[i]) i++;
+      const firstDiff =
+        i < want.length
+          ? `backup มี ${want[i]} แต่ปลายทาง${i < migrations.length ? `มี ${migrations[i]} แทน` : "ยังไม่มี"}`
+          : `ปลายทางมี ${migrations[i]} เกินมา`;
       throw new BackupError(
-        `migration ไม่ตรงกัน: ปลายทางมี ${migrations.length} ตัว, backup มี ${payload.migrations.length} ตัว ` +
-          "— รัน prisma migrate deploy กับปลายทางด้วยโค้ดเวอร์ชันเดียวกับตอน backup ก่อน",
+        `migration ไม่ตรงกัน: ปลายทางมี ${migrations.length} ตัว, backup มี ${want.length} ตัว\n` +
+          `  backup ล่าสุด:  ${want.at(-1) ?? "ไม่มี"}\n` +
+          `  ปลายทางล่าสุด: ${migrations.at(-1) ?? "ไม่มี"}\n` +
+          `  ต่างกันตัวแรก: ${firstDiff}\n` +
+          `  → ใช้ฐานข้อมูลว่างใหม่ แล้วรัน prisma migrate deploy จากโค้ดที่ migration ล่าสุดคือ ${want.at(-1) ?? "-"} ` +
+          "(ดูขั้นตอน \"กู้คืน\" ใน PROJECT.md)",
       );
     }
 
