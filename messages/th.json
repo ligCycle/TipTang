@@ -497,7 +497,7 @@
   "report": {
     "title": "แจ้งปัญหา / ติดต่อแอดมิน",
     "desc": "เจอบั๊ก หรือมีข้อเสนอแนะ? ส่งถึงแอดมินได้เลย",
-    "openButton": "ส่งรายงาน",
+    "openButton": "แจ้งปัญหา",
     "categoryLabel": "ประเภท",
     "category_bug": "บั๊ก/ข้อผิดพลาด",
     "category_payment": "เรื่องเงิน/สลิป",
@@ -516,7 +516,8 @@
     "statusResolved": "แก้ไขแล้ว",
     "markResolved": "ทำเครื่องหมายแก้ไขแล้ว",
     "reopen": "เปิดใหม่",
-    "processing": "..."
+    "processing": "...",
+    "close": "ปิด"
   },
   "shop": {
     "title": "ร้านค้า",

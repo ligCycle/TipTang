@@ -497,7 +497,7 @@
   "report": {
     "title": "Report an issue / contact admin",
     "desc": "Found a bug or have a suggestion? Send it to the admin.",
-    "openButton": "Send a report",
+    "openButton": "Report a problem",
     "categoryLabel": "Type",
     "category_bug": "Bug",
     "category_payment": "Payment",
@@ -516,7 +516,8 @@
     "statusResolved": "Resolved",
     "markResolved": "Mark resolved",
     "reopen": "Reopen",
-    "processing": "..."
+    "processing": "...",
+    "close": "Close"
   },
   "shop": {
     "title": "Shop",

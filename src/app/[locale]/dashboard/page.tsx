@@ -22,7 +22,7 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
-import { ReportForm } from "@/components/ReportForm";
+import { ReportButton } from "@/components/ReportButton";
 import { SHOP_ENABLED } from "@/lib/features";
 import { Icon } from "@/components/Icon";
 
@@ -213,6 +213,7 @@ export default async function DashboardPage({
             <Icon name="settings" />
             {t("goSettings")}
           </Link>
+          <ReportButton className={pillClass} />
         </div>
       </div>
 
@@ -360,9 +361,6 @@ export default async function DashboardPage({
           </ul>
         )}
       </div>
-
-      {/* Report / contact admin */}
-      <ReportForm />
     </div>
   );
 }
