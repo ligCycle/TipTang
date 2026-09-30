@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "node --test \"src/**/*.test.ts\" \"scripts/**/*.test.ts\"",
     "backup": "node --env-file=.env scripts/backup-db.ts",
+    "restore": "node scripts/restore-db.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
