@@ -133,10 +133,10 @@ export function AccountSecurity({
         )}
       </div>
       {verifyState === "error" && (
-        <p className="-mt-4 text-sm text-red-600">{t("verifyError")}</p>
+        <p className="-mt-4 text-sm text-red-600 dark:text-red-400">{t("verifyError")}</p>
       )}
       {verifyState === "limited" && (
-        <p className="-mt-4 text-sm text-red-600">{t("verifyLimited")}</p>
+        <p className="-mt-4 text-sm text-red-600 dark:text-red-400">{t("verifyLimited")}</p>
       )}
 
       {/* Sign out everywhere */}
@@ -156,18 +156,18 @@ export function AccountSecurity({
         </button>
       </div>
       {signOutError && (
-        <p className="-mt-4 text-sm text-red-600">{t("deleteErrorGeneric")}</p>
+        <p className="-mt-4 text-sm text-red-600 dark:text-red-400">{t("deleteErrorGeneric")}</p>
       )}
 
       {/* Delete account */}
       <div className="border-t border-brand-900/10 pt-6">
-        <p className="font-medium text-red-700">{t("deleteTitle")}</p>
+        <p className="font-medium text-red-700 dark:text-red-400">{t("deleteTitle")}</p>
         <p className="mt-0.5 text-sm text-brand-900/60">{t("deleteHint")}</p>
         {!deleteOpen ? (
           <button
             type="button"
             onClick={() => setDeleteOpen(true)}
-            className="mt-3 inline-flex items-center gap-2 rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-400/60 dark:text-red-300 dark:hover:bg-red-500/10"
           >
             <Icon name="trash" className="h-4 w-4" />
             {t("deleteOpen")}
@@ -200,7 +200,7 @@ export function AccountSecurity({
               </label>
             )}
             {deleteError && (
-              <p className="text-sm font-medium text-red-600">{deleteError}</p>
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">{deleteError}</p>
             )}
             <div className="flex flex-wrap gap-2">
               <button
