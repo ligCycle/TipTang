@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SLIP_KEEP_DAYS } from "@/lib/retention";
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
@@ -325,6 +326,12 @@ export default async function DashboardPage({
           <h2 className="text-lg font-bold text-brand-900">{t("tipsTitle")}</h2>
           {rejectedCount > 0 && <ClearRejectedButton count={rejectedCount} />}
         </div>
+        {clientTips.length > 0 && (
+          <p className="-mt-2 mb-4 flex items-start gap-1.5 text-sm text-brand-900/60">
+            <Icon name="clock" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{t("slipRetentionHint", { days: SLIP_KEEP_DAYS })}</span>
+          </p>
+        )}
         {clientTips.length === 0 ? (
           <p className="card rounded-2xl p-6 text-center text-brand-900/60">
             {t("noTips")}
