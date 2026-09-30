@@ -36,18 +36,28 @@ function deriveKey(passphrase: string, salt: Buffer, k: KdfParams): Buffer {
   });
 }
 
-function validKdf(h: Partial<Header>): h is Header {
+function intIn(x: unknown, min: number, max: number): x is number {
+  return Number.isInteger(x) && (x as number) >= min && (x as number) <= max;
+}
+
+/**
+ * The one place a header (or key-check) is judged. Bounds sit just around what
+ * this tool writes, so a tampered file is refused before scrypt runs instead
+ * of making it allocate gigabytes or throw a raw RangeError.
+ */
+function validKdf(h: unknown): h is Header {
+  if (typeof h !== "object" || h === null || Array.isArray(h)) return false;
+  const k = h as Partial<Header>;
   return (
-    h.kdf === "scrypt" &&
-    typeof h.salt === "string" &&
-    typeof h.iv === "string" &&
-    Number.isInteger(h.N) &&
-    Number.isInteger(h.r) &&
-    Number.isInteger(h.p) &&
-    (h.N ?? 0) >= 1024 &&
-    (h.N ?? 0) <= 1 << 20 &&
-    (h.r ?? 0) <= 32 &&
-    (h.p ?? 0) <= 16
+    k.kdf === "scrypt" &&
+    intIn(k.N, 1024, 131072) &&
+    (k.N & (k.N - 1)) === 0 &&
+    intIn(k.r, 1, 16) &&
+    intIn(k.p, 1, 4) &&
+    typeof k.salt === "string" &&
+    typeof k.iv === "string" &&
+    Buffer.from(k.salt, "base64").length >= 16 &&
+    Buffer.from(k.iv, "base64").length === 12
   );
 }
 
@@ -76,24 +86,27 @@ export function decryptBackup(file: Buffer, passphrase: string): Buffer {
   const nl = file.indexOf(0x0a, MAGIC.length);
   if (nl === -1) throw new BackupError("ส่วนหัวของไฟล์ backup เสียหาย");
   const header = file.subarray(MAGIC.length, nl + 1);
-  let h: Partial<Header>;
+  let h: unknown;
   try {
     h = JSON.parse(header.toString("utf8"));
   } catch {
+    throw new BackupError("ส่วนหัวของไฟล์ backup เสียหาย");
+  }
+  if (typeof h !== "object" || h === null || Array.isArray(h)) {
     throw new BackupError("ส่วนหัวของไฟล์ backup เสียหาย");
   }
   if (!validKdf(h)) throw new BackupError("ส่วนหัวของไฟล์ backup เสียหายหรือไม่รองรับ");
 
   const body = file.subarray(nl + 1);
   if (body.length < TAG_BYTES) throw new BackupError("ไฟล์ backup ถูกตัดหรือเสียหาย");
-  const decipher = createDecipheriv(
-    "aes-256-gcm",
-    deriveKey(passphrase, Buffer.from(h.salt, "base64"), h),
-    Buffer.from(h.iv, "base64"),
-  );
-  decipher.setAAD(header);
-  decipher.setAuthTag(body.subarray(body.length - TAG_BYTES));
   try {
+    const decipher = createDecipheriv(
+      "aes-256-gcm",
+      deriveKey(passphrase, Buffer.from(h.salt, "base64"), h),
+      Buffer.from(h.iv, "base64"),
+    );
+    decipher.setAAD(header);
+    decipher.setAuthTag(body.subarray(body.length - TAG_BYTES));
     return Buffer.concat([
       decipher.update(body.subarray(0, body.length - TAG_BYTES)),
       decipher.final(),
