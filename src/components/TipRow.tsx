@@ -16,6 +16,10 @@ type Tip = {
   slipUrl: string | null;
   /** Slip image removed by the 90-day retention job. */
   slipPurged: boolean;
+  /** When that job will delete the slip (decided tips only), ISO. */
+  slipDeleteAt: string | null;
+  /** Deletion is less than a week away. */
+  slipDeleteSoon: boolean;
   autoVerified: boolean;
   verifyCode: string | null;
   verifyDetail: string | null;
@@ -179,6 +183,23 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-brand-900/50">
           {formatDate(tip.createdAt, currencyLocale)}
+          {tip.slipUrl && tip.slipDeleteAt && (
+            <span
+              className={
+                tip.slipDeleteSoon
+                  ? "font-semibold text-amber-600 dark:text-amber-400"
+                  : undefined
+              }
+            >
+              {" · "}
+              {t("slipDeletesOn", {
+                date: new Intl.DateTimeFormat(currencyLocale, {
+                  dateStyle: "medium",
+                  timeZone: "Asia/Bangkok",
+                }).format(new Date(tip.slipDeleteAt)),
+              })}
+            </span>
+          )}
         </span>
         <div className="flex items-center gap-2">
           {tip.status !== "CONFIRMED" && (

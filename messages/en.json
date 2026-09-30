@@ -344,7 +344,8 @@
     "obsRotated": "New links made — the old ones no longer work. Remember to update every URL in OBS.",
     "obsRotateFailed": "Couldn't make a new link. Please try again.",
     "slipPurged": "Slip deleted (kept for 90 days)",
-    "slipRetentionHint": "Slip images are kept for {days} days after you confirm or reject a tip, then deleted automatically (the tip itself stays). Need one as proof? Open \"View slip\" and save the image."
+    "slipRetentionHint": "Slip images are kept for {days} days after you confirm or reject a tip, then deleted automatically (the tip itself stays). Need one as proof? Open \"View slip\" and save the image.",
+    "slipDeletesOn": "Slip deleted on {date}"
   },
   "settings": {
     "title": "Settings",

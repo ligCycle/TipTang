@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SLIP_KEEP_DAYS } from "@/lib/retention";
+import { SLIP_KEEP_DAYS, slipDeleteDate } from "@/lib/retention";
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
@@ -145,6 +145,21 @@ export default async function DashboardPage({
   const rejectedCount = tips.filter((tip) => tip.status === "REJECTED").length;
   const profilePath = `/${locale}/${user.username}`;
 
+  // When the retention job will delete a decided tip's slip, and whether that
+  // is within a week (highlighted). Worked out here, not in the client row,
+  // so server and browser render the same thing. Pending tips get no date:
+  // confirming or rejecting one moves it.
+  const slipDeletion = (tip: (typeof tips)[number]) => {
+    if (tip.status === "PENDING" || !(tip.slipKey || tip.slipUrl)) {
+      return { slipDeleteAt: null, slipDeleteSoon: false };
+    }
+    const at = slipDeleteDate(tip.createdAt, true);
+    return {
+      slipDeleteAt: at.toISOString(),
+      slipDeleteSoon: at.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000,
+    };
+  };
+
   // Convert Prisma Decimal -> number BEFORE passing to the client component.
   const clientTips = tips.map((tip) => ({
     id: tip.id,
@@ -156,6 +171,7 @@ export default async function DashboardPage({
     // included — so a leaked dashboard link never exposes the raw file.
     slipUrl: tip.slipKey || tip.slipUrl ? `/api/tips/${tip.id}/slip` : null,
     slipPurged: Boolean(tip.slipPurgedAt),
+    ...slipDeletion(tip),
     autoVerified: tip.autoVerified,
     verifyCode: tip.verifyCode,
     verifyDetail: tip.verifyDetail,
