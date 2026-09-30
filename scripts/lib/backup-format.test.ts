@@ -46,3 +46,9 @@ test("tables must be arrays", () => {
   const file = encryptBackup(gzipSync(Buffer.from(JSON.stringify(bad))), PASS);
   assert.throws(() => unpackBackup(file, PASS), BackupError);
 });
+
+test("tables itself must not be an array", () => {
+  const bad = { ...payload, tables: [[1]] };
+  const file = encryptBackup(gzipSync(Buffer.from(JSON.stringify(bad))), PASS);
+  assert.throws(() => unpackBackup(file, PASS), BackupError);
+});

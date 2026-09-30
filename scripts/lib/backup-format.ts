@@ -23,6 +23,7 @@ function isPayload(x: unknown): x is BackupPayload {
     p.migrations.every((m) => typeof m === "string") &&
     typeof p.tables === "object" &&
     p.tables !== null &&
+    !Array.isArray(p.tables) &&
     Object.values(p.tables).every(Array.isArray)
   );
 }
@@ -39,8 +40,15 @@ export function unpackBackup(file: Buffer, passphrase: string): BackupPayload {
   } catch {
     throw new BackupError("ถอดรหัสได้ แต่ข้อมูลข้างในเสียหาย");
   }
-  if (!isPayload(parsed)) {
+  const format =
+    typeof parsed === "object" && parsed !== null
+      ? (parsed as Record<string, unknown>).format
+      : undefined;
+  if (format !== 1) {
     throw new BackupError("รูปแบบไฟล์ backup ไม่รองรับ (สคริปต์นี้อ่านได้เฉพาะ format 1)");
+  }
+  if (!isPayload(parsed)) {
+    throw new BackupError("ถอดรหัสได้ แต่ข้อมูลข้างในไม่ครบหรือผิดรูปแบบ");
   }
   return parsed;
 }
