@@ -24,7 +24,11 @@ export function LoginForm() {
         password,
       });
       if (result?.error) {
-        setError(t("errorInvalid"));
+        setError(
+          result.code === "rate_limited"
+            ? t("errorTooManyAttempts")
+            : t("errorInvalid"),
+        );
         return;
       }
       router.push("/dashboard");

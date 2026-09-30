@@ -100,6 +100,7 @@
     "goLogin": "Log in",
     "goRegister": "Sign up here",
     "errorInvalid": "Invalid email or password",
+    "errorTooManyAttempts": "Too many sign-in attempts. Please wait a while and try again, or use \"Forgot password?\" to set a new one.",
     "errorEmailTaken": "This email is already in use",
     "errorUsernameTaken": "This link name is already taken",
     "errorGeneric": "Something went wrong. Please try again.",

@@ -81,7 +81,8 @@ export async function readPaypalReceipt(file: File): Promise<PaypalRead> {
     try {
       data = JSON.parse(stripJsonFences(text));
     } catch {
-      console.error("[paypal-receipt] JSON parse failed", text.slice(0, 600));
+      // The model's text is a transcription of the receipt — log its size only.
+      console.error("[paypal-receipt] JSON parse failed, length", text.length);
       return { kind: "error" };
     }
     // responseSchema types amount as NUMBER, so this is normally already a

@@ -20,7 +20,7 @@
 - **Tailwind CSS v4** (`@theme`, dark mode แบบ manual ผ่าน `data-theme`)
 - **Supabase Storage** — เก็บรูป (avatar/cover/slip/alert asset)
 - **promptpay-qr** + **qrcode** — สร้าง PromptPay QR
-- **zod 4** (validation), **nodemailer** (reset password email), **@upstash/ratelimit** (rate limit, มี in-memory fallback), **@vercel/analytics**
+- **zod 4** (validation), **Resend** (อีเมลจาก support@tiptang.com ผ่าน REST API), **@upstash/ratelimit** (rate limit, มี in-memory fallback), **@vercel/analytics**
 - Deploy: **Vercel** (Hobby, push `main` → auto-deploy)
 
 ## 3. Data model (Prisma — `prisma/schema.prisma`)
@@ -89,7 +89,7 @@ default Gemini = `gemini-2.5-flash` (OCR อ่านสลิป ไม่ใ�
 - env สำคัญ (ดู `.env.example` ครบ): `DATABASE_URL`/`DIRECT_URL`, `AUTH_SECRET`,
   `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (ปุ่ม Google โผล่เมื่อครบทั้งคู่),
   `NEXT_PUBLIC_SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/`SUPABASE_BUCKET`,
-  `SLIP_VERIFY_PROVIDER`+`GEMINI_API_KEY`, `ADMIN_EMAIL`, (optional) SMTP/Resend, Upstash Redis
+  `SLIP_VERIFY_PROVIDER`+`GEMINI_API_KEY`, `ADMIN_EMAIL`, (optional) `RESEND_API_KEY`/`RESEND_FROM`, Upstash Redis
 
 ## 7. เช็คงานก่อน deploy
 - **`next build` และ `npm run dev` รันไม่ได้บนเครื่องนี้** (Smart App Control บล็อก `@swc/core` — อย่าปิด SAC)

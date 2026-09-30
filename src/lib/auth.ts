@@ -1,15 +1,45 @@
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth, { CredentialsSignin, type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { generateUniqueUsername } from "@/lib/username";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+// Surfaces as `code: "rate_limited"` on the client's signIn() result.
+class LoginRateLimited extends CredentialsSignin {
+  code = "rate_limited";
+}
+
+const MIN = 60_000;
+
+/**
+ * Password-guessing brake, checked before any DB lookup or bcrypt work.
+ * Every attempt counts (the limiter has no "peek"), so the numbers leave room
+ * for a real person fumbling their password: per IP 20 / 15 min (shared
+ * mobile/campus IPs), per account 10 / 15 min and 30 / day — the daily cap is
+ * what actually stops slow guessing. The account key is a hash so Redis never
+ * holds raw email addresses.
+ */
+async function loginAllowed(email: string, req: Request): Promise<boolean> {
+  const who = createHash("sha256").update(email).digest("hex").slice(0, 32);
+  const checks = [
+    [`login-ip:${clientIp(req)}`, 20, 15 * MIN],
+    [`login-acct:${who}`, 10, 15 * MIN],
+    [`login-acct-day:${who}`, 30, 24 * 60 * MIN],
+  ] as const;
+  for (const [key, limit, windowMs] of checks) {
+    if (!(await rateLimit(key, limit, windowMs)).ok) return false;
+  }
+  return true;
+}
 
 // Shape of the bits of the Google profile we read.
 type GoogleProfile = {
@@ -27,12 +57,14 @@ const providers: NextAuthConfig["providers"] = [
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
     },
-    authorize: async (raw) => {
+    authorize: async (raw, request) => {
       const parsed = credentialsSchema.safeParse(raw);
       if (!parsed.success) return null;
+      const email = parsed.data.email.trim().toLowerCase();
+      if (!(await loginAllowed(email, request))) throw new LoginRateLimited();
 
       const user = await prisma.user.findUnique({
-        where: { email: parsed.data.email.toLowerCase() },
+        where: { email },
       });
       if (!user) return null;
       // OAuth-only accounts have no password → can't sign in via this form.

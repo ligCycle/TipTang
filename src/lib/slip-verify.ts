@@ -115,8 +115,10 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
   // Provider unavailable / misconfigured (bad key 1002, expired pkg 1003, over
   // quota 1004, bank temporarily down 1009, or any 5xx) → "error" so verifySlip
   // can use the free fallback. Log the cause so it's diagnosable.
+  // Logs carry only the code/message — never the payload, which can hold the
+  // sender's and receiver's names and account numbers.
   if (res.status >= 500 || [1002, 1003, 1004, 1009].includes(json?.code)) {
-    console.error("[slipok] provider error", res.status, JSON.stringify(json)?.slice(0, 300));
+    console.error("[slipok] provider error", res.status, json?.code, json?.message);
     return { ok: false, reason: "error" };
   }
   // A clean success (HTTP 200) OR a 1014 "receiver != branch account" BOTH carry
@@ -128,12 +130,10 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
     json?.success === true ||
     (json?.code === 1014 && json?.data?.success === true);
   if (!validated) {
-    console.error("[slipok] invalid", JSON.stringify(json)?.slice(0, 400));
+    console.error("[slipok] invalid", res.status, json?.code, json?.message);
     return { ok: false, reason: "invalid" };
   }
   const d = json.data ?? {};
-  // One-time diagnostic during rollout — safe to remove once verified.
-  console.error("[slipok] ok data", JSON.stringify(d).slice(0, 800));
   // Response shape per SlipOK API Guide v1.13: data.transRef, data.amount, and
   // the receiver nested under data.receiver — account.value for a bank account,
   // proxy.value for PromptPay (both MASKED, e.g. "xxx-x-x3109-x" / "086xxx2341").
@@ -232,7 +232,8 @@ async function viaGemini(file: File): Promise<SlipVerifyResult> {
     if (!text) {
       console.error(
         "[gemini] no text in response",
-        JSON.stringify(json)?.slice(0, 600),
+        json?.candidates?.[0]?.finishReason,
+        json?.promptFeedback?.blockReason,
       );
       return { ok: false, reason: "error" };
     }
@@ -241,21 +242,22 @@ async function viaGemini(file: File): Promise<SlipVerifyResult> {
     try {
       data = JSON.parse(text);
     } catch {
-      console.error("[gemini] JSON parse failed", text.slice(0, 600));
+      // The model's text is a transcription of the slip — log its size only.
+      console.error("[gemini] JSON parse failed, length", text.length);
       return { ok: false, reason: "error" };
     }
 
     if (!data?.isSlip) {
-      console.error("[gemini] isSlip=false", JSON.stringify(data).slice(0, 600));
+      console.error("[gemini] isSlip=false");
       return { ok: false, reason: "invalid" };
     }
     const amount = Number(String(data.amount ?? "").replace(/[, ]/g, ""));
     const transRef = String(data.transRef ?? "").trim();
     if (!Number.isFinite(amount) || amount <= 0 || !transRef) {
-      console.error(
-        "[gemini] missing amount/transRef",
-        JSON.stringify(data).slice(0, 600),
-      );
+      console.error("[gemini] missing amount/transRef", {
+        amount: Number.isFinite(amount) && amount > 0,
+        transRef: Boolean(transRef),
+      });
       return { ok: false, reason: "invalid" };
     }
     // Stuff both name + account digits so receiverMatches (last-4) can find it.

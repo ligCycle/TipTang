@@ -1,18 +1,13 @@
 import "server-only";
-import nodemailer from "nodemailer";
 
-// Where replies land. Resets and tip alerts go out from the support address
-// (or, on a Gmail fallback, at least point replies at it).
+// Where replies land. Resets and tip alerts go out from the support address.
 const REPLY_TO = (process.env.EMAIL_REPLY_TO ?? "support@tiptang.com").trim();
 
 /**
- * Low-level email sender.
- * Provider precedence: Resend (verified tiptang.com domain) -> SMTP (Gmail
- * app password, the original bootstrap) -> dev console fallback. Resend wins
- * when both are configured so switching production over is a matter of
- * adding RESEND_* on Vercel — no need to unset the SMTP variables first.
- * With no provider configured the message is logged to the server console so
- * flows stay testable in development.
+ * Low-level email sender: Resend (verified tiptang.com domain). The old Gmail
+ * SMTP path was removed once production moved to Resend. With no provider
+ * configured the message is logged to the server console so flows stay
+ * testable in development.
  */
 async function sendEmail(opts: {
   to: string;
@@ -40,29 +35,6 @@ async function sendEmail(opts: {
       }),
     });
     if (!res.ok) throw new Error(`Resend failed: ${await res.text()}`);
-    return;
-  }
-
-  if (process.env.SMTP_HOST) {
-    // Trim env values — a stray tab/space (e.g. from copy-paste) in SMTP_HOST
-    // otherwise causes an EBADNAME DNS failure.
-    const transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST.trim(),
-      port: Number((process.env.SMTP_PORT ?? "587").trim()),
-      secure: (process.env.SMTP_SECURE ?? "").trim() === "true",
-      auth: {
-        user: process.env.SMTP_USER?.trim(),
-        pass: process.env.SMTP_PASS?.trim(),
-      },
-    });
-    await transport.sendMail({
-      from: (process.env.SMTP_FROM ?? process.env.SMTP_USER)?.trim(),
-      to,
-      replyTo: REPLY_TO,
-      subject,
-      text,
-      html,
-    });
     return;
   }
 
