@@ -93,6 +93,7 @@ export default async function LocaleLayout({
                 {t("privacy")}
               </Link>
             </nav>
+            <p className="mb-1 font-semibold text-brand-900/70">{t("tagline")}</p>
             <p>© {new Date().getFullYear()} TipTang</p>
           </footer>
           <Analytics />

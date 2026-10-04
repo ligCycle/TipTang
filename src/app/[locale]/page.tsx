@@ -79,7 +79,7 @@ export default async function LandingPage({
     url: "https://tiptang.com",
     inLanguage: locale,
     description:
-      "รับทิป/โดเนทผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม ทางเลือกแทน TipMe สำหรับครีเอเตอร์และสตรีมเมอร์ไทย",
+      "รับทิป/โดเนทผ่าน PromptPay ฟรี ไม่มีค่าธรรมเนียม สำหรับครีเอเตอร์และสตรีมเมอร์ไทย",
   };
 
   // Check the session (for login-aware hero CTAs) alongside the reviews in a
@@ -289,7 +289,7 @@ export default async function LandingPage({
         <section>
           <h2 className={h2Class}>{t("faqTitle")}</h2>
           <div className="mt-6 max-w-2xl divide-y divide-brand-900/10">
-            {[1, 2, 3].map((n) => (
+            {[1, 2, 3, 4].map((n) => (
               <details key={n} className="group py-5">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-lg font-semibold text-brand-900 [&::-webkit-details-marker]:hidden">
                   <span>{t(`faqQ${n}`)}</span>
