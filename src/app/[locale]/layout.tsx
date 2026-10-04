@@ -10,6 +10,7 @@ import { Link } from "@/i18n/navigation";
 import { Header } from "@/components/Header";
 import { DemoBanner } from "@/components/DemoBanner";
 import { ThemeScript } from "@/components/ThemeScript";
+import { lineSeed } from "../brand-font";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -64,7 +65,11 @@ export default async function LocaleLayout({
   const t = await getTranslations("common");
 
   return (
-    <html lang={locale} className="h-full antialiased" suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={`${lineSeed.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <head>
         {/* Sets data-theme before first paint; server HTML only. */}
         <ThemeScript />

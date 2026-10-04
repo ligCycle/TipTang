@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { lineSeed } from "../brand-font";
 import "../globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function OverlayLayout({ children }: { children: ReactNode }) {
     // overflow:hidden — an OBS overlay never scrolls; this stops confetti (or
     // any transient off-screen element) from expanding the document and
     // nudging the centered alert card sideways.
-    <html lang="en" style={{ overflow: "hidden" }}>
+    <html lang="en" className={lineSeed.variable} style={{ overflow: "hidden" }}>
       <body style={{ background: "transparent", overflow: "hidden" }}>
         {children}
       </body>

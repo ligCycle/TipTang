@@ -39,8 +39,8 @@ body {
     var(--background);
   color: var(--foreground);
   font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans Thai",
-    Tahoma, sans-serif;
+    var(--font-line-seed), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    "Noto Sans Thai", Tahoma, sans-serif;
   min-height: 100vh;
   /* Belt-and-suspenders against horizontal scroll on mobile. `clip` (not
      `hidden`) doesn't establish a scroll container, so the sticky header
