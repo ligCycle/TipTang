@@ -24,6 +24,34 @@ export const UPDATES_SEEN_KEY = "tiptang_last_seen_update";
 
 export const UPDATES: Update[] = [
   {
+    id: "2026-10-04-channel-colour",
+    date: "2026-10-04",
+    tags: ["creator"],
+    href: "/dashboard/settings",
+    th: {
+      title: "สีช่องของคุณ ใช้ทั้งห้อง",
+      body: "สีช่องที่ตั้งในหน้าตั้งค่า ตอนนี้เปลี่ยนสีทั้งหน้าโดเนทและแดชบอร์ดของคุณ ทั้งปุ่ม ลิงก์ และเมนู",
+    },
+    en: {
+      title: "Your channel colour, everywhere in your space",
+      body: "The channel colour from settings now paints your whole donate page and dashboard — buttons, links and menus.",
+    },
+  },
+  {
+    id: "2026-10-04-dark-alert-card",
+    date: "2026-10-04",
+    tags: ["creator"],
+    href: "/dashboard/overlay",
+    th: {
+      title: "การ์ดแจ้งเตือนแบบมืด",
+      body: "เลือก \"การ์ดมืด\" ในหน้า OBS ได้แล้ว พื้นเข้มเรืองแสงตามสีการ์ดของคุณ ยอดทิปเด่นด้วยสีส้ม เห็นชัดบนเกมฉากสว่าง",
+    },
+    en: {
+      title: "Dark alert card",
+      body: "Pick \"Dark card\" on the OBS page: a dark card that glows in your alert colour, with the tip amount in orange — easy to see over bright games.",
+    },
+  },
+  {
     id: "2026-09-30-account-security",
     date: "2026-09-30",
     tags: ["creator", "security"],
