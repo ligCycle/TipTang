@@ -711,7 +711,7 @@ export function OverlaySettings() {
                           </span>
                           <span
                             className={`rounded-full px-1.5 ${
-                              th === "dark" ? "bg-tip-400 text-tip-900" : "bg-white/25"
+                              th === "dark" ? "bg-[#ff8a3d] text-[#5a1f0b]" : "bg-white/25"
                             }`}
                           >
                             ฿100

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { formatBaht } from "@/lib/format";
 import { isAlertStyle, DEFAULT_ALERT_STYLE } from "@/lib/alertStyles";
+import { darkCardGlow } from "@/lib/alertThemes";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import { Confetti } from "./Confetti";
 import { Icon } from "@/components/Icon";
@@ -233,7 +234,7 @@ export function OverlayClient({
 
   const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
   const dark = alertTheme === "dark";
-  const glow = useCustom ? color! : DEFAULT_COLOR;
+  const glow = darkCardGlow(useCustom ? color! : DEFAULT_COLOR);
   const cardStyle = dark
     ? {
         borderColor: glow,
