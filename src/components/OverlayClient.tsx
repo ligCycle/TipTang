@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { formatBaht } from "@/lib/format";
 import { isAlertStyle, DEFAULT_ALERT_STYLE } from "@/lib/alertStyles";
+import { DEFAULT_COLOR } from "@/lib/colors";
 import { Confetti } from "./Confetti";
 import { Icon } from "@/components/Icon";
 
@@ -36,6 +37,7 @@ export function OverlayClient({
   librarySounds,
   libraryStickers,
   alertStyle,
+  alertTheme,
   bigTipThreshold,
 }: {
   username: string;
@@ -49,6 +51,7 @@ export function OverlayClient({
   librarySounds: string[];
   libraryStickers: string[];
   alertStyle: string;
+  alertTheme: string;
   bigTipThreshold: number;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
@@ -229,14 +232,18 @@ export function OverlayClient({
     Number(current.amount) >= bigTipThreshold;
 
   const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
-  const cardStyle = useCustom
+  const dark = alertTheme === "dark";
+  const glow = useCustom ? color! : DEFAULT_COLOR;
+  const cardStyle = dark
     ? {
-        backgroundImage: `linear-gradient(to bottom right, ${color}, ${darken(
-          color!,
-          0.3,
-        )})`,
+        borderColor: glow,
+        boxShadow: `0 0 0 1px ${glow}66, 0 0 32px ${glow}80, 0 24px 48px -16px rgba(0,0,0,0.7)`,
       }
-    : undefined;
+    : useCustom
+      ? {
+          backgroundImage: `linear-gradient(to bottom right, ${color}, ${darken(color!, 0.3)})`,
+        }
+      : undefined;
 
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -257,8 +264,10 @@ export function OverlayClient({
             isAlertStyle(alertStyle) ? alertStyle : DEFAULT_ALERT_STYLE
           } ${
             isBig ? "alert-big" : ""
-          } w-full rounded-2xl p-5 text-white shadow-2xl ring-1 ring-white/20 ${
-            useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"
+          } w-full rounded-2xl p-5 text-white shadow-2xl ${
+            dark
+              ? "border-[1.5px] bg-[#120c16]/90 backdrop-blur-md"
+              : `ring-1 ring-white/20 ${useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"}`
           }`}
         >
           {isBig && (
@@ -266,6 +275,14 @@ export function OverlayClient({
               <Icon name="sparkles" className="h-4 w-4" />
               SUPER TIP!
               <Icon name="sparkles" className="h-4 w-4" />
+            </p>
+          )}
+          {dark && !isBig && (
+            <p
+              className="mb-2 text-xs font-bold uppercase tracking-widest"
+              style={{ color: glow }}
+            >
+              ทิปใหม่!
             </p>
           )}
           {videoUrl ? (
@@ -292,7 +309,9 @@ export function OverlayClient({
                 {current.name || "ผู้ไม่ประสงค์ออกนาม"}
               </span>
             </span>
-            <span className="rounded-full bg-white/25 px-3 py-1 text-lg font-black">
+            <span
+              className={`rounded-full px-3 py-1 text-lg font-black ${dark ? "bg-tip-400 text-tip-900" : "bg-white/25"}`}
+            >
               {formatBaht(current.amount)}
             </span>
           </div>

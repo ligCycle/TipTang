@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { OverlayClient } from "@/components/OverlayClient";
+import { DEFAULT_ALERT_THEME, isAlertTheme } from "@/lib/alertThemes";
 
 export default async function OverlayPage({
   params,
@@ -23,6 +24,7 @@ export default async function OverlayPage({
       alertVideoUrl: true,
       alertColor: true,
       alertStyle: true,
+      alertTheme: true,
       bigTipThreshold: true,
       ttsEnabled: true,
     },
@@ -57,6 +59,7 @@ export default async function OverlayPage({
       librarySounds={librarySounds}
       libraryStickers={libraryStickers}
       alertStyle={user.alertStyle}
+      alertTheme={isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME}
       bigTipThreshold={user.bigTipThreshold}
     />
   );

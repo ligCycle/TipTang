@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { ALERT_STYLES } from "@/lib/alertStyles";
+import { ALERT_THEMES, DEFAULT_ALERT_THEME } from "@/lib/alertThemes";
 import { Icon } from "@/components/Icon";
 import { formatDate } from "@/lib/format";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -18,6 +19,7 @@ type Config = {
   videoUrl: string | null;
   color: string | null;
   alertStyle: string;
+  alertTheme: string;
   bigTipThreshold: number;
   ttsEnabled: boolean;
   hasGoal: boolean;
@@ -118,6 +120,7 @@ export function OverlaySettings() {
           videoUrl: d.videoUrl ?? null,
           color: d.color ?? null,
           alertStyle: d.alertStyle ?? "pop",
+          alertTheme: d.alertTheme ?? "light",
           bigTipThreshold: d.bigTipThreshold ?? 0,
           ttsEnabled: Boolean(d.ttsEnabled),
           hasGoal: Boolean(d.hasGoal),
@@ -465,6 +468,15 @@ export function OverlaySettings() {
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
+  // Alert card theme — saved immediately on pick.
+  async function saveAlertTheme(theme: string) {
+    setConfig((c) => (c ? { ...c, alertTheme: theme } : c));
+    const fd = new FormData();
+    fd.set("kind", "alertTheme");
+    fd.set("theme", theme);
+    await fetch("/api/overlay/asset", { method: "POST", body: fd });
+  }
+
   // Big-tip threshold (baht; 0 = off). Server coerces to a clean Int.
   async function saveBigTip() {
     const fd = new FormData();
@@ -665,6 +677,54 @@ export function OverlaySettings() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Alert card theme */}
+              <div className="rounded-xl bg-brand-50 p-3">
+                <p className="mb-1 flex items-center gap-2 text-sm font-medium text-brand-900/80">
+                  <Icon name="palette" />
+                  {t("obsAlertTheme")}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {ALERT_THEMES.map((th) => {
+                    const active = (config.alertTheme || DEFAULT_ALERT_THEME) === th;
+                    return (
+                      <button
+                        key={th}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => saveAlertTheme(th)}
+                        className={`rounded-xl border-2 p-2 text-left text-sm font-medium transition ${
+                          active ? "border-brand-600" : "border-transparent hover:border-brand-200"
+                        }`}
+                      >
+                        <span
+                          className={`mb-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold text-white ${
+                            th === "dark"
+                              ? "border border-brand-400 bg-[#120c16] shadow-[0_0_12px_rgba(236,72,153,0.45)]"
+                              : "bg-gradient-to-br from-brand-500 to-brand-700"
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <Icon name="heart" className="h-3 w-3" />
+                            {t("obsThemeSample")}
+                          </span>
+                          <span
+                            className={`rounded-full px-1.5 ${
+                              th === "dark" ? "bg-tip-400 text-tip-900" : "bg-white/25"
+                            }`}
+                          >
+                            ฿100
+                          </span>
+                        </span>
+                        <span className="text-brand-900">
+                          {th === "dark" ? t("obsThemeDark") : t("obsThemeLight")}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-brand-900/50">{t("obsAlertThemeHint")}</p>
               </div>
 
               {/* Alert animation style */}

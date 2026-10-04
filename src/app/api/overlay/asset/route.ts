@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAlertStyle } from "@/lib/alertStyles";
+import { isAlertTheme } from "@/lib/alertThemes";
 import {
   uploadImage,
   deleteFile,
@@ -263,6 +264,20 @@ export async function POST(req: Request) {
     });
     revalidateOverlay();
     return NextResponse.json({ ok: true, style });
+  }
+
+  // Alert card theme (light gradient card / dark glow card).
+  if (kind === "alertTheme") {
+    const theme = String(form?.get("theme") ?? "");
+    if (!isAlertTheme(theme)) {
+      return NextResponse.json({ error: "invalid" }, { status: 400 });
+    }
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { alertTheme: theme },
+    });
+    revalidateOverlay();
+    return NextResponse.json({ ok: true, theme });
   }
 
   // Read-aloud (TTS) on/off toggle.
