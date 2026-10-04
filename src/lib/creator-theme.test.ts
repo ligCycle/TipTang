@@ -11,6 +11,18 @@ import {
 
 const WHITE = "#ffffff";
 const DARK_BG = "#140b11";
+/** Bright, mid and dark channel colours, plus pink and the black/white extremes. */
+const COLOURS = [
+  "#facc15",
+  "#f59e0b",
+  "#06b6d4",
+  "#ffffff",
+  "#7c3aed",
+  "#0f172a",
+  "#1e3a8a",
+  "#ff69b4",
+  "#000000",
+];
 
 test("parseHex normalises #rgb and #rrggbb, rejects the rest", () => {
   assert.equal(parseHex("#ABC"), "#aabbcc");
@@ -35,13 +47,43 @@ test("ramps have all ten steps as #rrggbb", () => {
 });
 
 test("buttons and text stay readable for light and dark channel colours", () => {
-  for (const c of ["#facc15", "#f59e0b", "#06b6d4", "#ffffff", "#7c3aed", "#0f172a", "#1e3a8a"]) {
+  for (const c of COLOURS) {
     const { light, dark } = creatorRamp(c);
     assert.ok(contrast(light[600], WHITE) >= 4.5, `${c} light600 ${light[600]}`);
     assert.ok(contrast(light[700], WHITE) >= 4.5, `${c} light700 ${light[700]}`);
     assert.ok(contrast(light[900], WHITE) >= 7, `${c} light900 ${light[900]}`);
     assert.ok(contrast(dark[600], DARK_BG) >= 4.5, `${c} dark600 ${dark[600]}`);
     assert.ok(contrast(dark[700], DARK_BG) >= 4.5, `${c} dark700 ${dark[700]}`);
+  }
+});
+
+test("light 500 and 800 have a contrast floor on white", () => {
+  for (const c of COLOURS) {
+    const { light } = creatorRamp(c);
+    assert.ok(contrast(light[500], WHITE) >= 3, `${c} light500 ${light[500]}`);
+    assert.ok(contrast(light[800], WHITE) >= 4.5, `${c} light800 ${light[800]}`);
+  }
+});
+
+test("ramp steps only get stronger: darker on light, lighter on dark", () => {
+  const lightSteps = [500, 600, 700, 800, 900] as const;
+  const darkSteps = [600, 700, 800, 900] as const;
+  for (const c of COLOURS) {
+    const { light, dark } = creatorRamp(c);
+    for (let i = 1; i < lightSteps.length; i++) {
+      const [p, s] = [lightSteps[i - 1], lightSteps[i]];
+      assert.ok(
+        contrast(light[s], WHITE) >= contrast(light[p], WHITE),
+        `${c} light${s} ${light[s]} weaker than light${p} ${light[p]}`,
+      );
+    }
+    for (let i = 1; i < darkSteps.length; i++) {
+      const [p, s] = [darkSteps[i - 1], darkSteps[i]];
+      assert.ok(
+        contrast(dark[s], DARK_BG) >= contrast(dark[p], DARK_BG),
+        `${c} dark${s} ${dark[s]} weaker than dark${p} ${dark[p]}`,
+      );
+    }
   }
 });
 

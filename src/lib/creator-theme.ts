@@ -107,23 +107,42 @@ export function clashesWithTip(hex: string): boolean {
   return s > 0.35 && dist < 30;
 }
 
+/**
+ * Light: 50–400 are tints; from 500 on each step is built from the one before
+ * and only gets darker, so hover states (600 → 700) never go lighter.
+ * Dark: 50–400 are shades of the page; from 600 on each step only gets lighter.
+ */
 export function creatorRamp(accent: string): { light: Ramp; dark: Ramp } {
   const a = accent;
+  // Accent itself, unless it is under 3:1 on white (graphics / large-text AA).
+  const l500 = pushUntil(a, BLACK, WHITE, 3);
+  // Primary button background: ≥ 4.5:1, so its white label stays readable.
+  const l600 = pushUntil(mix(a, BLACK, 0.1), BLACK, WHITE, 4.5);
+  // Button hover, links and accents: ≥ 4.5:1 and darker than 600.
+  const l700 = pushUntil(mix(l600, BLACK, 0.15), BLACK, WHITE, 4.5);
+  // Body-size brand text: ≥ 4.5:1 and darker than 700.
+  const l800 = pushUntil(mix(l700, BLACK, 0.2), BLACK, WHITE, 4.5);
+  // Headings: ≥ 7:1 (AAA) and darker than 800.
+  const l900 = pushUntil(mix(l800, BLACK, 0.3), BLACK, WHITE, 7);
   const light: Ramp = {
     50: mix(a, WHITE, 0.93),
     100: mix(a, WHITE, 0.86),
     200: mix(a, WHITE, 0.74),
     300: mix(a, WHITE, 0.55),
     400: mix(a, WHITE, 0.25),
-    500: a,
-    // Primary button background: its white label must stay readable.
-    600: pushUntil(mix(a, BLACK, 0.1), BLACK, WHITE, 4.5),
-    // Links and accents on light surfaces.
-    700: pushUntil(mix(a, BLACK, 0.25), BLACK, WHITE, 4.5),
-    800: mix(a, BLACK, 0.4),
-    // Headings.
-    900: pushUntil(mix(a, BLACK, 0.6), BLACK, WHITE, 7),
+    500: l500,
+    600: l600,
+    700: l700,
+    800: l800,
+    900: l900,
   };
+  // Links and headings on the dark page (same role as today's dark pink 600/700):
+  // ≥ 4.5:1 on the dark background, 700 lighter than 600.
+  const d600 = pushUntil(mix(a, WHITE, 0.1), WHITE, DARK_BG, 4.5);
+  const d700 = pushUntil(mix(d600, WHITE, 0.2), WHITE, DARK_BG, 4.5);
+  // Lighter still than 700, so they inherit its ≥ 4.5:1.
+  const d800 = mix(d700, WHITE, 0.35);
+  const d900 = mix(d800, WHITE, 0.5);
   const dark: Ramp = {
     50: mix(a, DARK_BG, 0.92),
     100: mix(a, DARK_BG, 0.85),
@@ -131,11 +150,10 @@ export function creatorRamp(accent: string): { light: Ramp; dark: Ramp } {
     300: mix(a, DARK_BG, 0.6),
     400: mix(a, DARK_BG, 0.1),
     500: a,
-    // Links and headings on the dark page (same role as today's dark pink 600/700).
-    600: pushUntil(mix(a, WHITE, 0.1), WHITE, DARK_BG, 4.5),
-    700: pushUntil(mix(a, WHITE, 0.3), WHITE, DARK_BG, 4.5),
-    800: mix(a, WHITE, 0.55),
-    900: mix(a, WHITE, 0.8),
+    600: d600,
+    700: d700,
+    800: d800,
+    900: d900,
   };
   return { light, dark };
 }
