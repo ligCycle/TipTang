@@ -260,7 +260,7 @@ export default async function DashboardPage({
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <p className="text-2xl font-extrabold tabular-nums text-brand-600 sm:text-3xl">
+            <p className="text-2xl font-extrabold tabular-nums text-tip-600 sm:text-3xl">
               {formatBaht(received, currencyLocale)}
             </p>
             <p className="mt-0.5 text-xs text-brand-900/60">{t("received")}</p>
@@ -280,7 +280,7 @@ export default async function DashboardPage({
               {topSupporter && (
                 <>
                   {" · "}
-                  <span className="tabular-nums">
+                  <span className="font-semibold tabular-nums text-tip-600">
                     {formatBaht(topSupporter.total, currencyLocale)}
                   </span>
                 </>

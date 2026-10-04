@@ -209,7 +209,7 @@ export default async function ProfilePage({
         <span className="min-w-0 flex-1 truncate font-medium text-brand-800">
           {tip.supporterName || t("namePlaceholder")}
         </span>
-        <span className="shrink-0 text-sm font-semibold tabular-nums text-brand-700">
+        <span className="shrink-0 text-sm font-semibold tabular-nums text-tip-600">
           {formatBaht(Number(tip.amount), currencyLocale)}
         </span>
       </div>
@@ -384,7 +384,7 @@ export default async function ProfilePage({
                   >
                     {s.name}
                   </span>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums text-brand-700">
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-tip-600">
                     {formatBaht(s.total, currencyLocale)}
                   </span>
                 </li>

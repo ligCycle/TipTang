@@ -14,6 +14,17 @@
   --color-brand-700: #b71753;
   --color-brand-800: #991748;
   --color-brand-900: #7f1740;
+  /* Money amounts only (tips, totals, top supporters). Buttons stay brand. */
+  --color-tip-50: #fff6ed;
+  --color-tip-100: #ffead5;
+  --color-tip-200: #fed2aa;
+  --color-tip-300: #fdb274;
+  --color-tip-400: #ff8a3d;
+  --color-tip-500: #f96d16;
+  --color-tip-600: #c2410c;
+  --color-tip-700: #9a3412;
+  --color-tip-800: #7c2d12;
+  --color-tip-900: #5a1f0b;
 }
 
 :root {
@@ -257,6 +268,16 @@ html.js .reveal.is-in {
   --color-brand-700: #f77aa7;
   --color-brand-800: #ffa9c8;
   --color-brand-900: #ffd6e4;
+  --color-tip-50: #1e120c;
+  --color-tip-100: #2b170d;
+  --color-tip-200: #40200f;
+  --color-tip-300: #5c2c12;
+  --color-tip-400: #ff8a3d;
+  --color-tip-500: #ff9a52;
+  --color-tip-600: #ffa463;
+  --color-tip-700: #ffbe8a;
+  --color-tip-800: #ffd6b3;
+  --color-tip-900: #ffead8;
 }
 
 [data-theme="dark"] body {

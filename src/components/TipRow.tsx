@@ -173,7 +173,7 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
             )
           )}
         </div>
-        <span className="text-lg font-extrabold text-brand-700">
+        <span className="text-lg font-extrabold text-tip-600">
           {formatBaht(tip.amount, currencyLocale)}
         </span>
       </div>
