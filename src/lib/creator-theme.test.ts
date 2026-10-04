@@ -46,12 +46,18 @@ test("ramps have all ten steps as #rrggbb", () => {
   }
 });
 
+test("creatorRamp normalises its input and rejects anything that isn't hex", () => {
+  assert.deepEqual(creatorRamp(" #7C3AED "), creatorRamp("#7c3aed"));
+  assert.throws(() => creatorRamp("red;}x{"));
+});
+
 test("buttons and text stay readable for light and dark channel colours", () => {
   for (const c of COLOURS) {
     const { light, dark } = creatorRamp(c);
     assert.ok(contrast(light[600], WHITE) >= 4.5, `${c} light600 ${light[600]}`);
     assert.ok(contrast(light[700], WHITE) >= 4.5, `${c} light700 ${light[700]}`);
     assert.ok(contrast(light[900], WHITE) >= 7, `${c} light900 ${light[900]}`);
+    assert.ok(contrast(dark[500], DARK_BG) >= 3, `${c} dark500 ${dark[500]}`);
     assert.ok(contrast(dark[600], DARK_BG) >= 4.5, `${c} dark600 ${dark[600]}`);
     assert.ok(contrast(dark[700], DARK_BG) >= 4.5, `${c} dark700 ${dark[700]}`);
   }
@@ -67,7 +73,7 @@ test("light 500 and 800 have a contrast floor on white", () => {
 
 test("ramp steps only get stronger: darker on light, lighter on dark", () => {
   const lightSteps = [500, 600, 700, 800, 900] as const;
-  const darkSteps = [600, 700, 800, 900] as const;
+  const darkSteps = [500, 600, 700, 800, 900] as const;
   for (const c of COLOURS) {
     const { light, dark } = creatorRamp(c);
     for (let i = 1; i < lightSteps.length; i++) {

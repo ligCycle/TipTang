@@ -110,10 +110,12 @@ export function clashesWithTip(hex: string): boolean {
 /**
  * Light: 50–400 are tints; from 500 on each step is built from the one before
  * and only gets darker, so hover states (600 → 700) never go lighter.
- * Dark: 50–400 are shades of the page; from 600 on each step only gets lighter.
+ * Dark: 50–400 are shades of the page; from 500 on each step only gets lighter.
+ * Throws on anything that isn't #rgb / #rrggbb, so raw input never reaches a ramp.
  */
 export function creatorRamp(accent: string): { light: Ramp; dark: Ramp } {
-  const a = accent;
+  const a = parseHex(accent);
+  if (!a) throw new Error("creatorRamp: expected #rgb or #rrggbb");
   // Accent itself, unless it is under 3:1 on white (graphics / large-text AA).
   const l500 = pushUntil(a, BLACK, WHITE, 3);
   // Primary button background: ≥ 4.5:1, so its white label stays readable.
@@ -136,6 +138,9 @@ export function creatorRamp(accent: string): { light: Ramp; dark: Ramp } {
     800: l800,
     900: l900,
   };
+  // Accent itself, unless it is under 3:1 on the dark page (graphics / large-text AA),
+  // so navy or black channel colours don't vanish in dark mode.
+  const d500 = pushUntil(a, WHITE, DARK_BG, 3);
   // Links and headings on the dark page (same role as today's dark pink 600/700):
   // ≥ 4.5:1 on the dark background, 700 lighter than 600.
   const d600 = pushUntil(mix(a, WHITE, 0.1), WHITE, DARK_BG, 4.5);
@@ -149,7 +154,7 @@ export function creatorRamp(accent: string): { light: Ramp; dark: Ramp } {
     200: mix(a, DARK_BG, 0.75),
     300: mix(a, DARK_BG, 0.6),
     400: mix(a, DARK_BG, 0.1),
-    500: a,
+    500: d500,
     600: d600,
     700: d700,
     800: d800,
