@@ -12,6 +12,7 @@ import { ogImages } from "@/lib/og";
 import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
 import { Icon } from "@/components/Icon";
+import { CreatorTheme } from "@/components/CreatorTheme";
 
 export async function generateMetadata({
   params,
@@ -224,6 +225,7 @@ export default async function ProfilePage({
       className="mx-auto max-w-5xl lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8"
       style={accentStyle}
     >
+      <CreatorTheme color={creator.profileColor} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { CreatorTheme } from "@/components/CreatorTheme";
 
 export default async function DashboardLayout({
   children,
@@ -18,5 +20,18 @@ export default async function DashboardLayout({
     redirect(`/${locale}/login`);
   }
 
-  return <>{children}</>;
+  // The signed-in creator's channel colour paints their own pages.
+  const me = session.user.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { profileColor: true },
+      })
+    : null;
+
+  return (
+    <>
+      <CreatorTheme color={me?.profileColor} />
+      {children}
+    </>
+  );
 }

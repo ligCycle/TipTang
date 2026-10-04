@@ -52,14 +52,15 @@ body {
 .card {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(217, 38, 104, 0.1);
-  box-shadow: 0 10px 30px -18px rgba(153, 23, 72, 0.35);
+  border: 1px solid color-mix(in srgb, var(--color-brand-600) 10%, transparent);
+  box-shadow: 0 10px 30px -18px
+    color-mix(in srgb, var(--color-brand-800) 35%, transparent);
 }
 
 .input {
   width: 100%;
   border-radius: 0.75rem;
-  border: 1px solid rgba(217, 38, 104, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-brand-600) 20%, transparent);
   background: #fff;
   padding: 0.6rem 0.85rem;
   font-size: 0.95rem;
@@ -69,7 +70,7 @@ body {
 }
 .input:focus {
   border-color: var(--color-brand-500);
-  box-shadow: 0 0 0 3px rgba(236, 72, 128, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 15%, transparent);
 }
 
 .btn-primary {
@@ -82,7 +83,7 @@ body {
   padding: 0.7rem 1.4rem;
   font-weight: 600;
   color: #fff;
-  box-shadow: 0 8px 20px -8px rgba(217, 38, 104, 0.6);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--color-brand-600) 60%, transparent);
   transition: background 0.15s, opacity 0.15s;
 }
 .btn-primary:hover {
@@ -182,7 +183,7 @@ body {
 .pill-brand {
   background: var(--color-brand-600);
   color: #fff;
-  box-shadow: 0 8px 20px -8px rgba(217, 38, 104, 0.6);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--color-brand-600) 60%, transparent);
 }
 .pill-brand .pill-arrow {
   background: #fff;
@@ -289,7 +290,7 @@ html.js .reveal.is-in {
 
 [data-theme="dark"] .card {
   background: rgba(38, 22, 31, 0.72);
-  border-color: rgba(255, 150, 190, 0.12);
+  border-color: color-mix(in srgb, var(--color-brand-800) 12%, transparent);
   box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
 }
 
@@ -304,7 +305,7 @@ html.js .reveal.is-in {
 
 [data-theme="dark"] .input {
   background: #241019;
-  border-color: rgba(255, 150, 190, 0.22);
+  border-color: color-mix(in srgb, var(--color-brand-800) 22%, transparent);
   color: var(--foreground);
 }
 
