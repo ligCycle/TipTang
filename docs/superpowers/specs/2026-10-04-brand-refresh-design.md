@@ -39,8 +39,8 @@ a dead competitor doesn't last.
   on light, 400–500 on dark).
 - Used **only for displayed money amounts**: dashboard total (overview ฿ figure), the amount on
   each tip row, leaderboard/top-supporter amounts on the dashboard and public profile, and the
-  amount badge on the dark alert card. Buttons, links, selected chips and headings stay brand
-  pink.
+  amount badge on the dark alert card. Buttons, links, selected chips and headings use the brand
+  ramp — TipTang pink, or the creator's channel colour where section 5 applies.
 
 ### 3. Font: LINE Seed Sans TH
 - Self-hosted with `next/font/local`, files in `src/app/fonts/` — three weights: Regular (400),
@@ -71,6 +71,39 @@ a dead competitor doesn't last.
   existing preview link shows the chosen theme.
 - Goal bar and timer overlays already use a dark glass card (`bg-black/55`) — unchanged.
 
+### 5. Creator channel colour themes the creator's "room"
+TipTang is a building; each creator owns a room and may paint it. The creator's `profileColor`
+(the "channel colour" already set in Settings) recolours **every** brand-coloured element — buttons,
+links, chips, checkboxes, borders, header and footer — on:
+- their public donate page `/[locale]/[username]` (what visitors see), and
+- their own signed-in pages under `/[locale]/dashboard/**` (dashboard, settings, OBS, shop).
+Public "lobby" pages (landing, guide, updates, legal, login/register) stay TipTang pink. OBS
+overlays keep using `alertColor`/`goalColor`/`timerColor` as today.
+
+How:
+- `src/lib/creator-theme.ts` (pure, unit-tested):
+  - `parseHex(v)` accepts `#rgb` / `#rrggbb` (as the validator does), returns normalised
+    `#rrggbb` or null.
+  - `creatorRamp(hex)` → `{ light: Record<50..900, "#rrggbb">, dark: Record<50..900, "#rrggbb"> }`
+    computed by mixing the accent with white/black (light) and with the dark background
+    `#140b11`/white (dark), mirroring the shape of today's pink ramps. The step used as the
+    primary button background (light 600, dark 500) is darkened/lightened until white text on it
+    reaches a contrast ratio ≥ 4.5:1, so a yellow or cyan channel colour still gives readable
+    buttons.
+  - `creatorThemeCss(hex)` → a CSS string
+    `:root{--color-brand-50:…;…}:root[data-theme="dark"]{…}` (the dark rule's higher specificity
+    beats the global dark ramp). If the accent's hue is within 30° of the tip orange, it also sets
+    the tip text steps to the foreground colour so money amounts stay distinguishable from buttons.
+  - Returns `null` for no colour, an invalid colour, or the default `#ec4899` — the page then keeps
+    today's hand-tuned pink exactly.
+- `src/components/CreatorTheme.tsx`: server component rendering a plain `<style>` (no
+  `href`/`precedence`, so React keeps it in place and removes it on navigation away) with
+  `creatorThemeCss(color)`; renders nothing when that returns null. The colour is re-validated by
+  `parseHex` before it reaches CSS text (no CSS injection).
+- Rendered by the donate page (creator's `profileColor`) and by `dashboard/layout.tsx` (the signed-in
+  creator's `profileColor`). The existing `--accent` inline styles on the donate page keep working;
+  where they duplicate the ramp they may be simplified.
+
 ## Out of scope
 Mascot illustration (founder will supply a pink version later), logo, primary colour change,
 3D icons, TH Sarabun.
@@ -84,4 +117,9 @@ Mascot illustration (founder will supply a pink version later), logo, primary co
   `.env.development.local`, deleted afterwards): theme picker saves, `?test=1` preview shows light
   vs dark card, normal and big tip.
 - Production migration only at "merge push" with explicit approval.
-- Add a "What's new" entry (creator tag) for the dark alert card.
+- Unit: `creator-theme.test.ts` — `#rgb` expansion, invalid/default → null, ramp shape, white-text
+  contrast ≥ 4.5 on the button step for light colours (e.g. `#f59e0b`, `#06b6d4`), tip-clash rule,
+  CSS string contains only `#rrggbb` values.
+- Visual: donate page and dashboard with a few channel colours (violet, amber, slate) in light and
+  dark; landing stays pink; navigating donate page → landing reverts to pink.
+- Add "What's new" entries (creator tag) for the dark alert card and channel-colour theming.
