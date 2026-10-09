@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { ALERT_STYLES } from "@/lib/alertStyles";
-import { ALERT_THEMES, DEFAULT_ALERT_THEME } from "@/lib/alertThemes";
+import { ALERT_THEMES, DEFAULT_ALERT_THEME, darkCardGlow } from "@/lib/alertThemes";
 import { Icon } from "@/components/Icon";
 import { formatDate } from "@/lib/format";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -531,6 +531,12 @@ export function OverlaySettings() {
     glow: t("obsStyleGlow"),
   };
 
+  // The colour the real alert card uses: the creator's pick, else the
+  // default. The preview card and both theme tiles all show this one.
+  const alertColor = config?.color ?? DEFAULT_COLOR;
+  const alertGradient = `linear-gradient(135deg, ${alertColor}, color-mix(in srgb, ${alertColor}, black 32%))`;
+  const alertGlow = darkCardGlow(alertColor);
+
   return (
     <div>
       <h1 className="flex items-center gap-2 text-2xl font-extrabold text-brand-900">
@@ -655,13 +661,7 @@ export function OverlaySettings() {
                   </p>
                   <div
                     className="w-full max-w-xs rounded-2xl p-4 text-white shadow-lg ring-1 ring-white/20"
-                    style={{
-                      backgroundImage: `linear-gradient(135deg, ${
-                        config.color ?? DEFAULT_COLOR
-                      }, color-mix(in srgb, ${
-                        config.color ?? DEFAULT_COLOR
-                      }, black 32%))`,
-                    }}
+                    style={{ backgroundImage: alertGradient }}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex items-center gap-1.5 text-sm font-extrabold drop-shadow">
@@ -700,10 +700,13 @@ export function OverlaySettings() {
                       >
                         <span
                           className={`mb-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] font-bold text-white ${
-                            th === "dark"
-                              ? "border border-brand-400 bg-[#120c16] shadow-[0_0_12px_rgba(236,72,153,0.45)]"
-                              : "bg-gradient-to-br from-brand-500 to-brand-700"
+                            th === "dark" ? "border bg-[#120c16]" : ""
                           }`}
+                          style={
+                            th === "dark"
+                              ? { borderColor: alertGlow, boxShadow: `0 0 12px ${alertGlow}73` }
+                              : { backgroundImage: alertGradient }
+                          }
                         >
                           <span className="inline-flex items-center gap-1">
                             <Icon name="heart" className="h-3 w-3" />
