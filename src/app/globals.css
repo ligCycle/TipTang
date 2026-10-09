@@ -144,7 +144,7 @@ body {
    pink"); in dark mode a shade darker than the page plus a hairline so the
    card still separates from the background. */
 .ink {
-  background: linear-gradient(160deg, #7f1740 0%, #4a0d26 100%);
+  background: var(--color-brand-900);
   color: #fff;
 }
 [data-theme="dark"] .ink {
@@ -160,11 +160,8 @@ body {
   border-radius: 9999px;
   padding: 0.375rem 0.375rem 0.375rem 1.5rem;
   font-weight: 600;
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.pill:hover {
-  transform: scale(1.03);
-}
+/* One hover signal: the arrow nudges; the capsule itself stays put. */
 .pill-arrow {
   display: grid;
   place-items: center;
@@ -227,22 +224,12 @@ html.js .reveal.is-in {
   transform: none;
 }
 
-/* Cards that lift a little on hover. */
-.lift {
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.lift:hover {
-  transform: translateY(-4px);
-}
-
 /* One switch for all of the above. Scoped to these classes on purpose: a
    global `transform: none` would break layout transforms elsewhere. */
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .rise > span > span,
-  .pill,
-  .pill-arrow,
-  .lift {
+  .pill-arrow {
     animation: none !important;
     transition: none !important;
   }
@@ -311,6 +298,12 @@ html.js .reveal.is-in {
 
 [data-theme="dark"] .btn-secondary {
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* On the dark page a brand-tinted shadow reads as a glow; keep it dark. */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .pill-brand {
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
 }
 
 /* ===== OBS donation-alert animation ===== */
