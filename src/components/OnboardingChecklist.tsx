@@ -10,8 +10,9 @@ type Step = { done: boolean; label: string } & (
 /**
  * Three setup steps a new creator has to get through before TipTang does
  * anything for them. Every step is detected from data the page already
- * has — nothing to tick, and the whole block disappears once all three
- * are true, so established creators never see it.
+ * has — nothing to tick. The block disappears once the two steps the creator
+ * can do themselves (PromptPay, overlay) are done: the first tip depends on
+ * fans, and the "your link" section below already covers sharing.
  */
 export async function OnboardingChecklist({
   locale,
@@ -24,7 +25,7 @@ export async function OnboardingChecklist({
   overlayDone: boolean;
   firstTipDone: boolean;
 }) {
-  if (promptpayDone && overlayDone && firstTipDone) return null;
+  if (promptpayDone && overlayDone) return null;
   const t = await getTranslations("dashboard");
 
   const steps: Step[] = [
