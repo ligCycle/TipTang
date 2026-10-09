@@ -10,18 +10,50 @@ import {
 } from "./creator-theme.ts";
 
 const WHITE = "#ffffff";
+const BLACK = "#000000";
 const DARK_BG = "#140b11";
-/** Bright, mid and dark channel colours, plus pink and the black/white extremes. */
+/** Lightest dark surface brand text sits on (.card-solid). */
+const DARK_SURFACE = "#26161f";
+
+/** HSL (h in degrees, s/l in 0–1) → #rrggbb, for the sweep below. */
+function hsl(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r, g, b] =
+    h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x]
+    : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return (
+    "#" +
+    [r, g, b].map((v) => Math.round((v + m) * 255).toString(16).padStart(2, "0")).join("")
+  );
+}
+
+/**
+ * Every 15° of hue × 3 saturations × 7 lightnesses, plus greys, presets and
+ * the colours that broke earlier versions (bright yellows/cyans, white,
+ * violet, slate, navy, near-black, pinks).
+ */
 const COLOURS = [
+  ...Array.from({ length: 24 }, (_, i) =>
+    [0.25, 0.6, 1].flatMap((s) =>
+      [0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9].map((l) => hsl(i * 15, s, l)),
+    ),
+  ).flat(),
+  "#ffffff",
+  "#000000",
+  "#808080",
   "#facc15",
   "#f59e0b",
   "#06b6d4",
-  "#ffffff",
+  "#22c55e",
+  "#84cc16",
   "#7c3aed",
+  "#64748b",
   "#0f172a",
   "#1e3a8a",
+  "#f472b6",
   "#ff69b4",
-  "#000000",
 ];
 
 test("parseHex normalises #rgb and #rrggbb, rejects the rest", () => {
@@ -51,15 +83,27 @@ test("creatorRamp normalises its input and rejects anything that isn't hex", () 
   assert.throws(() => creatorRamp("red;}x{"));
 });
 
-test("buttons and text stay readable for light and dark channel colours", () => {
+test("light buttons and text stay readable; dark 500 keeps 3:1 on the page", () => {
   for (const c of COLOURS) {
     const { light, dark } = creatorRamp(c);
     assert.ok(contrast(light[600], WHITE) >= 4.5, `${c} light600 ${light[600]}`);
     assert.ok(contrast(light[700], WHITE) >= 4.5, `${c} light700 ${light[700]}`);
     assert.ok(contrast(light[900], WHITE) >= 7, `${c} light900 ${light[900]}`);
     assert.ok(contrast(dark[500], DARK_BG) >= 3, `${c} dark500 ${dark[500]}`);
-    assert.ok(contrast(dark[600], DARK_BG) >= 4.5, `${c} dark600 ${dark[600]}`);
-    assert.ok(contrast(dark[700], DARK_BG) >= 4.5, `${c} dark700 ${dark[700]}`);
+  }
+});
+
+test("dark 600/700 read on the lightest dark surface; white labels on 600 reach 3:1", () => {
+  for (const c of COLOURS) {
+    const { dark } = creatorRamp(c);
+    assert.ok(contrast(dark[600], DARK_SURFACE) >= 4.5, `${c} dark600 ${dark[600]} on surface`);
+    assert.ok(contrast(WHITE, dark[600]) >= 3, `${c} white on dark600 ${dark[600]}`);
+    assert.ok(contrast(dark[700], DARK_SURFACE) >= 4.5, `${c} dark700 ${dark[700]} on surface`);
+    // Contrast against black rises strictly with luminance: 700 is strictly lighter.
+    assert.ok(
+      contrast(dark[700], BLACK) > contrast(dark[600], BLACK),
+      `${c} dark700 ${dark[700]} not lighter than dark600 ${dark[600]}`,
+    );
   }
 });
 
@@ -73,7 +117,9 @@ test("light 500 and 800 have a contrast floor on white", () => {
 
 test("ramp steps only get stronger: darker on light, lighter on dark", () => {
   const lightSteps = [500, 600, 700, 800, 900] as const;
-  const darkSteps = [500, 600, 700, 800, 900] as const;
+  // Dark 500 is left out: it is the raw accent (focus ring, chart), while 600 is
+  // capped for white labels, so a bright accent's 500 is lighter than its 600.
+  const darkSteps = [600, 700, 800, 900] as const;
   for (const c of COLOURS) {
     const { light, dark } = creatorRamp(c);
     for (let i = 1; i < lightSteps.length; i++) {

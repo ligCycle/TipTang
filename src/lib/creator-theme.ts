@@ -10,6 +10,12 @@ const WHITE = "#ffffff";
 const BLACK = "#000000";
 /** Dark-mode page background (globals.css). */
 const DARK_BG = "#140b11";
+/**
+ * Lightest dark-mode surface that brand text sits on: `.card-solid`
+ * (globals.css). Text that reads here also reads on the page, `.card` and
+ * `.input`, which are all darker.
+ */
+const DARK_SURFACE = "#26161f";
 /** Hue of the tip accent #ff8a3d, in degrees. */
 const TIP_HUE = 24;
 
@@ -110,7 +116,9 @@ export function clashesWithTip(hex: string): boolean {
 /**
  * Light: 50–400 are tints; from 500 on each step is built from the one before
  * and only gets darker, so hover states (600 → 700) never go lighter.
- * Dark: 50–400 are shades of the page; from 500 on each step only gets lighter.
+ * Dark: 50–400 are shades of the page; 500 is the accent with a floor; from
+ * 600 on each step only gets lighter. (A bright accent's 500 can be lighter
+ * than its 600, which is held down so white button labels stay readable.)
  * Throws on anything that isn't #rgb / #rrggbb, so raw input never reaches a ramp.
  */
 export function creatorRamp(accent: string): { light: Ramp; dark: Ramp } {
@@ -141,11 +149,21 @@ export function creatorRamp(accent: string): { light: Ramp; dark: Ramp } {
   // Accent itself, unless it is under 3:1 on the dark page (graphics / large-text AA),
   // so navy or black channel colours don't vanish in dark mode.
   const d500 = pushUntil(a, WHITE, DARK_BG, 3);
-  // Links and headings on the dark page (same role as today's dark pink 600/700):
-  // ≥ 4.5:1 on the dark background, 700 lighter than 600.
-  const d600 = pushUntil(mix(a, WHITE, 0.1), WHITE, DARK_BG, 4.5);
-  const d700 = pushUntil(mix(d600, WHITE, 0.2), WHITE, DARK_BG, 4.5);
-  // Lighter still than 700, so they inherit its ≥ 4.5:1.
+  // Brand text on every dark surface AND the fill behind white button labels:
+  // white on it ≥ 3:1 (darkened first), then ≥ 4.5:1 on the lightest dark
+  // surface (lightened). Both fit in a luminance band of ~0.224–0.30; one
+  // 0.08 step can't jump the band, so the second push keeps the white floor.
+  const d600 = pushUntil(
+    pushUntil(mix(a, WHITE, 0.1), BLACK, WHITE, 3),
+    WHITE,
+    DARK_SURFACE,
+    4.5,
+  );
+  // Hover, links and headings: from the adjusted 600, lighter still and
+  // ≥ 4.5:1 on the lightest dark surface. White on it may dip below 3:1
+  // (hover only; TipTang's own pink hover is 2.5:1).
+  const d700 = pushUntil(mix(d600, WHITE, 0.2), WHITE, DARK_SURFACE, 4.5);
+  // Lighter still than 700, so they inherit its ≥ 4.5:1 on every dark surface.
   const d800 = mix(d700, WHITE, 0.35);
   const d900 = mix(d800, WHITE, 0.5);
   const dark: Ramp = {
