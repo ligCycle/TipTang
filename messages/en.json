@@ -475,11 +475,11 @@
     "statusRejected": "Rejected",
     "activation": {
       "title": "Activation — where each creator is stuck",
-      "hint": "Admin account excluded · overlay tracking started 20 Sep 2026 — earlier rows show \"no data\"",
+      "hint": "Admin account excluded · Active = a tip in the last 30 days or the overlay used in the last 14 · overlay tracking started 20 Sep 2026 — earlier rows show \"no data\"",
       "stage_NO_PROMPTPAY": "No PromptPay yet",
       "stage_NO_OVERLAY": "Overlay never opened",
       "stage_NO_TIP": "No tips yet",
-      "stage_ACTIVE": "Active (30 days)",
+      "stage_ACTIVE": "Active",
       "stage_IDLE": "Gone quiet",
       "colCreator": "Creator",
       "colSignup": "Signed up",

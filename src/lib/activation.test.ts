@@ -5,6 +5,7 @@ import {
   nudgeTemplate,
   compareRows,
   ACTIVE_WINDOW_DAYS,
+  OVERLAY_ACTIVE_DAYS,
   type SortableRow,
 } from "./activation.ts";
 
@@ -37,10 +38,32 @@ test("overlay seen, no confirmed tip → NO_TIP", () => {
 });
 
 test("confirmed tip inside the window → ACTIVE; outside → IDLE; boundary is ACTIVE", () => {
-  const base = { promptpayId: "0812345678", overlayLastSeenAt: daysAgo(1) };
+  // Overlay not seen lately, so only the tip decides.
+  const base = { promptpayId: "0812345678", overlayLastSeenAt: daysAgo(60) };
   assert.equal(stage({ ...base, lastConfirmedTipAt: daysAgo(29) }, NOW), "ACTIVE");
   assert.equal(stage({ ...base, lastConfirmedTipAt: daysAgo(31) }, NOW), "IDLE");
   assert.equal(stage({ ...base, lastConfirmedTipAt: daysAgo(ACTIVE_WINDOW_DAYS) }, NOW), "ACTIVE");
+});
+
+test("old tips but overlay used lately → still ACTIVE; boundary is ACTIVE", () => {
+  // A streamer who runs the overlay but whose viewers haven't tipped in a while.
+  const base = { promptpayId: "0812345678", lastConfirmedTipAt: daysAgo(45) };
+  assert.equal(stage({ ...base, overlayLastSeenAt: daysAgo(0) }, NOW), "ACTIVE");
+  assert.equal(
+    stage({ ...base, overlayLastSeenAt: daysAgo(OVERLAY_ACTIVE_DAYS) }, NOW),
+    "ACTIVE",
+  );
+  assert.equal(
+    stage({ ...base, overlayLastSeenAt: daysAgo(OVERLAY_ACTIVE_DAYS + 1) }, NOW),
+    "IDLE",
+  );
+});
+
+test("overlay used lately but never a tip → NO_TIP, not ACTIVE", () => {
+  assert.equal(
+    stage({ promptpayId: "0812345678", overlayLastSeenAt: daysAgo(0), lastConfirmedTipAt: null }, NOW),
+    "NO_TIP",
+  );
 });
 
 test("tips but overlay never recorded (pre-feature creators) → never NO_OVERLAY", () => {
@@ -62,11 +85,12 @@ test("rows sort by stage, then stuck-longest first", () => {
     s: SortableRow["stage"],
     createdDays: number,
     tipDays: number | null,
+    overlayDays: number | null = null,
   ): SortableRow => ({
     stage: s,
     createdAt: daysAgo(createdDays),
     promptpayId: s === "NO_PROMPTPAY" ? null : "x",
-    overlayLastSeenAt: null,
+    overlayLastSeenAt: overlayDays === null ? null : daysAgo(overlayDays),
     lastConfirmedTipAt: tipDays === null ? null : daysAgo(tipDays),
   });
   const rows = [
@@ -76,23 +100,30 @@ test("rows sort by stage, then stuck-longest first", () => {
     row("NO_PROMPTPAY", 40, null),
     row("IDLE", 200, 60),
     row("IDLE", 200, 45),
+    row("IDLE", 200, 90, 20), // old tip, but the overlay ran 20 days ago
     row("ACTIVE", 100, 10),
+    row("ACTIVE", 100, 40, 0), // overlay live today, tips are old
     row("NO_OVERLAY", 15, null),
   ];
   const sorted = [...rows].sort(compareRows);
   const days = (d: Date | null) =>
     d ? Math.round((NOW.getTime() - d.getTime()) / 86_400_000) : "-";
   assert.deepEqual(
-    sorted.map((r) => `${r.stage}:${days(r.createdAt)}:${days(r.lastConfirmedTipAt)}`),
+    sorted.map(
+      (r) =>
+        `${r.stage}:${days(r.createdAt)}:${days(r.lastConfirmedTipAt)}:${days(r.overlayLastSeenAt)}`,
+    ),
     [
-      "NO_PROMPTPAY:40:-", // oldest signup first
-      "NO_PROMPTPAY:5:-",
-      "NO_OVERLAY:15:-",
-      "NO_TIP:20:-",
-      "IDLE:200:60", // longest silence first
-      "IDLE:200:45",
-      "ACTIVE:100:1", // most recent tip first
-      "ACTIVE:100:10",
+      "NO_PROMPTPAY:40:-:-", // oldest signup first
+      "NO_PROMPTPAY:5:-:-",
+      "NO_OVERLAY:15:-:-",
+      "NO_TIP:20:-:-",
+      "IDLE:200:60:-", // longest silence (tip or overlay) first
+      "IDLE:200:45:-",
+      "IDLE:200:90:20",
+      "ACTIVE:100:40:0", // most recent activity (tip or overlay) first
+      "ACTIVE:100:1:-",
+      "ACTIVE:100:10:-",
     ],
   );
 });
