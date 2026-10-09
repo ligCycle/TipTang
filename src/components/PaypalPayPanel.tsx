@@ -8,12 +8,10 @@ export function PaypalPayPanel({
   handle,
   amount,
   amountLabel,
-  accentStyle,
 }: {
   handle: string;
   amount: number;
   amountLabel: string;
-  accentStyle?: React.CSSProperties;
 }) {
   const t = useTranslations("profile");
   return (
@@ -22,8 +20,7 @@ export function PaypalPayPanel({
         href={paypalLink(handle, amount)}
         target="_blank"
         rel="noopener noreferrer"
-        style={accentStyle}
-        className="btn-primary inline-flex w-full justify-center transition hover:brightness-95"
+        className="btn-primary inline-flex w-full justify-center"
       >
         {t("paypalPay", { amount: amountLabel })}
       </a>

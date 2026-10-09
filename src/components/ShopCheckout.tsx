@@ -46,8 +46,6 @@ export function ShopCheckout({
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const primaryStyle = accentColor ? { backgroundColor: accentColor } : undefined;
-
   async function openItem(item: ShopItem) {
     setSel(item);
     setStep("pay");
@@ -152,7 +150,6 @@ export function ShopCheckout({
               </span>
               <button
                 onClick={() => openItem(item)}
-                style={primaryStyle}
                 className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:brightness-95"
               >
                 {t("buy")}
@@ -187,8 +184,7 @@ export function ShopCheckout({
                   <>
                     <a
                       href={`/${locale}/order/${receiptToken}`}
-                      style={primaryStyle}
-                      className="btn-primary mt-4 inline-block transition hover:brightness-95"
+                      className="btn-primary mt-4 inline-block"
                     >
                       {t("ctaViewOrder")}
                     </a>
@@ -282,8 +278,7 @@ export function ShopCheckout({
                 <button
                   type="submit"
                   disabled={loading}
-                  style={primaryStyle}
-                  className="btn-primary w-full transition hover:brightness-95"
+                  className="btn-primary w-full"
                 >
                   {loading ? t("submitting") : t("submitOrder")}
                 </button>

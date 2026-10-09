@@ -62,12 +62,8 @@ export function TipForm({
   const locale = useLocale();
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
 
-  // Recolor the primary button/selected chip with the creator's accent.
-  // Inline background overrides .btn-primary's solid bg; hover feedback comes
-  // from a brightness filter (not a bg swap) so hover keeps working.
-  const primaryStyle = accentColor
-    ? { backgroundColor: accentColor }
-    : undefined;
+  // Decorative tint only. Buttons and selected chips keep their brand classes,
+  // which <CreatorTheme> repaints with the creator's readable ramp.
   const cardTintStyle = accentColor
     ? {
         backgroundImage: `linear-gradient(155deg, color-mix(in srgb, ${accentColor} 16%, transparent), color-mix(in srgb, ${accentColor} 5%, transparent))`,
@@ -279,7 +275,6 @@ export function TipForm({
                   role="radio"
                   aria-checked={method === m}
                   onClick={() => setMethod(m)}
-                  style={method === m ? primaryStyle : undefined}
                   // Two lines allowed + smaller text on phones: truncating would hide
                   // "(ในไทย)" / "(ต่างประเทศ)", which is the whole point of the label.
                   className={`rounded-xl px-2 py-2 text-xs leading-tight font-semibold transition sm:px-3 sm:text-sm ${
@@ -303,7 +298,6 @@ export function TipForm({
                   type="button"
                   key={a}
                   onClick={() => setAmountStr(String(a))}
-                  style={amount === a ? primaryStyle : undefined}
                   className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                     amount === a
                       ? "bg-brand-600 text-white"
@@ -367,7 +361,6 @@ export function TipForm({
                     key={value}
                     onClick={() => setTimerEffect(value)}
                     aria-pressed={timerEffect === value}
-                    style={timerEffect === value ? primaryStyle : undefined}
                     className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                       timerEffect === value
                         ? "bg-brand-600 text-white"
@@ -442,8 +435,7 @@ export function TipForm({
           <button
             type="submit"
             disabled={loading || reduceTooSmall || belowMinimum}
-            style={primaryStyle}
-            className="btn-primary w-full transition hover:brightness-95"
+            className="btn-primary w-full"
           >
             {loading
               ? t("generating")
@@ -461,7 +453,6 @@ export function TipForm({
               handle={paypalHandle}
               amount={amount}
               amountLabel={formatBaht(amount, currencyLocale)}
-              accentStyle={primaryStyle}
             />
           ) : qr ? (
             <div className="text-center">
@@ -534,8 +525,7 @@ export function TipForm({
             <button
               type="submit"
               disabled={loading}
-              style={primaryStyle}
-              className="btn-primary flex-1 transition hover:brightness-95"
+              className="btn-primary flex-1"
             >
               {loading ? t("submitting") : t("submitTip")}
             </button>

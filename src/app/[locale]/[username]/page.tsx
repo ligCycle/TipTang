@@ -270,7 +270,7 @@ export default async function ProfilePage({
             <h1 className="text-2xl font-extrabold text-brand-900 sm:text-3xl">
               {creator.displayName}
             </h1>
-            <p className="text-sm font-medium" style={{ color: accent }}>
+            <p className="text-sm font-medium text-brand-700">
               @{creator.username}
             </p>
           </div>
@@ -339,10 +339,7 @@ export default async function ProfilePage({
                   {creator.goalTitle || t("goalDefaultTitle")}
                 </span>
               </h2>
-              <span
-                className="shrink-0 text-sm font-bold tabular-nums"
-                style={{ color: accent }}
-              >
+              <span className="shrink-0 text-sm font-bold tabular-nums text-brand-700">
                 {goalPct}%
               </span>
             </div>
@@ -373,10 +370,7 @@ export default async function ProfilePage({
             <ol className="divide-y divide-brand-900/10">
               {topSupporters.map((s, i) => (
                 <li key={s.name} className="flex items-center gap-3 py-2.5">
-                  <span
-                    className="w-5 shrink-0 text-sm font-black tabular-nums"
-                    style={{ color: accent }}
-                  >
+                  <span className="w-5 shrink-0 text-sm font-black tabular-nums text-brand-700">
                     {i + 1}
                   </span>
                   <span
