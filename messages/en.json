@@ -469,6 +469,7 @@
     "empty": "No reviews yet — be the first to review!",
     "inviteTitle": "How has TipTang been for you?",
     "inviteDesc": "A short review helps other creators decide. It shows on the homepage once approved.",
+    "inviteLater": "Later",
     "ratingRequired": "Please give a rating first",
     "error": "Couldn't submit the review. Please try again."
   },

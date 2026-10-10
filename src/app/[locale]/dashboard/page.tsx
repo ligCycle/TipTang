@@ -340,6 +340,13 @@ export default async function DashboardPage({
         </div>
       </section>
 
+      {/* Reviews come from creators who have actually been tipped; the
+          landing page only shows the section once there is one to show.
+          Above the tip list so a long list can't push it out of sight. */}
+      {confirmedEver > 0 && (
+        <ReviewsSection reviews={[]} average={0} count={0} invite />
+      )}
+
       {/* Tips */}
       <div id="tips">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -364,12 +371,6 @@ export default async function DashboardPage({
           </ul>
         )}
       </div>
-
-      {/* Reviews come from creators who have actually been tipped; the
-          landing page only shows the section once there is one to show. */}
-      {confirmedEver > 0 && (
-        <ReviewsSection reviews={[]} average={0} count={0} invite />
-      )}
     </div>
   );
 }
