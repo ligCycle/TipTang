@@ -6,6 +6,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
 import { routing } from "@/i18n/routing";
 import { ogImages } from "@/lib/og";
+import { SUPPORT_EMAIL } from "@/lib/site";
 import { Link } from "@/i18n/navigation";
 import { Header } from "@/components/Header";
 import { DemoBanner } from "@/components/DemoBanner";
@@ -97,6 +98,12 @@ export default async function LocaleLayout({
               <Link href="/privacy" className="hover:text-brand-700 hover:underline">
                 {t("privacy")}
               </Link>
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                className="whitespace-nowrap hover:text-brand-700 hover:underline"
+              >
+                {t("contact")} · {SUPPORT_EMAIL}
+              </a>
             </nav>
             <p className="mb-1 font-semibold text-brand-900/70">{t("tagline")}</p>
             <p>© {new Date().getFullYear()} TipTang</p>

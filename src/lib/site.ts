@@ -1,6 +1,12 @@
 export const SITE_URL = "https://tiptang.com";
 
 /**
+ * Public contact address (footer, legal pages). A real mailbox: Cloudflare
+ * Email Routing forwards it to the founder's inbox.
+ */
+export const SUPPORT_EMAIL = "support@tiptang.com";
+
+/**
  * Base for links we put in emails. Production always uses the canonical
  * domain — never the request's Host header, which a client controls. Other
  * environments (localhost, preview deploys) link back to themselves so the

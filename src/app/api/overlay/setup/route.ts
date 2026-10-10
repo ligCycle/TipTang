@@ -15,6 +15,7 @@ export async function POST() {
     select: {
       username: true,
       overlayKey: true,
+      overlayLastSeenAt: true,
       alertSoundUrl: true,
       alertImageUrl: true,
       alertVideoUrl: true,
@@ -83,6 +84,7 @@ export async function POST() {
   return NextResponse.json({
     username: user.username,
     key,
+    overlayLastSeenAt: user.overlayLastSeenAt?.toISOString() ?? null,
     librarySounds: assets
       .filter((a) => a.kind === "SOUND")
       .map((a) => ({ id: a.id, url: a.url })),

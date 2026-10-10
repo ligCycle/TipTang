@@ -9,11 +9,14 @@ import { ALERT_THEMES, DEFAULT_ALERT_THEME, darkCardGlow } from "@/lib/alertThem
 import { Icon } from "@/components/Icon";
 import { formatDate } from "@/lib/format";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { OverlayConnectionStatus } from "@/components/OverlayConnectionStatus";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string };
 type Config = {
   url: string;
+  /** Last time a live program loaded the alert overlay (ISO), null = never. */
+  lastSeenAt: string | null;
   soundUrl: string | null;
   imageUrl: string | null;
   videoUrl: string | null;
@@ -115,6 +118,7 @@ export function OverlaySettings() {
       if (res.ok && d.key) {
         setConfig({
           url: `${window.location.origin}/overlay/${d.username}?key=${d.key}`,
+          lastSeenAt: d.overlayLastSeenAt ?? null,
           soundUrl: d.soundUrl ?? null,
           imageUrl: d.imageUrl ?? null,
           videoUrl: d.videoUrl ?? null,
@@ -192,7 +196,8 @@ export function OverlaySettings() {
       if (!res.ok || !d.key) throw new Error();
       const url = new URL(config.url);
       url.searchParams.set("key", d.key);
-      setConfig({ ...config, url: url.toString() });
+      // The old URL is dead, so the program has to load the new one first.
+      setConfig({ ...config, url: url.toString(), lastSeenAt: null });
       setRotated("ok");
     } catch {
       setRotated("error");
@@ -588,6 +593,10 @@ export function OverlaySettings() {
                   {t("obsPreview")}
                 </a>
               </div>
+              <OverlayConnectionStatus
+                key={config.url}
+                initialLastSeenAt={config.lastSeenAt}
+              />
               <p className="mt-1 text-xs text-brand-900/55">{t("obsHint")}</p>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 <span className="text-brand-900/55">{t("obsRotateHint")}</span>
@@ -629,6 +638,20 @@ export function OverlaySettings() {
                   <Icon name="lightbulb" className="mt-px h-3.5 w-3.5" />
                   <span>{t("obsGuideNote")}</span>
                 </p>
+              </details>
+
+              {/* Same URL, other live programs — and what to do on a phone */}
+              <details className="mt-2 rounded-xl border border-brand-200 bg-brand-50/70">
+                <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-sm font-semibold text-brand-800">
+                  <Icon name="monitor" />
+                  {t("obsOtherTitle")}
+                </summary>
+                <ul className="list-disc space-y-1.5 pb-3 pl-9 pr-3 text-xs text-brand-900/70">
+                  <li>{t("obsOtherStreamlabs")}</li>
+                  <li>{t("obsOtherTiktok")}</li>
+                  <li>{t("obsOtherPrism")}</li>
+                  <li>{t("obsOtherMobile")}</li>
+                </ul>
               </details>
             </div>
 

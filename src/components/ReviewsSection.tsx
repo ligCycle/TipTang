@@ -39,14 +39,21 @@ function Stars({
   );
 }
 
+/**
+ * Public reviews plus the write-a-review form. `invite` is the dashboard
+ * variant for creators who have been tipped: the same form under a short ask,
+ * without the review list.
+ */
 export function ReviewsSection({
   reviews,
   average,
   count,
+  invite = false,
 }: {
   reviews: PublicReview[];
   average: number;
   count: number;
+  invite?: boolean;
 }) {
   const t = useTranslations("reviews");
   const [open, setOpen] = useState(false);
@@ -87,7 +94,12 @@ export function ReviewsSection({
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-brand-900">{t("title")}</h2>
+          <h2 className={`font-bold text-brand-900 ${invite ? "text-lg" : "text-2xl"}`}>
+            {invite ? t("inviteTitle") : t("title")}
+          </h2>
+          {invite && (
+            <p className="mt-1 text-sm text-brand-900/60">{t("inviteDesc")}</p>
+          )}
           {count > 0 && (
             <div className="mt-1 flex items-center gap-2">
               <Stars value={Math.round(average)} size="text-base" />
@@ -164,7 +176,7 @@ export function ReviewsSection({
       )}
 
       {/* Approved reviews */}
-      {reviews.length === 0 ? (
+      {invite ? null : reviews.length === 0 ? (
         <p className="card rounded-2xl p-6 text-center text-brand-900/60">
           {t("empty")}
         </p>

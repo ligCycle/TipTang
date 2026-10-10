@@ -280,11 +280,16 @@ export default async function LandingPage({
         </div>
       </section>
 
-      <ReviewsSection
-        reviews={approved}
-        average={avgRating}
-        count={reviewCount}
-      />
+      {/* An empty "be the first to review" block tells visitors nobody uses
+          the site, so the section only appears once there is a review;
+          tipped creators write them from their dashboard. */}
+      {reviewCount > 0 && (
+        <ReviewsSection
+          reviews={approved}
+          average={avgRating}
+          count={reviewCount}
+        />
+      )}
 
       {/* ===== Closing CTA band ===== */}
       <section className="ink rounded-3xl p-8 sm:p-12">

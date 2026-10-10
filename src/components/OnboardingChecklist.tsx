@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Icon } from "@/components/Icon";
 
-type Step = { done: boolean; label: string } & (
+type Step = { done: boolean; label: string; note?: string } & (
   | { href: string; cta: string }
   | { hint: string }
 );
@@ -13,6 +13,8 @@ type Step = { done: boolean; label: string } & (
  * has — nothing to tick. The block disappears once the two steps the creator
  * can do themselves (PromptPay, overlay) are done: the first tip depends on
  * fans, and the "your link" section below already covers sharing.
+ * "Overlay done" means a live program really loaded it (or a tip came in) —
+ * not merely that the OBS page was opened.
  */
 export async function OnboardingChecklist({
   locale,
@@ -38,6 +40,7 @@ export async function OnboardingChecklist({
     {
       done: overlayDone,
       label: t("onboardingOverlay"),
+      note: t("onboardingOverlayNote"),
       href: `/${locale}/dashboard/overlay`,
       cta: t("goOverlay"),
     },
@@ -65,12 +68,17 @@ export async function OnboardingChecklist({
                 aria-hidden
               />
             )}
-            <span
-              className={`min-w-0 flex-1 ${
-                step.done ? "text-brand-900/50" : "font-medium text-brand-900"
-              }`}
-            >
-              {step.label}
+            <span className="min-w-0 flex-1">
+              <span
+                className={`block ${
+                  step.done ? "text-brand-900/50" : "font-medium text-brand-900"
+                }`}
+              >
+                {step.label}
+              </span>
+              {!step.done && step.note && (
+                <span className="block text-xs text-brand-900/55">{step.note}</span>
+              )}
             </span>
             {!step.done &&
               ("href" in step ? (

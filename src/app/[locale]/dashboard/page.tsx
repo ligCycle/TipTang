@@ -22,6 +22,8 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { ReviewsSection } from "@/components/ReviewsSection";
+import { overlaySetUp } from "@/lib/overlay-connection";
 import { ReportButton } from "@/components/ReportButton";
 import { SHOP_ENABLED } from "@/lib/features";
 import { Icon } from "@/components/Icon";
@@ -84,7 +86,7 @@ export default async function DashboardPage({
           displayName: true,
           username: true,
           promptpayId: true,
-          overlayKey: true,
+          overlayLastSeenAt: true,
         },
       }),
       prisma.tip.findMany({
@@ -221,7 +223,7 @@ export default async function DashboardPage({
       <OnboardingChecklist
         locale={locale}
         promptpayDone={Boolean(user.promptpayId)}
-        overlayDone={Boolean(user.overlayKey)}
+        overlayDone={overlaySetUp(user.overlayLastSeenAt, confirmedEver)}
         firstTipDone={confirmedEver > 0}
       />
 
@@ -362,6 +364,12 @@ export default async function DashboardPage({
           </ul>
         )}
       </div>
+
+      {/* Reviews come from creators who have actually been tipped; the
+          landing page only shows the section once there is one to show. */}
+      {confirmedEver > 0 && (
+        <ReviewsSection reviews={[]} average={0} count={0} invite />
+      )}
     </div>
   );
 }
