@@ -13,14 +13,16 @@ const SECURITY_HEADERS = [
   },
 ];
 
-// Content-Security-Policy in REPORT-ONLY mode: browsers log what the policy
-// would block (DevTools console) but block nothing. Once the live site runs
-// clean with it, move it to the enforcing header. 'unsafe-inline' scripts are
+// Content-Security-Policy, currently in REPORT-ONLY mode: browsers log what the
+// policy would block (DevTools console) but block nothing. Once the live site
+// runs clean with it, set CSP_ENFORCE = true below — that is the only change
+// needed (see headers() for why there is exactly one CSP header per page).
+// 'unsafe-inline' scripts are
 // needed by Next's inline bootstrap and the theme script (a nonce would force
 // every page to render dynamically); the other directives still cut off
 // plugins, <base> hijacking, off-site form posts and data sent to hosts we
 // don't use. Dev adds 'unsafe-eval' for React Refresh.
-const CSP_REPORT_ONLY = [
+const CSP_BASE = [
   "default-src 'self'",
   // va.vercel-scripts.com: Vercel Analytics' debug script (dev); production
   // serves it same-origin from /_vercel/insights.
@@ -36,13 +38,30 @@ const CSP_REPORT_ONLY = [
   "form-action 'self'",
 ].join("; ");
 
+// Flip to true to enforce the policy. Until then it only reports.
+const CSP_ENFORCE = false;
+const CSP_KEY = CSP_ENFORCE
+  ? "Content-Security-Policy"
+  : "Content-Security-Policy-Report-Only";
+
 // Clickjacking protection for everything except the OBS overlays. OBS loads
 // /overlay/* top-level (not in an iframe), but some streamers wrap browser
 // sources in third-party tools, so keep those pages frameable.
-const NO_FRAME_HEADERS = [
+//
+// Next lets the LAST matching rule win when two rules set the same header key,
+// so the policy must live in ONE header per page: frame-ancestors is a
+// directive of the same policy, not a second Content-Security-Policy header.
+// While the policy is report-only, frame-ancestors is also sent as its own
+// enforcing header so framing stays blocked (X-Frame-Options backs it up).
+const FRAME_HEADERS = [
   { key: "X-Frame-Options", value: "DENY" },
-  { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+  { key: CSP_KEY, value: `${CSP_BASE}; frame-ancestors 'none'` },
+  ...(CSP_ENFORCE
+    ? []
+    : [{ key: "Content-Security-Policy", value: "frame-ancestors 'none'" }]),
 ];
+// Overlays: same policy, no frame-ancestors, no X-Frame-Options.
+const OVERLAY_HEADERS = [{ key: CSP_KEY, value: CSP_BASE }];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -54,14 +73,10 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      {
-        source: "/:path*",
-        headers: [
-          ...SECURITY_HEADERS,
-          { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
-        ],
-      },
-      { source: "/((?!overlay/).*)", headers: NO_FRAME_HEADERS },
+      // Two disjoint rules (overlay / everything else) so no header key is set
+      // twice for the same path.
+      { source: "/overlay/:path*", headers: [...SECURITY_HEADERS, ...OVERLAY_HEADERS] },
+      { source: "/((?!overlay/).*)", headers: [...SECURITY_HEADERS, ...FRAME_HEADERS] },
     ];
   },
 };
