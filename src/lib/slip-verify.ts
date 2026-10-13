@@ -19,9 +19,16 @@ import "server-only";
  * bank-side verification.
  */
 
-export type SlipVerifyResult =
+type ProviderResult =
   | { ok: false; reason: "disabled" | "error" | "invalid" | "duplicate" | "timeout" }
   | { ok: true; transRef: string; amount: number; receiverRaw: string };
+
+// `tier` says who answered: "bank" = SlipOK/EasySlip checked the slip against
+// the bank; "ocr" = Gemini only READ the image. The dashboard labels the two
+// differently so a creator can tell a bank-verified tip from an AI-read one.
+export type SlipVerifyResult =
+  | Extract<ProviderResult, { ok: false }>
+  | (Extract<ProviderResult, { ok: true }> & { tier: "bank" | "ocr" });
 
 const PROVIDER = process.env.SLIP_VERIFY_PROVIDER; // "easyslip" | "slipok" | "gemini"
 // Optional free fallback (e.g. "gemini") used ONLY when the primary provider is
@@ -33,16 +40,20 @@ const FALLBACK = process.env.SLIP_VERIFY_FALLBACK;
 async function runProvider(
   name: string | undefined,
   file: File,
-): Promise<SlipVerifyResult> {
+): Promise<ProviderResult> {
   if (name === "easyslip") return viaEasySlip(file);
   if (name === "slipok") return viaSlipOk(file);
   if (name === "gemini") return viaGemini(file);
   return { ok: false, reason: "disabled" };
 }
 
+function tag(r: ProviderResult, answeredBy: string | undefined): SlipVerifyResult {
+  return r.ok ? { ...r, tier: answeredBy === "gemini" ? "ocr" : "bank" } : r;
+}
+
 export async function verifySlip(file: File): Promise<SlipVerifyResult> {
   try {
-    const primary = await runProvider(PROVIDER, file);
+    const primary = tag(await runProvider(PROVIDER, file), PROVIDER);
     // A success OR a `duplicate` is a DEFINITIVE answer from the real bank-side
     // check — use it as-is. NEVER fall back on `duplicate`: the real API knows
     // the slip was already used; Gemini can't, so falling back would let a
@@ -56,7 +67,7 @@ export async function verifySlip(file: File): Promise<SlipVerifyResult> {
       FALLBACK !== PROVIDER &&
       (primary.reason === "error" || primary.reason === "disabled")
     ) {
-      return await runProvider(FALLBACK, file);
+      return tag(await runProvider(FALLBACK, file), FALLBACK);
     }
     return primary;
   } catch {
@@ -64,7 +75,7 @@ export async function verifySlip(file: File): Promise<SlipVerifyResult> {
   }
 }
 
-async function viaEasySlip(file: File): Promise<SlipVerifyResult> {
+async function viaEasySlip(file: File): Promise<ProviderResult> {
   const token = process.env.EASYSLIP_API_TOKEN;
   if (!token) return { ok: false, reason: "disabled" };
 
@@ -89,7 +100,7 @@ async function viaEasySlip(file: File): Promise<SlipVerifyResult> {
   return { ok: true, transRef: String(transRef), amount, receiverRaw };
 }
 
-async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
+async function viaSlipOk(file: File): Promise<ProviderResult> {
   const key = process.env.SLIPOK_API_KEY;
   const branch = process.env.SLIPOK_BRANCH_ID;
   if (!key || !branch) return { ok: false, reason: "disabled" };
@@ -157,7 +168,7 @@ async function viaSlipOk(file: File): Promise<SlipVerifyResult> {
  * Read the slip with Gemini (vision). OCR-style extraction of amount / receiver
  * / transRef — NOT a bank-side check. Fail-safe: any uncertainty → ok:false.
  */
-async function viaGemini(file: File): Promise<SlipVerifyResult> {
+async function viaGemini(file: File): Promise<ProviderResult> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { ok: false, reason: "disabled" };
   // gemini-2.0-flash no longer has a free-tier quota (returns 429 limit:0);

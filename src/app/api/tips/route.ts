@@ -153,6 +153,9 @@ export async function POST(req: Request) {
     const receiverOk = receiverMatches(creator.promptpayId, verify.receiverRaw);
     if (amountOk && receiverOk) {
       verifyCode = "match";
+      // Read by the AI (Gemini), not checked with the bank: the dashboard shows
+      // "AI: ตรวจแล้วตรง" instead of the bank-verified "auto" badge.
+      if (verify.tier === "ocr") verifyDetail = "ocr";
     } else if (!amountOk) {
       // The slip's amount differs from what the supporter entered.
       verifyCode = "amount";

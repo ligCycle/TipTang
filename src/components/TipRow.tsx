@@ -153,7 +153,7 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
               {t("paypalBadge")}
             </span>
           )}
-          {tip.autoVerified ? (
+          {tip.autoVerified && tip.verifyDetail !== "ocr" ? (
             <span
               title="auto-verified"
               className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700"
