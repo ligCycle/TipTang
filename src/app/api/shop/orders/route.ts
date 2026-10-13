@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { SHOP_ENABLED } from "@/lib/features";
 import { fileMatchesType } from "@/lib/filetype";
 import crypto from "crypto";
 import { Prisma } from "@prisma/client";
@@ -16,6 +17,10 @@ import { censorText } from "@/lib/profanity";
 
 // Public: place an order for a shop item. Paid via PromptPay + slip (like Tip).
 export async function POST(req: Request) {
+  // The shop is switched off (src/lib/features.ts): no entry point, UI or API.
+  if (!SHOP_ENABLED) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   const limit = await rateLimit(`order:${clientIp(req)}`, 5, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });

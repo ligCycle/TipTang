@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { SHOP_ENABLED } from "@/lib/features";
 import { fileMatchesType } from "@/lib/filetype";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,10 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // The shop is switched off (src/lib/features.ts): no entry point, UI or API.
+  if (!SHOP_ENABLED) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
