@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   uploadImage,
+  deleteFile,
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_BYTES,
 } from "@/lib/storage";
@@ -32,11 +33,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_type" }, { status: 415 });
   }
 
+  const field = kind === "avatar" ? "avatarUrl" : "coverUrl";
+  const current = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { [field]: true } as Record<string, true>,
+  });
+  const oldUrl = (current as Record<string, string | null> | null)?.[field];
+
   const url = await uploadImage(file, kind === "avatar" ? "avatars" : "covers");
   await prisma.user.update({
     where: { id: session.user.id },
     data: kind === "avatar" ? { avatarUrl: url } : { coverUrl: url },
   });
+  await deleteFile(oldUrl); // replaced → free the previous public object
 
   return NextResponse.json({ ok: true, url });
 }

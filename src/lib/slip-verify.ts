@@ -181,10 +181,12 @@ async function viaGemini(file: File): Promise<SlipVerifyResult> {
   const timer = setTimeout(() => ac.abort(), 7000);
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // Key in a header, not the query string, so it never lands in a URL
+        // captured by logs, proxies or error objects.
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
         signal: ac.signal,
         body: JSON.stringify({
           contents: [

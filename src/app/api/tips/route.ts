@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { Prisma } from "@prisma/client";
 import { fileMatchesType } from "@/lib/filetype";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -17,6 +18,7 @@ import { verifySlip, receiverMatches, type SlipVerifyResult } from "@/lib/slip-v
 import { judgePaypalReceipt } from "@/lib/paypal";
 import { readPaypalReceipt } from "@/lib/paypal-receipt";
 import { censorText } from "@/lib/profanity";
+import { linkBase } from "@/lib/site";
 import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
 
 export async function POST(req: Request) {
@@ -209,25 +211,37 @@ export async function POST(req: Request) {
   // Private bucket — the dashboard reaches it via /api/tips/[id]/slip only.
   const slipKey = await uploadSlip(slip);
 
-  const tip = await prisma.tip.create({
-    data: {
-      creatorId: creator.id,
-      supporterName: cleanName,
-      message: cleanMessage,
-      amount: parsed.data.amount,
-      isMessagePublic,
-      slipKey,
-      timerEffect,
-      paymentMethod,
-      status,
-      transRef,
-      autoVerified,
-      confirmedAt,
-      verifyCode,
-      verifyDetail,
-    },
-    select: { id: true },
-  });
+  // The slip is already in storage; if the row cannot be written (a concurrent
+  // duplicate hitting the unique transRef, a DB error, a creator deleted
+  // mid-request) nothing else references the object, so remove it here.
+  let tip: { id: string };
+  try {
+    tip = await prisma.tip.create({
+      data: {
+        creatorId: creator.id,
+        supporterName: cleanName,
+        message: cleanMessage,
+        amount: parsed.data.amount,
+        isMessagePublic,
+        slipKey,
+        timerEffect,
+        paymentMethod,
+        status,
+        transRef,
+        autoVerified,
+        confirmedAt,
+        verifyCode,
+        verifyDetail,
+      },
+      select: { id: true },
+    });
+  } catch (e) {
+    await deleteSlip(slipKey);
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
+    }
+    throw e;
+  }
 
   // Confirmed on arrival (auto-verified or auto-confirm) → add subathon time.
   if (status === "CONFIRMED") {
@@ -236,7 +250,7 @@ export async function POST(req: Request) {
 
   // Notify the creator by email after the response is sent (best-effort — never
   // block or fail the tip on email problems).
-  const origin = new URL(req.url).origin;
+  const origin = linkBase(req);
   const amountLabel = formatBaht(parsed.data.amount, "th-TH");
   after(async () => {
     try {

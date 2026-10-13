@@ -13,6 +13,7 @@ import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
 import { Icon } from "@/components/Icon";
 import { CreatorTheme } from "@/components/CreatorTheme";
+import { jsonLdString } from "@/lib/jsonld";
 
 export async function generateMetadata({
   params,
@@ -228,7 +229,7 @@ export default async function ProfilePage({
       <CreatorTheme color={creator.profileColor} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
 
       {/* Profile header — full width and NOT a card. The tip form below is the

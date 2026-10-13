@@ -38,6 +38,12 @@ async function sendEmail(opts: {
     return;
   }
 
+  // The fallback prints the whole message, which for reset/verify mails is a
+  // live account link. Never do that in production: a missing or misnamed
+  // RESEND_API_KEY must fail loudly instead of leaking links into runtime logs.
+  if (process.env.VERCEL_ENV === "production") {
+    throw new Error(`Email not sent (${devLabel}): RESEND_API_KEY is not set`);
+  }
   console.log(`[email:dev] ${devLabel} -> ${to}: ${text}`);
 }
 

@@ -26,10 +26,11 @@ export async function readPaypalReceipt(file: File): Promise<PaypalRead> {
   const timer = setTimeout(() => ac.abort(), 7000);
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // Key in a header, not the query string (keeps it out of logged URLs).
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
         signal: ac.signal,
         body: JSON.stringify({
           contents: [

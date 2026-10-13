@@ -7,6 +7,7 @@ import { ReviewsSection } from "@/components/ReviewsSection";
 import { Reveal } from "@/components/Reveal";
 import { HeroMock } from "@/components/HeroMock";
 import { Icon } from "@/components/Icon";
+import { jsonLdString } from "@/lib/jsonld";
 
 export async function generateMetadata({
   params,
@@ -113,7 +114,7 @@ export default async function LandingPage({
     <div className="space-y-20 sm:space-y-28">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
 
       {/* ===== Hero ===== */}

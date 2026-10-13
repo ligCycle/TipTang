@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { shopOrderSchema } from "@/lib/validators";
 import {
   uploadSlip,
+  deleteSlip,
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_BYTES,
 } from "@/lib/storage";
@@ -141,10 +142,12 @@ export async function POST(req: Request) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
         const target = String(e.meta?.target ?? "");
         if (target.includes("transRef")) {
+          await deleteSlip(slipKey);
           return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
         }
         if (attempt < 3) continue; // receiptToken collision → retry
       }
+      await deleteSlip(slipKey);
       throw e;
     }
   }
