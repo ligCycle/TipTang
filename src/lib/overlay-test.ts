@@ -21,7 +21,12 @@ const hasUpstash = Boolean(
     (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN),
 );
 const redis = hasUpstash ? Redis.fromEnv() : null;
-const memory = new Map<string, { value: TestAlert; expiresAt: number }>();
+// On globalThis: Next bundles each route separately, so a module-level map
+// would give the test route and the overlay routes different copies.
+const g = globalThis as unknown as {
+  __tiptangTestAlerts?: Map<string, { value: TestAlert; expiresAt: number }>;
+};
+const memory = (g.__tiptangTestAlerts ??= new Map());
 
 const keyFor = (userId: string) => `tiptang/test/${userId}`;
 

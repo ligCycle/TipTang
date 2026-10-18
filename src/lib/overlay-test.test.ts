@@ -29,3 +29,12 @@ test("creators do not see each other's tests", async () => {
   await pushTestAlert("u4", 20);
   assert.equal(await readTestAlert("u5"), null);
 });
+
+test("separate module instances share the in-process fallback (Next bundles each route apart)", async () => {
+  // A variable specifier: fresh module instances via query strings (runtime only).
+  const spec = "./overlay-test.ts";
+  const a: typeof import("./overlay-test.ts") = await import(`${spec}?instance=a`);
+  const b: typeof import("./overlay-test.ts") = await import(`${spec}?instance=b`);
+  const t = await a.pushTestAlert("u6", 77);
+  assert.equal((await b.readTestAlert("u6"))?.id, t.id);
+});
