@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatBaht } from "@/lib/format";
-import { isAlertStyle, DEFAULT_ALERT_STYLE } from "@/lib/alertStyles";
-import { darkCardGlow } from "@/lib/alertThemes";
-import { DEFAULT_COLOR } from "@/lib/colors";
 import { Confetti } from "./Confetti";
-import { Icon } from "@/components/Icon";
+import { AlertCard } from "@/components/overlay/AlertCard";
+import { pickTier, resolveAlert, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
+import type { TestAlert } from "@/lib/overlay-test";
 
 type Alert = {
   id: string;
@@ -17,14 +15,17 @@ type Alert = {
   timerDelta?: number | null;
 };
 
-// Darken a #rrggbb color by mixing toward black (amount 0..1).
-function darken(hex: string, amount: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.round(((n >> 16) & 255) * (1 - amount));
-  const g = Math.round(((n >> 8) & 255) * (1 - amount));
-  const b = Math.round((n & 255) * (1 - amount));
-  return `rgb(${r}, ${g}, ${b})`;
-}
+/** One tip as the overlay feeds return it. */
+export type FeedTip = {
+  id: string;
+  supporterName: string;
+  message: string | null;
+  amount: number;
+  confirmedAt: string | null;
+  timerDelta: number | null;
+};
+
+const BASE_DURATION_SEC = 7;
 
 export function OverlayClient({
   username,
@@ -37,9 +38,13 @@ export function OverlayClient({
   ttsEnabled,
   librarySounds,
   libraryStickers,
+  libraryVideos = [],
   alertStyle,
   alertTheme,
   bigTipThreshold,
+  tiers = [],
+  feed,
+  positionClass,
 }: {
   username: string;
   apiKey: string;
@@ -51,17 +56,25 @@ export function OverlayClient({
   ttsEnabled: boolean;
   librarySounds: string[];
   libraryStickers: string[];
+  /** Library videos — only alert tiers use them (never random-picked). */
+  libraryVideos?: string[];
   alertStyle: string;
   alertTheme: string;
   bigTipThreshold: number;
+  tiers?: AlertTier[];
+  /** When set, the parent polls (single OBS link) and this component doesn't. */
+  feed?: { tips: FeedTip[]; test: TestAlert | null } | null;
+  /** Replaces the default top-centre placement (single OBS link anchors). */
+  positionClass?: string;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
-  // Sticker shown with the current alert (randomised per alert from the library).
-  const [sticker, setSticker] = useState<string | null>(null);
+  // Sound/visual/duration chosen for the current alert (library random + tier).
+  const [media, setMedia] = useState<AlertBase | null>(null);
   const queue = useRef<Alert[]>([]);
   const seen = useRef<Set<string>>(new Set());
   const lastSeen = useRef<string>(new Date().toISOString());
   const showing = useRef(false);
+  const libraryUrls = useRef(new Set([...librarySounds, ...libraryStickers, ...libraryVideos]));
 
   function pickRandom(arr: string[]): string | null {
     return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
@@ -121,17 +134,26 @@ export function OverlayClient({
     if (!next) return;
     showing.current = true;
     setCurrent(next);
-    // Random pick from the library each alert; fall back to the single asset.
-    const chosenSound = pickRandom(librarySounds) ?? soundUrl;
-    const chosenSticker = pickRandom(libraryStickers) ?? imageUrl;
-    setSticker(videoUrl ? null : chosenSticker);
+    // Random pick from the library each alert (fall back to the single asset),
+    // then the amount's tier overrides whatever it sets.
+    const chosen = resolveAlert(
+      {
+        soundUrl: pickRandom(librarySounds) ?? soundUrl,
+        imageUrl: pickRandom(libraryStickers) ?? imageUrl,
+        videoUrl,
+        durationSec: BASE_DURATION_SEC,
+      },
+      pickTier(tiers, Number(next.amount)),
+      libraryUrls.current,
+    );
+    setMedia(chosen);
     // Video carries its own audio; only play the separate sound / TTS when no
     // video. TTS follows the alert sound so they don't overlap.
-    if (chosenSound && !videoUrl) {
+    if (chosen.soundUrl && !chosen.videoUrl) {
       // OBS browser sources allow autoplay; normal browsers may block until a
       // user gesture (fine — the overlay runs inside OBS in real use).
       try {
-        const audio = new Audio(chosenSound);
+        const audio = new Audio(chosen.soundUrl);
         if (ttsEnabled) {
           audio.addEventListener("ended", () => speak(next), { once: true });
         }
@@ -141,14 +163,15 @@ export function OverlayClient({
       } catch {
         if (ttsEnabled) speak(next);
       }
-    } else if (!videoUrl) {
+    } else if (!chosen.videoUrl) {
       speak(next);
     }
     setTimeout(() => {
       setCurrent(null);
+      setMedia(null);
       showing.current = false;
       setTimeout(pump, 600); // small gap before the next alert
-    }, 7000);
+    }, chosen.durationSec * 1000);
   }
 
   function enqueue(a: Alert) {
@@ -157,6 +180,26 @@ export function OverlayClient({
     queue.current.push(a);
     pump();
   }
+
+  function take(tips: FeedTip[], t: TestAlert | null) {
+    for (const tip of tips) {
+      enqueue({
+        id: tip.id,
+        name: tip.supporterName,
+        amount: tip.amount,
+        message: tip.message,
+        timerDelta: tip.timerDelta ?? null,
+      });
+    }
+    // A test from the dashboard: shown once per id, never moves the timer.
+    if (t) enqueue({ id: t.id, name: t.name, amount: t.amount, message: t.message, timerDelta: null });
+  }
+
+  // Parent-polled mode (single OBS link): enqueue whatever the parent hands us.
+  useEffect(() => {
+    if (feed) take(feed.tips, feed.test);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feed]);
 
   useEffect(() => {
     let testIv: ReturnType<typeof setInterval> | undefined;
@@ -182,8 +225,8 @@ export function OverlayClient({
     }
     // In test mode show ONLY the looping sample alerts — don't also poll real
     // confirmed tips (they'd appear with unexpected amounts mixed into the
-    // preview).
-    if (test || !apiKey) {
+    // preview). When a parent feeds us, it does the polling.
+    if (test || !apiKey || feed !== undefined) {
       return () => {
         if (testIv) clearInterval(testIv);
       };
@@ -197,18 +240,12 @@ export function OverlayClient({
         );
         if (!res.ok) return;
         const data = await res.json();
-        for (const t of data.tips ?? []) {
-          if (t.confirmedAt && t.confirmedAt > lastSeen.current) {
-            lastSeen.current = t.confirmedAt;
-          }
-          enqueue({
-            id: t.id,
-            name: t.supporterName,
-            amount: t.amount,
-            message: t.message,
-            timerDelta: t.timerDelta ?? null,
-          });
+        // The server's cursor also jumps forward while alerts are switched off,
+        // so tips from that time never replay when they come back on.
+        if (typeof data.cursor === "string" && data.cursor > lastSeen.current) {
+          lastSeen.current = data.cursor;
         }
+        take(data.tips ?? [], data.test ?? null);
       } catch {
         // ignore transient network errors
       }
@@ -232,101 +269,31 @@ export function OverlayClient({
     current != null &&
     Number(current.amount) >= bigTipThreshold;
 
-  const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
-  const dark = alertTheme === "dark";
-  const glow = darkCardGlow(useCustom ? color! : DEFAULT_COLOR);
-  const cardStyle = dark
-    ? {
-        borderColor: glow,
-        boxShadow: `0 0 0 1px ${glow}66, 0 0 32px ${glow}80, 0 24px 48px -16px rgba(0,0,0,0.7)`,
-      }
-    : useCustom
-      ? {
-          backgroundImage: `linear-gradient(to bottom right, ${color}, ${darken(color!, 0.3)})`,
-        }
-      : undefined;
-
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
-      {current && (
+      {current && media && (
         // Centering wrapper: absolute left-1/2 + translateX(-50%) pins the card
         // to the viewport centre regardless of document width / siblings /
         // scroll. The inner card runs the entrance animation (its own transform),
         // so the two never conflict.
         <div
-          className={`absolute left-1/2 top-6 w-[calc(100%-2rem)] -translate-x-1/2 ${
-            isBig ? "max-w-[34rem]" : "max-w-md"
-          }`}
+          className={`absolute w-[calc(100%-2rem)] ${
+            positionClass ?? "left-1/2 top-6 -translate-x-1/2"
+          } ${isBig ? "max-w-[34rem]" : "max-w-md"}`}
         >
-        <div
-          key={current.id}
-          style={cardStyle}
-          className={`alert-${
-            isAlertStyle(alertStyle) ? alertStyle : DEFAULT_ALERT_STYLE
-          } ${
-            isBig ? "alert-big" : ""
-          } w-full rounded-2xl p-5 text-white shadow-2xl ${
-            dark
-              ? "border-[1.5px] bg-[#120c16]/90 backdrop-blur-md"
-              : `ring-1 ring-white/20 ${useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"}`
-          }`}
-        >
-          {isBig && (
-            <p className="mb-2 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-widest drop-shadow">
-              <Icon name="sparkles" className="h-4 w-4" />
-              SUPER TIP!
-              <Icon name="sparkles" className="h-4 w-4" />
-            </p>
-          )}
-          {dark && !isBig && (
-            <p
-              className="mb-2 text-xs font-bold uppercase tracking-widest"
-              style={{ color: glow }}
-            >
-              ทิปใหม่!
-            </p>
-          )}
-          {videoUrl ? (
-            <video
-              src={videoUrl}
-              autoPlay
-              playsInline
-              className="mx-auto mb-3 max-h-48 w-auto rounded-xl"
-            />
-          ) : (
-            sticker && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={sticker}
-                alt=""
-                className="mx-auto mb-3 max-h-40 w-auto rounded-xl object-contain"
-              />
-            )
-          )}
-          <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex min-w-0 items-center gap-2 text-lg font-extrabold drop-shadow">
-              <Icon name="heart" className="h-5 w-5 shrink-0" />
-              <span className="truncate">
-                {current.name || "ผู้ไม่ประสงค์ออกนาม"}
-              </span>
-            </span>
-            <span
-              className={`rounded-full px-3 py-1 text-lg font-black ${dark ? "bg-tip-400 text-tip-900" : "bg-white/25"}`}
-            >
-              {formatBaht(current.amount)}
-            </span>
-          </div>
-          {current.timerDelta != null && current.timerDelta !== 0 && (
-            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/25 px-3 py-0.5 text-sm font-bold">
-              <Icon name="clock" className="h-3.5 w-3.5" />
-              {current.timerDelta < 0 ? "−" : "+"}
-              {Math.max(1, Math.round(Math.abs(current.timerDelta) / 60))} นาที
-            </p>
-          )}
-          {current.message && (
-            <p className="mt-2 text-white/95">{current.message}</p>
-          )}
-        </div>
+          <AlertCard
+            key={current.id}
+            name={current.name}
+            amount={current.amount}
+            message={current.message}
+            timerDelta={current.timerDelta}
+            color={color}
+            alertStyle={alertStyle}
+            alertTheme={alertTheme}
+            isBig={isBig}
+            imageUrl={media.videoUrl ? null : media.imageUrl}
+            videoUrl={media.videoUrl}
+          />
         </div>
       )}
       {/* Confetti is a SIBLING of the card (card clips overflow) — fixed + high

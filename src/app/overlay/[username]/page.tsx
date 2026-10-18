@@ -35,15 +35,25 @@ export default async function OverlayPage({
     return null;
   }
 
-  const assets = await prisma.alertAsset.findMany({
-    where: { userId: user.id },
-    select: { kind: true, url: true },
-  });
+  const [assets, tierRows] = await Promise.all([
+    prisma.alertAsset.findMany({
+      where: { userId: user.id },
+      select: { kind: true, url: true },
+    }),
+    prisma.alertTier.findMany({
+      where: { userId: user.id },
+      orderBy: { minAmount: "asc" },
+      select: { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true },
+    }),
+  ]);
   const librarySounds = assets
     .filter((a) => a.kind === "SOUND")
     .map((a) => a.url);
   const libraryStickers = assets
     .filter((a) => a.kind === "STICKER")
+    .map((a) => a.url);
+  const libraryVideos = assets
+    .filter((a) => a.kind === "VIDEO")
     .map((a) => a.url);
 
   return (
@@ -58,6 +68,8 @@ export default async function OverlayPage({
       ttsEnabled={user.ttsEnabled}
       librarySounds={librarySounds}
       libraryStickers={libraryStickers}
+      libraryVideos={libraryVideos}
+      tiers={tierRows}
       alertStyle={user.alertStyle}
       alertTheme={isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME}
       bigTipThreshold={user.bigTipThreshold}
