@@ -1,29 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatBaht } from "@/lib/format";
-import { Icon } from "@/components/Icon";
+import { GoalView, type GoalState } from "@/components/overlay/GoalView";
 
-type Goal = {
-  enabled: boolean;
-  title: string;
-  goal: number;
-  raised: number;
-  pct: number;
-};
-
-// Darken a #rrggbb color by mixing toward black (amount 0..1).
-function darken(hex: string, amount: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.round(((n >> 16) & 255) * (1 - amount));
-  const g = Math.round(((n >> 8) & 255) * (1 - amount));
-  const b = Math.round((n & 255) * (1 - amount));
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
-const DEFAULT_A = "#ec4899";
-const DEFAULT_B = "#be185d";
-
+/** The old per-feature goal link: polls its own endpoint and renders GoalView. */
 export function GoalOverlayClient({
   username,
   apiKey,
@@ -33,7 +13,7 @@ export function GoalOverlayClient({
   apiKey: string;
   color: string | null;
 }) {
-  const [goal, setGoal] = useState<Goal | null>(null);
+  const [goal, setGoal] = useState<GoalState | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -43,7 +23,7 @@ export function GoalOverlayClient({
           `/api/overlay/${username}/goal?key=${encodeURIComponent(apiKey)}`,
         );
         if (!res.ok) return;
-        const data: Goal = await res.json();
+        const data: GoalState = await res.json();
         if (active) setGoal(data);
       } catch {
         // ignore transient network errors
@@ -61,41 +41,9 @@ export function GoalOverlayClient({
   // Disabled or no goal set → render nothing (transparent).
   if (!goal || !goal.enabled || goal.goal <= 0) return null;
 
-  const valid = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
-  const from = valid ? color! : DEFAULT_A;
-  const to = valid ? darken(color!, 0.28) : DEFAULT_B;
-
   return (
     <div className="p-4">
-      <div className="w-full max-w-xl rounded-2xl bg-black/55 p-4 text-white shadow-2xl ring-1 ring-white/15 backdrop-blur">
-        <div className="mb-2 flex items-end justify-between gap-3">
-          <span className="inline-flex items-center gap-2 text-lg font-extrabold drop-shadow">
-            <Icon name="target" className="h-5 w-5 shrink-0" />
-            {goal.title || "เป้าหมาย"}
-          </span>
-          <span className="text-lg font-black drop-shadow">{goal.pct}%</span>
-        </div>
-        <div className="h-6 w-full overflow-hidden rounded-full bg-white/20">
-          <div
-            className="flex h-full items-center justify-end rounded-full pr-2 transition-all duration-700 ease-out"
-            style={{
-              width: `${Math.min(100, Math.max(goal.pct, 4))}%`,
-              backgroundImage: `linear-gradient(to right, ${from}, ${to})`,
-            }}
-          >
-            {/* Only once the fill is wide enough to hold it — at 0% the 4%
-                sliver cut "฿0.00" down to "00". The total is shown below anyway. */}
-            {goal.pct >= 20 && (
-              <span className="text-xs font-bold drop-shadow">
-                {formatBaht(goal.raised)}
-              </span>
-            )}
-          </div>
-        </div>
-        <p className="mt-1.5 text-right text-sm font-semibold text-white/90 drop-shadow">
-          {formatBaht(goal.raised)} / {formatBaht(goal.goal)}
-        </p>
-      </div>
+      <GoalView goal={goal} color={color} />
     </div>
   );
 }
