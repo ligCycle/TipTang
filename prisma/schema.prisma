@@ -42,6 +42,8 @@ enum ReportStatus {
 enum AlertAssetKind {
   SOUND
   STICKER
+  // Library videos are used only by alert tiers (never random-picked).
+  VIDEO
 }
 
 enum ShopItemType {
@@ -122,6 +124,22 @@ model AlertAsset {
   createdAt DateTime       @default(now())
 
   @@index([userId, kind])
+}
+
+// Alert tier by amount (src/lib/alert-tiers.ts): tips >= minAmount use these
+// overrides; null fields fall back to the normal alert. URLs are library assets.
+model AlertTier {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minAmount   Int
+  soundUrl    String?
+  imageUrl    String?
+  videoUrl    String?
+  durationSec Int?
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, minAmount])
 }
 
 // A report / issue / suggestion a creator sends to the platform admin.
@@ -221,6 +239,14 @@ model User {
   bigTipThreshold Int   @default(0)
   // Read the supporter's name + message aloud (TTS) when an alert fires.
   ttsEnabled    Boolean @default(false)
+  // Feature hub: alerts can be switched off like goal/timer (default on).
+  alertsEnabled Boolean @default(true)
+  // Positions on the single OBS link (src/lib/overlay-layout.ts anchors).
+  alertPosition String  @default("center")
+  goalPosition  String  @default("bottom-center")
+  timerPosition String  @default("top-right")
+  // When the one-time feature-hub chooser was answered/skipped. Null = show it.
+  featuresOnboardedAt DateTime?
   // When true, incoming tips are confirmed automatically (creator trusts the
   // slip / checks their bank) instead of waiting for manual confirmation.
   autoConfirmTips Boolean @default(false)
@@ -258,6 +284,7 @@ model User {
   verifyTokens  EmailVerificationToken[]
   reports       Report[]
   alertAssets   AlertAsset[]
+  alertTiers    AlertTier[]
   shopItems     ShopItem[]
   shopOrders    ShopOrder[]
 }
