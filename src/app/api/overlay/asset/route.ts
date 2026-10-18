@@ -103,6 +103,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, goalStartedAt: startedAt.toISOString() });
   }
 
+  // Donation alerts on/off (feature hub). Off = the feeds return no tips.
+  if (kind === "alertsToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { alertsEnabled: enabled },
+    });
+    return NextResponse.json({ ok: true, enabled });
+  }
+
   // Goal-bar overlay on/off toggle.
   if (kind === "goalToggle") {
     const enabled = form?.get("enabled") === "1";
