@@ -1,6 +1,8 @@
 import { NextResponse, after as runAfter } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tipSeconds } from "@/lib/subathon-math";
+import { readTestAlert } from "@/lib/overlay-test";
+import { nextCursor } from "@/lib/overlay-cursor";
 
 // Polled by the OBS overlay. Validates the secret key, returns confirmed tips
 // confirmed after the `after` timestamp (so only new tips trigger alerts).
@@ -23,6 +25,7 @@ export async function GET(
       id: true,
       overlayKey: true,
       overlayLastSeenAt: true,
+      alertsEnabled: true,
       timerEnabled: true,
       timerBahtPerUnit: true,
       timerSecondsPerUnit: true,
@@ -64,9 +67,14 @@ export async function GET(
   const gt =
     afterDate && !isNaN(afterDate.getTime()) ? { gt: afterDate } : undefined;
 
+  // Alerts switched off → no tips (the cursor below jumps to now, so tips from
+  // the off period never replay when alerts come back on).
+  const serverNow = new Date().toISOString();
+  const off = !user.alertsEnabled;
+
   // Union confirmed tips + confirmed shop orders → both pop on the stream.
-  const [tips, orders] = await Promise.all([
-    prisma.tip.findMany({
+  const [tips, orders, test] = await Promise.all([
+    off ? [] : prisma.tip.findMany({
       where: { creatorId: user.id, status: "CONFIRMED", confirmedAt: gt },
       orderBy: { confirmedAt: "asc" },
       take: 10,
@@ -79,7 +87,7 @@ export async function GET(
         timerEffect: true,
       },
     }),
-    prisma.shopOrder.findMany({
+    off ? [] : prisma.shopOrder.findMany({
       where: { creatorId: user.id, status: "CONFIRMED", confirmedAt: gt },
       orderBy: { confirmedAt: "asc" },
       take: 10,
@@ -91,6 +99,7 @@ export async function GET(
         confirmedAt: true,
       },
     }),
+    off ? null : readTestAlert(user.id),
   ]);
 
   const timerDeltaFor = (effect: "ADD" | "REDUCE" | "NONE", amount: number) => {
@@ -127,7 +136,12 @@ export async function GET(
     )
     .slice(0, 15);
 
+  const tipTimes = merged.map((m) => m.confirmedAt?.toISOString() ?? null);
+  const prev = gt ? afterDate!.toISOString() : "";
+
   return NextResponse.json({
+    test,
+    cursor: nextCursor(prev, tipTimes, serverNow, !off),
     tips: merged.map((m) => ({
       id: m.id,
       supporterName: m.supporterName,
