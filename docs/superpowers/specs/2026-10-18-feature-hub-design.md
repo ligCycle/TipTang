@@ -83,9 +83,10 @@ A left sidebar on desktop with grouped items (on mobile it collapses — see "Le
 | ฝั่งแฟน | หน้าโดเนท | existing `/dashboard/settings` (profile, payout, donation page sections) |
 | บนจอสตรีม | ลูกเล่น | new hub (replaces `/dashboard/overlay`) |
 | บนจอสตรีม | คลังเสียงและรูป | new page: the alert asset library (moved out of `OverlaySettings`) |
-| บัญชี | ตั้งค่าบัญชี | the account section of `/dashboard/settings` |
+| บัญชี | ตั้งค่าบัญชี | new page holding the existing account components (`ConnectedAccounts`, `AccountSecurity`), moved out of `/dashboard/settings` |
 
-The admin link stays visible to the admin only. `/dashboard/overlay` redirects to the hub so old
+Every menu item has its own route, so the active item is simply the current route (no hash-based
+highlighting). The admin link stays visible to the admin only. `/dashboard/overlay` redirects to the hub so old
 bookmarks and the guide page keep working.
 
 ### 2. The hub ("ลูกเล่น")
@@ -181,6 +182,23 @@ Product guardrail: the wheel and gacha settings have no "prize" or "value" field
 deliberately strict; the founder should have someone with legal knowledge read the set before
 the wheel ships.
 
+## Technical notes (from the founder's review, 2026-10-18)
+
+1. **Test on OBS signal:** store the test payload in Upstash Redis keyed by creator with a short TTL
+   (about 10–15 s), not in Postgres — nothing test-related is ever written to `Tip` or other tables.
+   Do **not** delete it on first read: a creator may run the old alert link and the single link at
+   the same time, and both must show the test. Give each test an id; every overlay client shows a
+   given id once. Locally (no Upstash env) use the same in-process fallback pattern as
+   `src/lib/ratelimit.ts`.
+2. **One poll for the single link:** today the alert, goal and timer overlays poll separately
+   (every 3 s, 5 s and 4 s). The single-link page must make one poll for the combined state and pass
+   it down to the alert, goal and timer views; it must not run three pollers. The old routes keep
+   their own polling unchanged.
+3. **Stacking:** the alert view always renders above every other widget on the single link, so a
+   widget placed in the same spot never covers an alert. The position control warns when two
+   features share an anchor.
+4. **Menu active state:** solved by giving every menu item its own route (decision 1).
+
 ## Left to the builder
 
 - Route names (hub, tips page, library page, single overlay route) and file layout.
@@ -200,8 +218,8 @@ the wheel ships.
 3. Default positions on the single link: alerts centre, goal bottom centre, timer top right.
 4. The full tip list moves to its own "รายการทิป" page; the dashboard home keeps the latest few with
    a "ดูทั้งหมด" link (my call: 5 latest, with the same confirm/reject actions).
-5. "หน้าโดเนท" and "ตั้งค่าบัญชี" in the menu point to the existing settings page sections rather
-   than new pages.
+5. "หน้าโดเนท" points to the existing `/dashboard/settings` page; "ตั้งค่าบัญชี" becomes its own small
+   page reusing the existing account components, so each menu item has one route and one active state.
 6. Old overlay links are never retired; the hub only suggests the single link.
 
 ## Roadmap (one project each, in this order, after this one)
