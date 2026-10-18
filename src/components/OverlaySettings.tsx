@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ColorField } from "./ColorField";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
@@ -10,6 +10,7 @@ import { Icon } from "@/components/Icon";
 import { formatDate } from "@/lib/format";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OverlayConnectionStatus } from "@/components/OverlayConnectionStatus";
+import { SettingsSection } from "@/components/features/SettingsSection";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string };
@@ -59,8 +60,25 @@ const FIELD: Record<Kind, keyof Config> = {
   video: "videoUrl",
 };
 
-export function OverlaySettings() {
+export type OverlayView = "all" | "alerts" | "goal" | "subathon" | "library";
+export type OverlayConfig = Config;
+
+export function OverlaySettings({
+  view = "all",
+  aside,
+  positionSlot,
+  tiersSlot,
+}: {
+  view?: OverlayView;
+  /** Left column on feature pages (e.g. the alert preview); gets the loaded config. */
+  aside?: (config: Config) => ReactNode;
+  /** Position picker for the feature (single OBS link). */
+  positionSlot?: ReactNode;
+  /** Alert tiers editor (section ④ on the alerts page). */
+  tiersSlot?: ReactNode;
+} = {}) {
   const t = useTranslations("dashboard");
+  const tHub = useTranslations("featureHub");
   const locale = useLocale();
   const dateLocale = locale === "th" ? "th-TH" : "en-US";
   const [config, setConfig] = useState<Config | null>(null);
@@ -542,30 +560,34 @@ export function OverlaySettings() {
   const alertGradient = `linear-gradient(135deg, ${alertColor}, color-mix(in srgb, ${alertColor}, black 32%))`;
   const alertGlow = darkCardGlow(alertColor);
 
-  return (
-    <div>
+  const headerBlock = (
+    <>
       <h1 className="flex items-center gap-2 text-2xl font-extrabold text-brand-900">
         <Icon name="monitor" className="h-6 w-6" />
         {t("obsTitle")}
       </h1>
       <p className="mt-1 text-sm text-brand-900/65">{t("obsDesc")}</p>
+    </>
+  );
 
-      {!config ? (
-        <p className="mt-6 text-sm text-brand-900/60" aria-live="polite">
-          {loading ? t("processing") : t("obsLoadFailed")}
-        </p>
-      ) : (
-        <div className="mt-4 space-y-6">
-          {/* ===== Alert card ===== */}
-          <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
-            <h3 className="flex items-center gap-2 text-base font-bold text-brand-900">
-              <Icon name="bell" className="h-4 w-4" />
-              {t("obsAlertSection")}
-            </h3>
-            <p className="mb-3 mt-0.5 text-xs text-brand-900/55">
-              {t("obsAlertSectionDesc")}
-            </p>
+  if (!config) {
+    const waiting = (
+      <p className="mt-6 text-sm text-brand-900/60" aria-live="polite">
+        {loading ? t("processing") : t("obsLoadFailed")}
+      </p>
+    );
+    return view === "all" ? (
+      <div>
+        {headerBlock}
+        {waiting}
+      </div>
+    ) : (
+      waiting
+    );
+  }
 
+  const obsBlock = (
+    <>
             {/* Alert overlay URL */}
             <div>
               <p className="mb-1 text-sm font-medium text-brand-900/70">
@@ -654,17 +676,10 @@ export function OverlaySettings() {
                 </ul>
               </details>
             </div>
-
-            {/* Customize the alert card */}
-            <div className="mt-4 space-y-3 border-t border-brand-900/10 pt-4">
-              <p className="text-sm font-semibold text-brand-900/80">
-                {t("obsCustomize")}
-              </p>
-              <p className="flex items-start gap-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs text-brand-900/70">
-                <Icon name="lightbulb" className="mt-px h-3.5 w-3.5 shrink-0" />
-                <span>{t("obsPriorityNote")}</span>
-              </p>
-
+    </>
+  );
+  const lookBlock = (
+    <>
               {/* Color + live preview */}
               <div className="rounded-xl border border-brand-200 bg-brand-50/70 p-4">
                 <ColorField
@@ -813,6 +828,10 @@ export function OverlaySettings() {
                 </p>
               </div>
 
+    </>
+  );
+  const soundBlock = (
+    <>
               {/* Sound */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center gap-3">
@@ -857,6 +876,10 @@ export function OverlaySettings() {
                 </div>
               </div>
 
+    </>
+  );
+  const libSoundsBlock = (
+    <>
               {/* Random library — sounds */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center justify-between gap-2">
@@ -904,6 +927,10 @@ export function OverlaySettings() {
                 )}
               </div>
 
+    </>
+  );
+  const libStickersBlock = (
+    <>
               {/* Random library — stickers */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center justify-between gap-2">
@@ -948,6 +975,10 @@ export function OverlaySettings() {
                 )}
               </div>
 
+    </>
+  );
+  const imageBlock = (
+    <>
               {/* Image / GIF */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center gap-3">
@@ -992,6 +1023,10 @@ export function OverlaySettings() {
                 </div>
               </div>
 
+    </>
+  );
+  const videoBlock = (
+    <>
               {/* Video (takes priority) */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="mb-1 flex items-center gap-3">
@@ -1036,6 +1071,10 @@ export function OverlaySettings() {
                 <p className="mt-1 text-xs text-brand-600">{t("obsVideoNote")}</p>
               </div>
 
+    </>
+  );
+  const ttsBlock = (
+    <>
               {/* Read-aloud (TTS) */}
               <div className="rounded-xl bg-brand-50 p-3">
                 <div className="flex items-center justify-between gap-3">
@@ -1074,12 +1113,17 @@ export function OverlaySettings() {
                 )}
               </div>
 
+    </>
+  );
+  const errorBlock = (
+    <>
               {error && (
                 <p className="text-sm font-medium text-red-600">{error}</p>
               )}
-            </div>
-          </section>
-
+    </>
+  );
+  const goalBlock = (
+    <>
           {/* ===== Goal bar ===== */}
           <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
             {/* On/off toggle */}
@@ -1248,7 +1292,10 @@ export function OverlaySettings() {
               </div>
             )}
           </section>
-
+    </>
+  );
+  const timerBlock = (
+    <>
           {/* ===== Subathon timer ===== */}
           <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
             <div className="flex items-center justify-between gap-3">
@@ -1517,8 +1564,109 @@ export function OverlaySettings() {
               </div>
             )}
           </section>
-        </div>
-      )}
+    </>
+  );
+
+  // view "all" is the original one-page layout; the feature-hub pages mount
+  // one feature each, with numbered sections (and an optional left column).
+  if (view === "all") {
+    return (
+      <div>
+        {headerBlock}
+
+        {(
+          <div className="mt-4 space-y-6">
+          {/* ===== Alert card ===== */}
+          <section className="rounded-2xl border border-brand-200 bg-brand-50/40 p-4">
+            <h3 className="flex items-center gap-2 text-base font-bold text-brand-900">
+              <Icon name="bell" className="h-4 w-4" />
+              {t("obsAlertSection")}
+            </h3>
+            <p className="mb-3 mt-0.5 text-xs text-brand-900/55">
+              {t("obsAlertSectionDesc")}
+            </p>
+
+            <div>
+              {obsBlock}
+            </div>
+
+            {/* Customize the alert card */}
+            <div className="mt-4 space-y-3 border-t border-brand-900/10 pt-4">
+              <p className="text-sm font-semibold text-brand-900/80">
+                {t("obsCustomize")}
+              </p>
+              <p className="flex items-start gap-2 rounded-lg bg-brand-100/60 px-3 py-2 text-xs text-brand-900/70">
+                <Icon name="lightbulb" className="mt-px h-3.5 w-3.5 shrink-0" />
+                <span>{t("obsPriorityNote")}</span>
+              </p>
+
+              {lookBlock}
+              {soundBlock}
+              {libSoundsBlock}
+              {libStickersBlock}
+              {imageBlock}
+              {videoBlock}
+              {ttsBlock}
+              {errorBlock}
+            </div>
+          </section>
+
+          {goalBlock}
+
+          {timerBlock}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const body =
+    view === "alerts" ? (
+      <div className="space-y-3">
+        <SettingsSection index={1} title={tHub("secLook")} defaultOpen>
+          {positionSlot}
+          {lookBlock}
+        </SettingsSection>
+        <SettingsSection index={2} title={tHub("secMedia")}>
+          {soundBlock}
+          {imageBlock}
+          {videoBlock}
+        </SettingsSection>
+        <SettingsSection index={3} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
+        {tiersSlot && (
+          <SettingsSection index={4} title={tHub("secTiers")}>{tiersSlot}</SettingsSection>
+        )}
+        <SettingsSection index={tiersSlot ? 5 : 4} title={tHub("secMore")}>
+          {obsBlock}
+        </SettingsSection>
+        {errorBlock}
+      </div>
+    ) : view === "goal" ? (
+      <div className="space-y-3">
+        {positionSlot}
+        {goalBlock}
+        {errorBlock}
+      </div>
+    ) : view === "subathon" ? (
+      <div className="space-y-3">
+        {positionSlot}
+        {timerBlock}
+        {errorBlock}
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {libSoundsBlock}
+        {libStickersBlock}
+        {errorBlock}
+      </div>
+    );
+
+  return aside ? (
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
+      <div className="lg:sticky lg:top-4">{aside(config)}</div>
+      {body}
     </div>
+  ) : (
+    body
   );
 }

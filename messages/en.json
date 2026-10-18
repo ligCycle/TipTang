@@ -686,5 +686,12 @@
     "s6Body": "You may stop using the service at any time, and request account deletion by emailing support@tiptang.com — we delete it within 7 days. We may improve or discontinue the service and may update these terms from time to time. Continued use means you accept the updated terms.",
     "s7Title": "Governing law & contact",
     "s7Body": "These terms are governed by the laws of Thailand. For questions, contact support@tiptang.com"
+  },
+  "featureHub": {
+    "secLook": "Look",
+    "secMedia": "Sound & image",
+    "secTts": "Read aloud (TTS)",
+    "secTiers": "By amount",
+    "secMore": "More settings"
   }
 }
