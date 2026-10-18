@@ -59,7 +59,9 @@ export type IconName =
   | "volume"
   | "x"
   | "x-circle"
-  | "zap";
+  | "zap"
+  | "home"
+  | "list";
 
 const paths: Record<IconName, ReactElement> = {
   "alert-triangle": (
@@ -333,6 +335,18 @@ const paths: Record<IconName, ReactElement> = {
       <circle cx="12" cy="12" r="10" />
       <path d="m15 9-6 6" />
       <path d="m9 9 6 6" />
+    </>
+  ),
+  home: (
+    <>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />
+    </>
+  ),
+  list: (
+    <>
+      <path d="M8 6h13M8 12h13M8 18h13" />
+      <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
     </>
   ),
   zap: (

@@ -693,5 +693,20 @@
     "secTts": "Read aloud (TTS)",
     "secTiers": "By amount",
     "secMore": "More settings"
+  },
+  "dashNav": {
+    "menuLabel": "Dashboard menu",
+    "groupOverview": "Overview",
+    "groupFan": "For fans",
+    "groupStream": "On stream",
+    "groupAccount": "Account",
+    "home": "Home",
+    "tips": "Tips",
+    "donatePage": "Donate page",
+    "features": "Features",
+    "library": "Sounds & images",
+    "account": "Account settings",
+    "admin": "Admin",
+    "seeAllTips": "See all"
   }
 }

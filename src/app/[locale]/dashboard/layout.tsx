@@ -4,6 +4,8 @@ import { setRequestLocale } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CreatorTheme } from "@/components/CreatorTheme";
+import { DashboardNav } from "@/components/DashboardNav";
+import { isAdminEmail } from "@/lib/admin";
 
 export default async function DashboardLayout({
   children,
@@ -31,7 +33,10 @@ export default async function DashboardLayout({
   return (
     <>
       <CreatorTheme color={me?.profileColor} />
-      {children}
+      <div className="md:flex md:items-start md:gap-8">
+        <DashboardNav admin={isAdminEmail(session.user.email)} />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
     </>
   );
 }

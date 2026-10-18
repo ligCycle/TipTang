@@ -3,7 +3,6 @@ import { setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/SettingsForm";
-import { AccountSecurity } from "@/components/AccountSecurity";
 import { normalizeSocialLinks } from "@/lib/socials";
 
 export default async function SettingsPage({
@@ -21,10 +20,6 @@ export default async function SettingsPage({
     where: { id: sessionUser.id },
     // promptpayId belongs to the owner — safe to load into their OWN edit form.
     select: {
-      email: true,
-      googleId: true,
-      emailVerifiedAt: true,
-      passwordHash: true,
       displayName: true,
       username: true,
       bio: true,
@@ -40,10 +35,6 @@ export default async function SettingsPage({
     },
   });
   if (!user) return null;
-
-  const googleAuthEnabled = Boolean(
-    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
-  );
 
   return (
     <div className="mx-auto max-w-xl">
@@ -62,19 +53,6 @@ export default async function SettingsPage({
           socialLinks: normalizeSocialLinks(user.socialLinks),
           profileColor: user.profileColor ?? "",
         }}
-        account={{
-          googleConnected: Boolean(user.googleId),
-          accountEmail: user.email,
-          googleAuthEnabled,
-          emailVerified: Boolean(user.emailVerifiedAt),
-        }}
-      />
-      <AccountSecurity
-        email={user.email}
-        emailVerified={Boolean(user.emailVerifiedAt)}
-        // Only whether a password exists — the hash never leaves the server.
-        hasPassword={Boolean(user.passwordHash)}
-        username={user.username}
       />
     </div>
   );

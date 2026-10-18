@@ -693,5 +693,20 @@
     "secTts": "อ่านข้อความ (TTS)",
     "secTiers": "แยกตามยอดเงิน",
     "secMore": "ตั้งค่าเพิ่มเติม"
+  },
+  "dashNav": {
+    "menuLabel": "เมนูแดชบอร์ด",
+    "groupOverview": "ภาพรวม",
+    "groupFan": "ฝั่งแฟน",
+    "groupStream": "บนจอสตรีม",
+    "groupAccount": "บัญชี",
+    "home": "หน้าหลัก",
+    "tips": "รายการทิป",
+    "donatePage": "หน้าโดเนท",
+    "features": "ลูกเล่น",
+    "library": "คลังเสียงและรูป",
+    "account": "ตั้งค่าบัญชี",
+    "admin": "แอดมิน",
+    "seeAllTips": "ดูทั้งหมด"
   }
 }

@@ -106,7 +106,8 @@ export function SettingsForm({
   account,
 }: {
   initial: Initial;
-  account: Account;
+  /** Connected accounts section; the account page shows it now, so optional. */
+  account?: Account;
 }) {
   const t = useTranslations("settings");
   const tc = useTranslations("common");
@@ -551,7 +552,7 @@ export function SettingsForm({
           </div>
         </Section>
 
-        {account.googleAuthEnabled && (
+        {account?.googleAuthEnabled && (
           <Section
             icon="link"
             title={t("sectionAccount")}

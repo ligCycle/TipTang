@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SLIP_KEEP_DAYS, slipDeleteDate } from "@/lib/retention";
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
@@ -16,10 +15,9 @@ import {
   sumByDay,
   type Range,
 } from "@/lib/range";
-import { TipRow } from "@/components/TipRow";
+import { TipList } from "@/components/TipList";
 import { UpdatesPill } from "@/components/UpdatesPill";
 import { AutoRefresh } from "@/components/AutoRefresh";
-import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { ReviewsSection } from "@/components/ReviewsSection";
@@ -78,7 +76,7 @@ export default async function DashboardPage({
   };
 
   // One parallel batch, as before: none of these depend on each other.
-  const [user, tips, rangeAgg, rangeTips, top, pendingCount, confirmedEver] =
+  const [user, rangeAgg, rangeTips, top, pendingCount, confirmedEver] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -87,27 +85,6 @@ export default async function DashboardPage({
           username: true,
           promptpayId: true,
           overlayLastSeenAt: true,
-        },
-      }),
-      prisma.tip.findMany({
-        where: { creatorId: userId },
-        orderBy: { createdAt: "desc" },
-        take: 100,
-        select: {
-          id: true,
-          supporterName: true,
-          message: true,
-          amount: true,
-          status: true,
-          slipUrl: true,
-          slipKey: true,
-          slipPurgedAt: true,
-          autoVerified: true,
-          verifyCode: true,
-          verifyDetail: true,
-          timerEffect: true,
-          paymentMethod: true,
-          createdAt: true,
         },
       }),
       prisma.tip.aggregate({
@@ -150,43 +127,8 @@ export default async function DashboardPage({
     timeZone: "Asia/Bangkok",
   });
 
-  const rejectedCount = tips.filter((tip) => tip.status === "REJECTED").length;
   const profilePath = `/${locale}/${user.username}`;
 
-  // When the retention job will delete a decided tip's slip, and whether that
-  // is within a week (highlighted). Worked out here, not in the client row,
-  // so server and browser render the same thing. Pending tips get no date:
-  // confirming or rejecting one moves it.
-  const slipDeletion = (tip: (typeof tips)[number]) => {
-    if (tip.status === "PENDING" || !(tip.slipKey || tip.slipUrl)) {
-      return { slipDeleteAt: null, slipDeleteSoon: false };
-    }
-    const at = slipDeleteDate(tip.createdAt, true);
-    return {
-      slipDeleteAt: at.toISOString(),
-      slipDeleteSoon: at.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000,
-    };
-  };
-
-  // Convert Prisma Decimal -> number BEFORE passing to the client component.
-  const clientTips = tips.map((tip) => ({
-    id: tip.id,
-    supporterName: tip.supporterName,
-    message: tip.message,
-    amount: Number(tip.amount),
-    status: tip.status,
-    // Every slip goes through the owner-checked route, legacy public URLs
-    // included — so a leaked dashboard link never exposes the raw file.
-    slipUrl: tip.slipKey || tip.slipUrl ? `/api/tips/${tip.id}/slip` : null,
-    slipPurged: Boolean(tip.slipPurgedAt),
-    ...slipDeletion(tip),
-    autoVerified: tip.autoVerified,
-    verifyCode: tip.verifyCode,
-    verifyDetail: tip.verifyDetail,
-    timerEffect: tip.timerEffect,
-    paymentMethod: tip.paymentMethod,
-    createdAt: tip.createdAt.toISOString(),
-  }));
 
   return (
     <div className="space-y-8">
@@ -198,7 +140,7 @@ export default async function DashboardPage({
         </h1>
         <div className="flex flex-wrap items-center gap-1">
           <Link
-            href={`/${locale}/dashboard/overlay`}
+            href={`/${locale}/dashboard/features`}
             className={`${primaryActionClass} sm:mr-1`}
           >
             <Icon name="monitor" />
@@ -347,30 +289,8 @@ export default async function DashboardPage({
         <ReviewsSection reviews={[]} average={0} count={0} invite />
       )}
 
-      {/* Tips */}
-      <div id="tips">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-brand-900">{t("tipsTitle")}</h2>
-          {rejectedCount > 0 && <ClearRejectedButton count={rejectedCount} />}
-        </div>
-        {clientTips.length > 0 && (
-          <p className="-mt-2 mb-4 flex items-start gap-1.5 text-sm text-brand-900/60">
-            <Icon name="clock" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>{t("slipRetentionHint", { days: SLIP_KEEP_DAYS })}</span>
-          </p>
-        )}
-        {clientTips.length === 0 ? (
-          <p className="card rounded-2xl p-6 text-center text-brand-900/60">
-            {t("noTips")}
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {clientTips.map((tip) => (
-              <TipRow key={tip.id} tip={tip} locale={locale} />
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* Latest tips; the full list lives on /dashboard/tips. */}
+      <TipList userId={userId} locale={locale} limit={5} />
     </div>
   );
 }
