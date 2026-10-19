@@ -47,6 +47,11 @@ enum AlertAssetKind {
   VIDEO
 }
 
+enum SpinStatus {
+  ACTIVE
+  CANCELLED
+}
+
 enum ShopItemType {
   DIGITAL
   COMMISSION
@@ -61,21 +66,21 @@ enum OrderStatus {
 
 // A product / commission slot a creator sells on their profile.
 model ShopItem {
-  id          String       @id @default(cuid())
-  creatorId   String
-  creator     User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  type        ShopItemType
-  title       String
-  description String?
-  price       Decimal      @db.Decimal(10, 2)
-  imageUrl    String?
+  id              String       @id @default(cuid())
+  creatorId       String
+  creator         User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  type            ShopItemType
+  title           String
+  description     String?
+  price           Decimal      @db.Decimal(10, 2)
+  imageUrl        String?
   // DIGITAL only: link / key / message auto-delivered to the buyer once payment
   // is confirmed (shown on their receipt page). Null = deliver manually.
   deliverableText String?
-  active      Boolean      @default(true)
+  active          Boolean      @default(true)
   // Soft delete: keep the row (orders reference it) but hide it everywhere.
-  isArchived  Boolean      @default(false)
-  createdAt   DateTime     @default(now())
+  isArchived      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
 
   orders ShopOrder[]
 
@@ -84,33 +89,33 @@ model ShopItem {
 
 // A purchase/commission order. Paid via PromptPay + slip (like Tip).
 model ShopOrder {
-  id           String      @id @default(cuid())
-  itemId       String
-  item         ShopItem    @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  creatorId    String
-  creator      User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  itemTitle    String // snapshot for history
-  buyerName    String
-  buyerContact String
-  note         String?
-  amount       Decimal     @db.Decimal(10, 2)
+  id              String      @id @default(cuid())
+  itemId          String
+  item            ShopItem    @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  creatorId       String
+  creator         User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  itemTitle       String // snapshot for history
+  buyerName       String
+  buyerContact    String
+  note            String?
+  amount          Decimal     @db.Decimal(10, 2)
   // Legacy public URL (orders before 2026-09-30). New slips go to the
   // private bucket under slipKey, served via /api/shop/orders/[id]/slip.
-  slipUrl      String?
-  slipKey      String?
-  slipPurgedAt DateTime?
-  status       OrderStatus @default(PENDING)
-  transRef     String?     @unique
+  slipUrl         String?
+  slipKey         String?
+  slipPurgedAt    DateTime?
+  status          OrderStatus @default(PENDING)
+  transRef        String?     @unique
   // Snapshot of the item's deliverable at purchase time (survives later item
   // edits/archive). Present = digital auto-delivery; revealed on the receipt
   // page once status is CONFIRMED/DELIVERED.
   deliverableText String?
   // Unguessable token for the buyer's public receipt/unlock page (no login).
   // Nullable-unique like transRef → safe to add to existing rows.
-  receiptToken String?     @unique
-  createdAt    DateTime    @default(now())
-  confirmedAt  DateTime?
-  deliveredAt  DateTime?
+  receiptToken    String?     @unique
+  createdAt       DateTime    @default(now())
+  confirmedAt     DateTime?
+  deliveredAt     DateTime?
 
   @@index([creatorId, status])
 }
@@ -163,6 +168,63 @@ model AlertSetItem {
   @@index([assetId])
 }
 
+// Spin wheel ("วงล้อสุ่ม", src/lib/wheel.ts). Every task gets `slots` segments;
+// `removed` holds segment keys ("<taskId>#<copy>") taken out when hit.
+model Wheel {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  price         Int            @default(50)
+  slots         Int            @default(1)
+  removeWhenHit Boolean        @default(false)
+  removed       String[]       @default([])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tasks         WheelTaskRow[]
+  spins         Spin[]
+  activeFor     User[]         @relation("ActiveWheel")
+
+  @@index([userId])
+}
+
+model WheelTaskRow {
+  id       String  @id @default(cuid())
+  wheelId  String
+  wheel    Wheel   @relation(fields: [wheelId], references: [id], onDelete: Cascade)
+  text     String
+  // "ไม่ต้องทำอะไร": a result that skips the to-do list.
+  noAction Boolean @default(false)
+  position Int
+
+  @@index([wheelId])
+}
+
+// One spin per tip, drawn by the server when the tip is confirmed. taskText is a
+// snapshot so later edits don't rewrite results. CANCELLED = the tip was
+// rejected; confirming again restores it (no re-roll).
+model Spin {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipId       String     @unique
+  tip         Tip        @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  wheelId     String?
+  wheel       Wheel?     @relation(fields: [wheelId], references: [id], onDelete: SetNull)
+  segmentKey  String
+  taskText    String
+  noAction    Boolean
+  status      SpinStatus @default(ACTIVE)
+  confirmedAt DateTime
+  // First wheel overlay to fetch it claims it (plays once across sources).
+  playedAt    DateTime?
+  // Ticked "ทำแล้ว" in the to-do list.
+  doneAt      DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([userId, status])
+}
+
 // Alert tier by amount (src/lib/alert-tiers.ts): tips >= minAmount use these
 // overrides; null fields fall back to the normal alert. URLs are library assets.
 model AlertTier {
@@ -210,127 +272,136 @@ model Review {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id                        String    @id @default(cuid())
+  email                     String    @unique
   // Null for accounts created via OAuth (Google) — they sign in without a password.
-  passwordHash String?
+  passwordHash              String?
   // Linked Google account id (the OAuth "sub"). Set when the user signs in with
   // Google; drives the "Google connected" status on the settings page.
-  googleId     String?  @unique
+  googleId                  String?   @unique
   // When the owner proved they control `email` (verification link, password
   // reset link, or Google sign-in). Null = a password account nobody has
   // proven yet: if Google later signs in with this email, the password is
   // dropped, because whoever set it may not own the address.
-  emailVerifiedAt DateTime?
+  emailVerifiedAt           DateTime?
   // Bumped to sign out every device (password reset, "sign out everywhere").
   // Session tokens carry the version they were issued with.
-  sessionVersion Int @default(0)
-  username     String   @unique
-  displayName  String
-  bio          String?
-  avatarUrl    String?
-  coverUrl     String?
+  sessionVersion            Int       @default(0)
+  username                  String    @unique
+  displayName               String
+  bio                       String?
+  avatarUrl                 String?
+  coverUrl                  String?
   // Fundraising goal shown as a progress bar on the profile (optional).
-  goalTitle    String?
-  goalAmount   Decimal? @db.Decimal(10, 2)
+  goalTitle                 String?
+  goalAmount                Decimal?  @db.Decimal(10, 2)
   // Whether the goal-bar OBS overlay is shown on stream (creator can toggle).
-  goalOverlayEnabled Boolean @default(true)
+  goalOverlayEnabled        Boolean   @default(true)
   // When the current goal round started ("start a new round" button). Only
   // tips confirmed at/after this moment count toward the goal. Null = never
   // reset, so every confirmed tip counts — the behaviour before this field
   // existed, which keeps existing creators unaffected.
-  goalStartedAt DateTime?
+  goalStartedAt             DateTime?
   // Goal-bar color (hex); null = follow alertColor, then default brand pink.
-  goalColor    String?
+  goalColor                 String?
   // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
-  socialLinks  Json?
+  socialLinks               Json?
   // Accent color (hex) for the public profile page; null = default brand pink.
-  profileColor String?
+  profileColor              String?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.
-  promptpayId  String?
+  promptpayId               String?
   // PayPal.me name only (no URL), for overseas supporters. Null = PayPal off.
   // Public on purpose: it is rendered as a paypal.me link on the donate page.
-  paypalHandle String?
+  paypalHandle              String?
   // Shown to supporters on the success screen after they tip. Null = none.
-  thankYouMessage String?
+  thankYouMessage           String?
   // Secret key for the OBS donation-alert overlay URL.
-  overlayKey   String?  @unique
+  overlayKey                String?   @unique
   // Activation tracking (admin-only). Last time the alert overlay polled
   // /api/overlay/[username] with a valid key — written at most once per
   // 5 minutes. Null = never opened (or opened before this column existed).
-  overlayLastSeenAt DateTime?
+  overlayLastSeenAt         DateTime?
   // When the one-time "you're stuck here" reminder was emailed. Non-null
   // means never send another one, whatever happens.
-  activationNudgeSentAt DateTime?
+  activationNudgeSentAt     DateTime?
   // Old single alert assets. No longer read: the feature-hub media migration
   // moved them into AlertAsset (the library). Kept so old rows stay intact.
-  alertSoundUrl String?
-  alertImageUrl String?
-  alertVideoUrl String?
+  alertSoundUrl             String?
+  alertImageUrl             String?
+  alertVideoUrl             String?
   // Hex color (e.g. "#ec4899") for the alert card; null = default brand pink.
-  alertColor    String?
+  alertColor                String?
   // Alert entrance/exit animation style (see src/lib/alertStyles.ts).
-  alertStyle    String  @default("pop")
+  alertStyle                String    @default("pop")
   // Alert card look (src/lib/alertThemes.ts): "light" gradient card or
   // "dark" glow card. Existing creators keep "light".
-  alertTheme    String  @default("light")
+  alertTheme                String    @default("light")
   // No longer read: the feature-hub migration turned it into an AlertTier
   // with celebrate = true. Kept so old rows stay intact.
-  bigTipThreshold Int   @default(0)
+  bigTipThreshold           Int       @default(0)
   // Read the supporter's name + message aloud (TTS) when an alert fires.
-  ttsEnabled    Boolean @default(false)
+  ttsEnabled                Boolean   @default(false)
   // Feature hub: alerts can be switched off like goal/timer (default on).
-  alertsEnabled Boolean @default(true)
+  alertsEnabled             Boolean   @default(true)
   // When the one-time feature-hub chooser was answered/skipped. Null = show it.
-  featuresOnboardedAt DateTime?
+  featuresOnboardedAt       DateTime?
   // When true, incoming tips are confirmed automatically (creator trusts the
   // slip / checks their bank) instead of waiting for manual confirmation.
-  autoConfirmTips Boolean @default(false)
+  autoConfirmTips           Boolean   @default(false)
   // Smallest tip the creator accepts (baht). 1 = no restriction.
-  minTipAmount    Int     @default(1)
+  minTipAmount              Int       @default(1)
   // Subathon timer (OBS overlay): confirmed donations add time to a live
   // countdown. Rate = timerSecondsPerUnit seconds added per timerBahtPerUnit baht.
-  timerEnabled        Boolean   @default(false)
-  timerBahtPerUnit    Int       @default(10)
-  timerSecondsPerUnit Int       @default(60)
-  timerInitialSeconds Int       @default(3600)
+  timerEnabled              Boolean   @default(false)
+  timerBahtPerUnit          Int       @default(10)
+  timerSecondsPerUnit       Int       @default(60)
+  timerInitialSeconds       Int       @default(3600)
   // Optional cap on total remaining time (seconds); null = no cap.
-  timerMaxSeconds     Int?
+  timerMaxSeconds           Int?
   // Countdown target while running; null when paused/stopped.
-  timerEndsAt         DateTime?
+  timerEndsAt               DateTime?
   // Frozen remaining seconds while paused; null when running or reset/stopped
   // (a reset shows timerInitialSeconds). State is derived:
   //   running = timerEndsAt != null; paused = timerRemaining != null; else stopped.
-  timerRemaining      Int?
+  timerRemaining            Int?
   // Timer clock color (hex); null = follow alertColor, then default brand pink.
-  timerColor          String?
+  timerColor                String?
   // Subathon "sabotage": viewers may pay to REDUCE the timer on the creator's
   // terms. Reduce rate is separate from (and by default pricier than) the add
   // rate; reduces can never push the clock below timerFloorSeconds.
-  timerReduceEnabled        Boolean @default(false)
-  timerReduceBahtPerUnit    Int     @default(20)
-  timerReduceSecondsPerUnit Int     @default(60)
-  timerReduceMinAmount      Int     @default(20)
+  timerReduceEnabled        Boolean   @default(false)
+  timerReduceBahtPerUnit    Int       @default(20)
+  timerReduceSecondsPerUnit Int       @default(60)
+  timerReduceMinAmount      Int       @default(20)
   // Show the tip rates (+time / -time) under the on-stream clock.
-  timerShowRates            Boolean @default(true)
-  timerFloorSeconds         Int     @default(300)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  timerShowRates            Boolean   @default(true)
+  timerFloorSeconds         Int       @default(300)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
-  tips          Tip[]
-  resetTokens   PasswordResetToken[]
-  verifyTokens  EmailVerificationToken[]
-  reports       Report[]
-  alertAssets   AlertAsset[]
-  alertTiers    AlertTier[]
-  alertSets     AlertSet[]
+  tips                 Tip[]
+  resetTokens          PasswordResetToken[]
+  verifyTokens         EmailVerificationToken[]
+  reports              Report[]
+  alertAssets          AlertAsset[]
+  alertTiers           AlertTier[]
+  alertSets            AlertSet[]
   // The set in use now (always one; see src/lib/alert-sets-server.ts).
-  activeSetId   String?   @unique
-  activeSet     AlertSet? @relation("ActiveSet", fields: [activeSetId], references: [id], onDelete: SetNull)
+  activeSetId          String?                  @unique
+  activeSet            AlertSet?                @relation("ActiveSet", fields: [activeSetId], references: [id], onDelete: SetNull)
   // Feature hub card "แฟนเลือกเสียง": show the sound picker on the donate page.
-  soundPickEnabled Boolean @default(false)
-  shopItems     ShopItem[]
-  shopOrders    ShopOrder[]
+  soundPickEnabled     Boolean                  @default(false)
+  wheels               Wheel[]
+  spins                Spin[]
+  // The wheel in use on the donate page (one at a time).
+  activeWheelId        String?                  @unique
+  activeWheel          Wheel?                   @relation("ActiveWheel", fields: [activeWheelId], references: [id], onDelete: SetNull)
+  // Feature hub card "วงล้อสุ่ม".
+  wheelEnabled         Boolean                  @default(false)
+  // When the creator ticked the first-enable rules checklist.
+  wheelRulesAcceptedAt DateTime?
+  shopItems            ShopItem[]
+  shopOrders           ShopOrder[]
 }
 
 model PasswordResetToken {
@@ -359,13 +430,13 @@ model EmailVerificationToken {
 }
 
 model Tip {
-  id              String    @id @default(cuid())
+  id              String        @id @default(cuid())
   creatorId       String
-  creator         User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator         User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   supporterName   String
   message         String?
-  amount          Decimal   @db.Decimal(10, 2)
-  currency        String    @default("THB")
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("THB")
   slipUrl         String?
   // Storage object key in the PRIVATE slip bucket; served only through
   // /api/tips/[id]/slip. slipUrl is the legacy public URL until migrated.
@@ -375,28 +446,33 @@ model Tip {
   slipPurgedAt    DateTime?
   // What this tip does to the subathon clock. ADD is the historical default
   // (every confirmed tip added time); NONE = supporter chose "just donate".
-  timerEffect     TimerEffect @default(ADD)
+  timerEffect     TimerEffect   @default(ADD)
   paymentMethod   PaymentMethod @default(PROMPTPAY)
   // The sound the fan picked (and paid at least its minimum for). Null = none,
   // or the file was deleted since — the alert then falls back to tier/set.
   pickedSoundId   String?
-  pickedSound     AlertAsset? @relation(fields: [pickedSoundId], references: [id], onDelete: SetNull)
-  status          TipStatus @default(PENDING)
-  isMessagePublic Boolean   @default(true)
+  pickedSound     AlertAsset?   @relation(fields: [pickedSoundId], references: [id], onDelete: SetNull)
+  // The wheel the fan saw when asking to spin. No FK: a deleted wheel keeps the
+  // id so the confirm button can warn.
+  spinWheelId     String?
+  spin            Spin?
+  status          TipStatus     @default(PENDING)
+  isMessagePublic Boolean       @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
   // of the same slip. NULL when not verified (Postgres allows many NULLs).
-  transRef        String?   @unique
-  autoVerified    Boolean   @default(false)
+  transRef        String?       @unique
+  autoVerified    Boolean       @default(false)
   // Slip screening verdict from the verifier (Gemini/SlipOK/EasySlip), shown as
   // a flag on the dashboard to help manual review. NULL = not screened.
   //   verifyCode:   "match" | "amount" | "receiver" | "notslip" | "unreadable"
   //   verifyDetail: short extra context (e.g. the amount the slip actually shows)
   verifyCode      String?
   verifyDetail    String?
-  createdAt       DateTime  @default(now())
+  createdAt       DateTime      @default(now())
   confirmedAt     DateTime?
 
   @@index([creatorId, status])
   // Library deletes null this out (ON DELETE SET NULL); avoid a full scan.
   @@index([pickedSoundId])
+  @@index([spinWheelId])
 }

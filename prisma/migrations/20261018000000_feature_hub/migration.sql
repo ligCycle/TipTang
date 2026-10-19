@@ -72,3 +72,66 @@ CREATE INDEX "Tip_pickedSoundId_idx" ON "Tip"("pickedSoundId");
 
 ALTER TABLE "AlertSet" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "AlertSetItem" ENABLE ROW LEVEL SECURITY;
+
+-- Spin wheel (src/lib/wheel.ts): wheels, their tasks, and one spin per tip.
+CREATE TYPE "SpinStatus" AS ENUM ('ACTIVE', 'CANCELLED');
+
+CREATE TABLE "Wheel" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "price" INTEGER NOT NULL DEFAULT 50,
+    "slots" INTEGER NOT NULL DEFAULT 1,
+    "removeWhenHit" BOOLEAN NOT NULL DEFAULT false,
+    "removed" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "Wheel_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "Wheel_userId_idx" ON "Wheel"("userId");
+ALTER TABLE "Wheel" ADD CONSTRAINT "Wheel_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "WheelTaskRow" (
+    "id" TEXT NOT NULL,
+    "wheelId" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "noAction" BOOLEAN NOT NULL DEFAULT false,
+    "position" INTEGER NOT NULL,
+    CONSTRAINT "WheelTaskRow_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "WheelTaskRow_wheelId_idx" ON "WheelTaskRow"("wheelId");
+ALTER TABLE "WheelTaskRow" ADD CONSTRAINT "WheelTaskRow_wheelId_fkey" FOREIGN KEY ("wheelId") REFERENCES "Wheel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "Spin" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tipId" TEXT NOT NULL,
+    "wheelId" TEXT,
+    "segmentKey" TEXT NOT NULL,
+    "taskText" TEXT NOT NULL,
+    "noAction" BOOLEAN NOT NULL,
+    "status" "SpinStatus" NOT NULL DEFAULT 'ACTIVE',
+    "confirmedAt" TIMESTAMP(3) NOT NULL,
+    "playedAt" TIMESTAMP(3),
+    "doneAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Spin_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "Spin_tipId_key" ON "Spin"("tipId");
+CREATE INDEX "Spin_userId_status_idx" ON "Spin"("userId", "status");
+ALTER TABLE "Spin" ADD CONSTRAINT "Spin_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Spin" ADD CONSTRAINT "Spin_tipId_fkey" FOREIGN KEY ("tipId") REFERENCES "Tip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Spin" ADD CONSTRAINT "Spin_wheelId_fkey" FOREIGN KEY ("wheelId") REFERENCES "Wheel"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "User" ADD COLUMN "activeWheelId" TEXT;
+ALTER TABLE "User" ADD COLUMN "wheelEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "wheelRulesAcceptedAt" TIMESTAMP(3);
+CREATE UNIQUE INDEX "User_activeWheelId_key" ON "User"("activeWheelId");
+ALTER TABLE "User" ADD CONSTRAINT "User_activeWheelId_fkey" FOREIGN KEY ("activeWheelId") REFERENCES "Wheel"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "Tip" ADD COLUMN "spinWheelId" TEXT;
+CREATE INDEX "Tip_spinWheelId_idx" ON "Tip"("spinWheelId");
+
+ALTER TABLE "Wheel" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "WheelTaskRow" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Spin" ENABLE ROW LEVEL SECURITY;
