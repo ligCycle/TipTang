@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAlertStyle } from "@/lib/alertStyles";
 import { isAlertTheme } from "@/lib/alertThemes";
+import { isAnchor } from "@/lib/overlay-layout";
 import {
   uploadImage,
   deleteFile,
@@ -23,6 +24,7 @@ import {
 // the latest assets.
 function revalidateOverlay() {
   revalidatePath("/overlay/[username]", "page");
+  revalidatePath("/overlay/[username]/live", "page");
 }
 
 const KINDS = {
@@ -101,6 +103,20 @@ export async function POST(req: Request) {
       data: { goalStartedAt: startedAt },
     });
     return NextResponse.json({ ok: true, goalStartedAt: startedAt.toISOString() });
+  }
+
+  // Where a feature sits on the single OBS link (src/lib/overlay-layout.ts).
+  if (kind === "position") {
+    const feature = String(form?.get("feature") ?? "");
+    const anchor = form?.get("anchor");
+    const field =
+      feature === "alert" ? "alertPosition" : feature === "goal" ? "goalPosition" : feature === "timer" ? "timerPosition" : null;
+    if (!field || !isAnchor(anchor)) {
+      return NextResponse.json({ error: "invalid" }, { status: 400 });
+    }
+    await prisma.user.update({ where: { id: session.user.id }, data: { [field]: anchor } });
+    revalidateOverlay();
+    return NextResponse.json({ ok: true, anchor });
   }
 
   // Donation alerts on/off (feature hub). Off = the feeds return no tips.

@@ -41,6 +41,9 @@ type Config = {
   timerMaxSeconds: number | null;
   timerState: "running" | "paused" | "stopped";
   timerColor: string | null;
+  alertsEnabled: boolean;
+  positions: { alert: string; goal: string; timer: string };
+  libraryVideos: LibItem[];
 };
 
 // Format seconds as H:MM:SS (or MM:SS under an hour).
@@ -160,6 +163,9 @@ export function OverlaySettings({
           timerMaxSeconds: d.timerMaxSeconds ?? null,
           timerState: (d.timerState as Config["timerState"]) ?? "stopped",
           timerColor: d.timerColor ?? null,
+          alertsEnabled: d.alertsEnabled !== false,
+          positions: d.positions ?? { alert: "center", goal: "bottom-center", timer: "top-right" },
+          libraryVideos: d.libraryVideos ?? [],
         });
         setGoalTitle(d.goalTitle ?? "");
         setGoalAmount(d.goalAmount ?? "");
