@@ -102,9 +102,38 @@ export default async function ProfilePage({
       timerReduceSecondsPerUnit: true,
       timerReduceMinAmount: true,
       minTipAmount: true,
+      soundPickEnabled: true,
+      alertsEnabled: true,
+      activeSetId: true,
     },
   });
   if (!creator) notFound();
+
+  // "แฟนเลือกเสียง": the fan-pickable sounds of today's set, when the creator
+  // has the card on. Unnamed sounds are numbered by library order.
+  const soundSet =
+    creator.soundPickEnabled && creator.alertsEnabled && creator.activeSetId
+      ? await prisma.alertSet.findUnique({
+          where: { id: creator.activeSetId },
+          select: {
+            name: true,
+            items: {
+              where: { fanPickable: true, asset: { kind: "SOUND" } },
+              orderBy: { asset: { createdAt: "asc" } },
+              select: { minAmount: true, asset: { select: { id: true, url: true, name: true } } },
+            },
+          },
+        })
+      : null;
+  const soundChoices =
+    soundSet && soundSet.items.length > 0
+      ? soundSet.items.map((i, n) => ({
+          id: i.asset.id,
+          url: i.asset.url,
+          name: i.asset.name ?? t("soundNumber", { n: n + 1 }),
+          minAmount: i.minAmount,
+        }))
+      : null;
 
   // Subathon: whenever the creator runs a timer, tell the supporter what the
   // tip does to it (add / just donate). "Reduce" joins only when the creator
@@ -312,6 +341,8 @@ export default async function ProfilePage({
             paypalHandle={creator.paypalHandle}
             thankYouMessage={creator.thankYouMessage}
             creatorAvatar={creator.avatarUrl}
+            soundChoices={soundChoices}
+            soundSetName={soundSet?.name ?? null}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">

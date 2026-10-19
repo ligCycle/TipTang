@@ -175,7 +175,16 @@
     "showLessSupporters": "ซ่อน",
     "notConfigured": "ครีเอเตอร์ยังไม่ได้ตั้งค่า PromptPay",
     "changeAmount": "เปลี่ยนจำนวน",
-    "quickAmount": "จำนวนยอดนิยม"
+    "quickAmount": "จำนวนยอดนิยม",
+    "soundPickLabel": "เลือกเสียงตอนทิปขึ้นจอ (ไม่บังคับ)",
+    "soundPickSet": "ชุดวันนี้: {name}",
+    "soundPreview": "ฟังเสียง {name}",
+    "soundFree": "ฟรี",
+    "soundLocked": "ทิป ฿{min} ขึ้นไป",
+    "soundPickHint": "ไม่เลือก = ระบบสุ่มเสียงจากชุดวันนี้ให้ · เสียงจะเล่นบนจอตอนครีเอเตอร์ไลฟ์อยู่",
+    "soundPickCleared": "ยอดต่ำกว่าราคาของเสียงที่เลือก เลยยกเลิกการเลือกเสียงให้",
+    "soundPickDropped": "เสียงที่เลือกไม่มีให้เลือกแล้ว ระบบจะสุ่มเสียงจากชุดวันนี้ให้แทน",
+    "soundNumber": "เสียง {n}"
   },
   "tipSuccess": {
     "title": "ส่งทิปสำเร็จ!",
@@ -365,7 +374,9 @@
     "filterRejected": "ปฏิเสธแล้ว",
     "noTipsInFilter": "ไม่มีทิปในหมวดนี้",
     "autoBadge": "ยืนยันอัตโนมัติ",
-    "autoBadgeTitle": "ระบบตรวจสลิปกับธนาคารแล้วตรง จึงยืนยันทิปให้อัตโนมัติ"
+    "autoBadgeTitle": "ระบบตรวจสลิปกับธนาคารแล้วตรง จึงยืนยันทิปให้อัตโนมัติ",
+    "pickedSoundBadge": "เสียง: {name}",
+    "pickedSoundUnnamed": "ไม่มีชื่อ"
   },
   "settings": {
     "title": "ตั้งค่าหน้าโดเนท",

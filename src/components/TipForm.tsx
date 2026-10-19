@@ -6,6 +6,7 @@ import { formatBaht } from "@/lib/format";
 import { SlipDropzone } from "@/components/SlipDropzone";
 import { Icon } from "@/components/Icon";
 import { PaypalPayPanel } from "@/components/PaypalPayPanel";
+import { SoundPicker, soundFloor, type SoundChoice } from "@/components/SoundPicker";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
 
@@ -34,6 +35,8 @@ export function TipForm({
   paypalHandle = null,
   thankYouMessage = null,
   creatorAvatar = null,
+  soundChoices = null,
+  soundSetName = null,
 }: {
   username: string;
   creatorName: string;
@@ -45,6 +48,9 @@ export function TipForm({
   /** Creator's own note shown after a successful tip; plain text. */
   thankYouMessage?: string | null;
   creatorAvatar?: string | null;
+  /** Sounds the fan may pick from today's set; null = picker hidden. */
+  soundChoices?: SoundChoice[] | null;
+  soundSetName?: string | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -85,6 +91,22 @@ export function TipForm({
   // the stream by accident.
   const [timerEffect, setTimerEffect] = useState<TimerEffect>("ADD");
   const [method, setMethod] = useState<"PROMPTPAY" | "PAYPAL">("PROMPTPAY");
+  // The sound the fan picked, and a note when it had to be dropped.
+  const [pickedSoundId, setPickedSoundId] = useState<string | null>(null);
+  const [pickNote, setPickNote] = useState(false);
+  const [pickDropped, setPickDropped] = useState(false);
+
+  // Every amount change goes through here: a pick the new amount no longer
+  // covers is cleared (never the other way round — the amount isn't raised).
+  function changeAmount(next: string) {
+    setAmountStr(next);
+    const n = next.trim() === "" ? 0 : Number(next);
+    const picked = soundChoices?.find((c) => c.id === pickedSoundId);
+    if (picked && n < soundFloor(picked, minAmount)) {
+      setPickedSoundId(null);
+      setPickNote(true);
+    }
+  }
   const reduceTooSmall =
     timerChoice !== null &&
     timerEffect === "REDUCE" &&
@@ -160,6 +182,7 @@ export function TipForm({
       fd.set("isMessagePublic", isPublic ? "true" : "false");
       fd.set("timerEffect", timerChoice ? timerEffect : "ADD");
       fd.set("paymentMethod", method);
+      if (pickedSoundId) fd.set("pickedSoundId", pickedSoundId);
       fd.set("slip", slip);
 
       const res = await fetch("/api/tips", { method: "POST", body: fd });
@@ -180,6 +203,7 @@ export function TipForm({
       }
       const data = await res.json().catch(() => ({}));
       setAutoVerified(Boolean(data.autoVerified) || Boolean(data.confirmed));
+      setPickDropped(Boolean(data.pickDropped));
       setStep("done");
     } catch {
       setError(tErr("notFound"));
@@ -197,6 +221,9 @@ export function TipForm({
     setMessage("");
     setAmountStr(String(defaultAmount));
     setTimerEffect("ADD");
+    setPickedSoundId(null);
+    setPickNote(false);
+    setPickDropped(false);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -251,6 +278,11 @@ export function TipForm({
                 : "messagePrivate",
           )}
         </p>
+        {pickDropped && (
+          <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
+            {t("soundPickDropped")}
+          </p>
+        )}
         <button onClick={reset} className="btn-secondary mt-6">
           {tSuccess("backToProfile")}
         </button>
@@ -297,7 +329,7 @@ export function TipForm({
                 <button
                   type="button"
                   key={a}
-                  onClick={() => setAmountStr(String(a))}
+                  onClick={() => changeAmount(String(a))}
                   className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                     amount === a
                       ? "bg-brand-600 text-white"
@@ -320,7 +352,7 @@ export function TipForm({
               max={100000}
               inputMode="numeric"
               value={amountStr}
-              onChange={(e) => setAmountStr(e.target.value)}
+              onChange={(e) => changeAmount(e.target.value)}
               className="input"
               required
             />
@@ -336,6 +368,27 @@ export function TipForm({
               </span>
             )}
           </label>
+
+          {soundChoices && soundChoices.length > 0 && (
+            <div>
+              <SoundPicker
+                choices={soundChoices}
+                setName={soundSetName ?? ""}
+                amount={amount}
+                creatorMin={minAmount}
+                value={pickedSoundId}
+                onChange={(id) => {
+                  setPickedSoundId(id);
+                  setPickNote(false);
+                }}
+              />
+              {pickNote && (
+                <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
+                  {t("soundPickCleared")}
+                </p>
+              )}
+            </div>
+          )}
 
           {timerChoice && (
             <fieldset>

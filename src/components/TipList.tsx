@@ -57,6 +57,7 @@ export async function TipList({
       timerEffect: true,
       paymentMethod: true,
       createdAt: true,
+      pickedSound: { select: { name: true } },
     },
   });
   // The "clear rejected" action counts the creator's rejected tips overall,
@@ -108,6 +109,8 @@ export async function TipList({
     timerEffect: tip.timerEffect,
     paymentMethod: tip.paymentMethod,
     createdAt: tip.createdAt.toISOString(),
+    // The fan's picked sound: its name, "" if unnamed, null if none.
+    pickedSound: tip.pickedSound ? (tip.pickedSound.name ?? "") : null,
   }));
 
   return (

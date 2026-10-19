@@ -175,7 +175,16 @@
     "showLessSupporters": "Show less",
     "notConfigured": "This creator hasn't set up PromptPay yet",
     "changeAmount": "Change amount",
-    "quickAmount": "Popular amounts"
+    "quickAmount": "Popular amounts",
+    "soundPickLabel": "Pick a sound for your tip on stream (optional)",
+    "soundPickSet": "Today: {name}",
+    "soundPreview": "Play {name}",
+    "soundFree": "Free",
+    "soundLocked": "Tip ฿{min}+",
+    "soundPickHint": "No pick = a random sound from today's set · Sounds play on screen while the creator is live",
+    "soundPickCleared": "The amount is below the picked sound's price, so the pick was cleared",
+    "soundPickDropped": "The sound you picked is no longer available, so a random one from today's set will play",
+    "soundNumber": "Sound {n}"
   },
   "tipSuccess": {
     "title": "Tip sent!",
@@ -365,7 +374,9 @@
     "filterRejected": "Rejected",
     "noTipsInFilter": "No tips here",
     "autoBadge": "Auto-confirmed",
-    "autoBadgeTitle": "The slip matched the bank record, so the tip was confirmed automatically"
+    "autoBadgeTitle": "The slip matched the bank record, so the tip was confirmed automatically",
+    "pickedSoundBadge": "Sound: {name}",
+    "pickedSoundUnnamed": "unnamed"
   },
   "settings": {
     "title": "Donate page settings",

@@ -20,6 +20,8 @@ import { readPaypalReceipt } from "@/lib/paypal-receipt";
 import { censorText } from "@/lib/profanity";
 import { linkBase } from "@/lib/site";
 import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
+import { validatePick } from "@/lib/alert-sets";
+import { getActiveSetId } from "@/lib/alert-sets-server";
 
 export async function POST(req: Request) {
   const limit = await rateLimit(`tip:${clientIp(req)}`, 5, 60_000);
@@ -50,6 +52,8 @@ export async function POST(req: Request) {
       timerReduceMinAmount: true,
       minTipAmount: true,
       paypalHandle: true,
+      soundPickEnabled: true,
+      alertsEnabled: true,
     },
   });
   if (!creator?.promptpayId) {
@@ -91,6 +95,32 @@ export async function POST(req: Request) {
     )
   ) {
     return NextResponse.json({ error: "reduce_not_allowed" }, { status: 400 });
+  }
+
+  // The sound the fan picked (src/lib/alert-sets.ts). It must be a fan-
+  // pickable sound of today's set that the amount covers. If not — usually
+  // the creator switched sets mid-payment — the tip still goes through (the
+  // fan has paid) without the pick, and the fan is told a random one plays.
+  const pickRaw = form.get("pickedSoundId");
+  const pickId = typeof pickRaw === "string" && pickRaw.length > 0 ? pickRaw : null;
+  let pickedSoundId: string | null = null;
+  let pickDropped = false;
+  if (pickId) {
+    const items =
+      creator.soundPickEnabled && creator.alertsEnabled
+        ? await prisma.alertSetItem.findMany({
+            where: { setId: await getActiveSetId(creator.id) },
+            select: { assetId: true, fanPickable: true, minAmount: true, asset: { select: { kind: true } } },
+          })
+        : [];
+    const pick = validatePick(
+      items.map((i) => ({ assetId: i.assetId, kind: i.asset.kind, fanPickable: i.fanPickable, minAmount: i.minAmount })),
+      pickId,
+      parsed.data.amount,
+      creator.minTipAmount,
+    );
+    if (pick.ok) pickedSoundId = pick.assetId;
+    else pickDropped = true;
   }
 
   // PAYPAL only when the creator has a PayPal.me; anything else is PromptPay.
@@ -229,6 +259,7 @@ export async function POST(req: Request) {
         slipKey,
         timerEffect,
         paymentMethod,
+        pickedSoundId,
         status,
         transRef,
         autoVerified,
@@ -276,6 +307,7 @@ export async function POST(req: Request) {
     id: tip.id,
     autoVerified,
     confirmed: status === "CONFIRMED",
+    pickDropped,
   });
 }
 
