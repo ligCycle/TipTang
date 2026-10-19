@@ -21,6 +21,8 @@ import { censorText } from "@/lib/profanity";
 import { linkBase } from "@/lib/site";
 import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
 import { validatePick } from "@/lib/alert-sets";
+import { spinFloor } from "@/lib/wheel";
+import { startSpin, wheelForFans, wheelSegments } from "@/lib/wheel-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 export async function POST(req: Request) {
@@ -104,6 +106,7 @@ export async function POST(req: Request) {
   const pickRaw = form.get("pickedSoundId");
   const pickId = typeof pickRaw === "string" && pickRaw.length > 0 ? pickRaw : null;
   let pickedSoundId: string | null = null;
+  let pickedSoundPrice: number | null = null;
   let pickDropped = false;
   if (pickId) {
     const items =
@@ -119,8 +122,26 @@ export async function POST(req: Request) {
       parsed.data.amount,
       creator.minTipAmount,
     );
-    if (pick.ok) pickedSoundId = pick.assetId;
-    else pickDropped = true;
+    if (pick.ok) {
+      pickedSoundId = pick.assetId;
+      pickedSoundPrice = items.find((i) => i.assetId === pick.assetId)?.minAmount ?? 0;
+    } else pickDropped = true;
+  }
+
+  // "หมุนวงล้อ" (src/lib/wheel.ts): stands only if the wheel card is on, the
+  // wheel in use has segments left and the amount covers spin + picked sound.
+  // The tip remembers which wheel the fan saw; the draw happens on confirm.
+  let spinWheelId: string | null = null;
+  let spinDropped = false;
+  if (form.get("spinWheel") === "1") {
+    const wheel = await wheelForFans(creator.id);
+    if (
+      wheel &&
+      wheelSegments(wheel).length > 0 &&
+      parsed.data.amount >= spinFloor(creator.minTipAmount, wheel.price, pickedSoundPrice)
+    ) {
+      spinWheelId = wheel.id;
+    } else spinDropped = true;
   }
 
   // PAYPAL only when the creator has a PayPal.me; anything else is PromptPay.
@@ -260,6 +281,7 @@ export async function POST(req: Request) {
         timerEffect,
         paymentMethod,
         pickedSoundId,
+        spinWheelId,
         status,
         transRef,
         autoVerified,
@@ -280,6 +302,8 @@ export async function POST(req: Request) {
   // Confirmed on arrival (auto-verified or auto-confirm) → add subathon time.
   if (status === "CONFIRMED") {
     after(() => applySubathonTip(creator.id, parsed.data.amount, timerEffect));
+    // Draw now (not after the response) so the overlay sees it on its next poll.
+    if (spinWheelId) await startSpin(tip.id).catch((err) => console.error("[wheel] spin failed:", err));
   }
 
   // Notify the creator by email after the response is sent (best-effort — never
@@ -308,6 +332,7 @@ export async function POST(req: Request) {
     autoVerified,
     confirmed: status === "CONFIRMED",
     pickDropped,
+    spinDropped,
   });
 }
 

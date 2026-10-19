@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applySubathonTip } from "@/lib/subathon";
 import { deleteSlip, deleteFile } from "@/lib/storage";
+import { cancelSpinTx, startSpinTx } from "@/lib/wheel-server";
 
 export async function PATCH(
   req: Request,
@@ -16,13 +17,15 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json().catch(() => null);
   const action = body?.action;
+  // Confirm anyway when the tip's wheel is gone/empty (the tip then has no spin).
+  const force = body?.force === true;
   if (action !== "confirm" && action !== "reject") {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
   const tip = await prisma.tip.findUnique({
     where: { id },
-    select: { creatorId: true, status: true, amount: true, timerEffect: true },
+    select: { creatorId: true, amount: true, timerEffect: true },
   });
   if (!tip) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -32,17 +35,37 @@ export async function PATCH(
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  await prisma.tip.update({
-    where: { id },
-    data: {
-      status: action === "confirm" ? "CONFIRMED" : "REJECTED",
-      confirmedAt: action === "confirm" ? new Date() : null,
-    },
+  // Status and spin change together, with the tip row locked, so two clicks
+  // (or two tabs) can't both draw — see src/lib/wheel-server.ts.
+  const now = new Date();
+  const result = await prisma.$transaction(async (tx) => {
+    const [row] = await tx.$queryRaw<{ status: string }[]>`
+      SELECT "status"::text AS "status" FROM "Tip" WHERE "id" = ${id} FOR UPDATE`;
+    const before = row?.status;
+    if (action === "confirm") {
+      if (before !== "CONFIRMED") {
+        const spin = await startSpinTx(tx, id, now);
+        if (spin === "empty" && !force) return { blocked: true as const, before };
+      }
+    } else if (before === "CONFIRMED") {
+      await cancelSpinTx(tx, id);
+    }
+    await tx.tip.update({
+      where: { id },
+      data: {
+        status: action === "confirm" ? "CONFIRMED" : "REJECTED",
+        confirmedAt: action === "confirm" ? (before === "CONFIRMED" ? undefined : now) : null,
+      },
+    });
+    return { blocked: false as const, before };
   });
+  if (result.blocked) {
+    return NextResponse.json({ error: "wheel_empty" }, { status: 409 });
+  }
 
   // Add time to a running subathon timer — only on a fresh confirmation
   // (guard against re-confirming an already-confirmed tip).
-  if (action === "confirm" && tip.status !== "CONFIRMED") {
+  if (action === "confirm" && result.before !== "CONFIRMED") {
     const amount = Number(tip.amount);
     after(() => applySubathonTip(session.user.id, amount, tip.timerEffect));
   }
