@@ -63,3 +63,45 @@ export async function readTestAlert(
   }
   return hit.value;
 }
+
+/**
+ * "ทดสอบหมุนบนจอ OBS": a fake spin on the wheel link (same TTL and store).
+ * The segment is drawn once here so every open source shows the same result.
+ */
+export type WheelTest = { id: string; wheelId: string; segmentKey: string };
+
+const wheelKeyFor = (userId: string) => `tiptang/wheeltest/${userId}`;
+const wheelMemory = g as unknown as { __tiptangWheelTests?: Map<string, { value: WheelTest; expiresAt: number }> };
+const wheelStore = (wheelMemory.__tiptangWheelTests ??= new Map());
+
+export async function pushWheelTest(
+  userId: string,
+  wheelId: string,
+  segmentKey: string,
+  now: number = Date.now(),
+): Promise<WheelTest> {
+  const value: WheelTest = { id: `test_${randomUUID()}`, wheelId, segmentKey };
+  if (redis) {
+    await redis.set(wheelKeyFor(userId), value, { px: TEST_TTL_MS });
+  } else {
+    wheelStore.set(wheelKeyFor(userId), { value, expiresAt: now + TEST_TTL_MS });
+  }
+  return value;
+}
+
+export async function readWheelTest(userId: string, now: number = Date.now()): Promise<WheelTest | null> {
+  if (redis) {
+    try {
+      return (await redis.get<WheelTest>(wheelKeyFor(userId))) ?? null;
+    } catch {
+      return null;
+    }
+  }
+  const hit = wheelStore.get(wheelKeyFor(userId));
+  if (!hit) return null;
+  if (hit.expiresAt <= now) {
+    wheelStore.delete(wheelKeyFor(userId));
+    return null;
+  }
+  return hit.value;
+}

@@ -221,7 +221,7 @@ function WheelEditor({
   const [error, setError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [test, setTest] = useState<"sent" | "failed" | null>(null);
+  const [test, setTest] = useState<"sent" | "empty" | "failed" | null>(null);
   // Latest saved wheel, so several quick edits each build on the newest task list.
   const latest = useRef(initial);
   const slotTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -290,7 +290,7 @@ function WheelEditor({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wheelId: wheel.id }),
     }).catch(() => null);
-    setTest(res?.ok ? "sent" : "failed");
+    setTest(res?.ok ? "sent" : res?.status === 409 ? "empty" : "failed");
   }
 
   return (
@@ -466,7 +466,7 @@ function WheelEditor({
         </button>
         {test && (
           <p className={`text-xs ${test === "sent" ? "text-emerald-700" : "text-red-600"}`}>
-            {test === "sent" ? t("testSent") : t("saveFailed")}
+            {test === "sent" ? t("testSent") : test === "empty" ? t("emptyNote") : t("saveFailed")}
           </p>
         )}
       </div>

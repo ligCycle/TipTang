@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pushTestAlert, readTestAlert } from "./overlay-test.ts";
+import { pushTestAlert, readTestAlert, pushWheelTest, readWheelTest } from "./overlay-test.ts";
 
 test("a pushed test can be read, and reading does not consume it", async () => {
   const now = Date.now();
@@ -37,4 +37,14 @@ test("separate module instances share the in-process fallback (Next bundles each
   const b: typeof import("./overlay-test.ts") = await import(`${spec}?instance=b`);
   const t = await a.pushTestAlert("u6", 77);
   assert.equal((await b.readTestAlert("u6"))?.id, t.id);
+});
+
+test("wheel test: readable until it expires, separate from alert tests", async () => {
+  const now = 2_000_000;
+  const w = await pushWheelTest("u9", "wheel1", "t1#0", now);
+  assert.deepEqual(await readWheelTest("u9", now + 1000), w);
+  assert.equal(w.wheelId, "wheel1");
+  assert.equal(w.segmentKey, "t1#0");
+  assert.equal(await readTestAlert("u9", now + 1000), null);
+  assert.equal(await readWheelTest("u9", now + 16_000), null);
 });

@@ -2,14 +2,15 @@ import "server-only";
 import { randomInt } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { clampSlots, drawSegment, layoutSegments, type WheelTask } from "@/lib/wheel";
+import { clampSlots, drawSegment, layoutSegments, LATE_PLAY_MS, type WheelTask } from "@/lib/wheel";
+import { readWheelTest, TEST_NAME } from "@/lib/overlay-test";
 
 type Tx = Prisma.TransactionClient;
 
 /** "started" = new draw · "restored" = a cancelled spin came back · "none" = nothing to do · "empty" = no segment to draw. */
 export type SpinResult = "started" | "restored" | "none" | "empty";
 
-const WHEEL_SELECT = {
+export const WHEEL_SELECT = {
   id: true,
   userId: true,
   name: true,
@@ -188,4 +189,65 @@ export async function todoItems(userId: string, status: "open" | "done", take = 
     confirmedAt: r.confirmedAt.toISOString(),
     doneAt: r.doneAt?.toISOString() ?? null,
   }));
+}
+
+/** One spin for the wheel OBS link to play. `wheel` is null when the wheel was deleted since. */
+export type OverlaySpin = {
+  id: string;
+  fan: string;
+  taskText: string;
+  segmentKey: string;
+  wheel: { tasks: WheelTask[]; slots: number; removedBefore: string[] } | null;
+};
+
+function forOverlay(w: WheelRow | null, segmentKey: string): OverlaySpin["wheel"] {
+  if (!w) return null;
+  return { tasks: w.tasks, slots: clampSlots(w.tasks.length, w.slots), removedBefore: w.removed.filter((k) => k !== segmentKey) };
+}
+
+/**
+ * The next spin to show on stream, claimed so it plays once across every
+ * open wheel source: the oldest live spin not played yet, confirmed within
+ * the late-play window. A pending dashboard test comes first (never claimed).
+ */
+export async function nextOverlaySpin(userId: string, now: number = Date.now()): Promise<OverlaySpin | null> {
+  const test = await readWheelTest(userId, now);
+  if (test) {
+    const w = await prisma.wheel.findFirst({ where: { id: test.wheelId, userId }, select: WHEEL_SELECT });
+    const seg = w ? wheelSegments(w).find((s) => s.key === test.segmentKey) : null;
+    if (w && seg) {
+      return {
+        id: test.id,
+        fan: TEST_NAME,
+        taskText: w.tasks.find((t) => t.id === seg.taskId)!.text,
+        segmentKey: seg.key,
+        wheel: { tasks: w.tasks, slots: clampSlots(w.tasks.length, w.slots), removedBefore: w.removed },
+      };
+    }
+  }
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const spin = await prisma.spin.findFirst({
+      where: {
+        userId,
+        status: "ACTIVE",
+        playedAt: null,
+        confirmedAt: { gte: new Date(now - LATE_PLAY_MS) },
+        tip: { status: "CONFIRMED" },
+      },
+      orderBy: { confirmedAt: "asc" },
+      select: { id: true, taskText: true, segmentKey: true, wheel: { select: WHEEL_SELECT }, tip: { select: { supporterName: true } } },
+    });
+    if (!spin) return null;
+    const claimed = await prisma.spin.updateMany({ where: { id: spin.id, playedAt: null }, data: { playedAt: new Date(now) } });
+    if (claimed.count === 1) {
+      return {
+        id: spin.id,
+        fan: spin.tip.supporterName,
+        taskText: spin.taskText,
+        segmentKey: spin.segmentKey,
+        wheel: forOverlay(spin.wheel, spin.segmentKey),
+      };
+    }
+  }
+  return null;
 }
