@@ -18,10 +18,17 @@ export type FeatureDef = {
   fanPage: boolean;
   /** The /api/overlay/asset kind that switches it. */
   toggleKind: "alertsToggle" | "goalToggle" | "timerToggle";
+  /**
+   * Its own OBS browser-source link, after /overlay/<username>. Each feature
+   * is a separate source so creators place and size it freely in OBS.
+   */
+  obsPath: "" | "/goal" | "/timer";
+  /** Suggested browser-source size (width×height). */
+  obsSize: string;
 };
 
 export const FEATURES: FeatureDef[] = [
-  { id: "alerts", icon: "bell", flag: "alertsEnabled", href: "/dashboard/features/alerts", fanPage: false, toggleKind: "alertsToggle" },
-  { id: "goal", icon: "target", flag: "goalOverlayEnabled", href: "/dashboard/features/goal", fanPage: false, toggleKind: "goalToggle" },
-  { id: "subathon", icon: "clock", flag: "timerEnabled", href: "/dashboard/features/subathon", fanPage: false, toggleKind: "timerToggle" },
+  { id: "alerts", icon: "bell", flag: "alertsEnabled", href: "/dashboard/features/alerts", fanPage: false, toggleKind: "alertsToggle", obsPath: "", obsSize: "800×300" },
+  { id: "goal", icon: "target", flag: "goalOverlayEnabled", href: "/dashboard/features/goal", fanPage: false, toggleKind: "goalToggle", obsPath: "/goal", obsSize: "700×140" },
+  { id: "subathon", icon: "clock", flag: "timerEnabled", href: "/dashboard/features/subathon", fanPage: false, toggleKind: "timerToggle", obsPath: "/timer", obsSize: "400×200" },
 ];

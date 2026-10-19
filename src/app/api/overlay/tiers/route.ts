@@ -49,6 +49,5 @@ export async function PUT(req: Request) {
     prisma.alertTier.createMany({ data: parsed.tiers.map((t) => ({ ...t, userId: user.id })) }),
   ]);
   revalidatePath("/overlay/[username]", "page");
-  revalidatePath("/overlay/[username]/live", "page");
   return NextResponse.json({ tiers: parsed.tiers });
 }

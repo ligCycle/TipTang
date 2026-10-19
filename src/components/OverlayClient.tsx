@@ -43,8 +43,6 @@ export function OverlayClient({
   alertTheme,
   bigTipThreshold,
   tiers = [],
-  feed,
-  positionClass,
 }: {
   username: string;
   apiKey: string;
@@ -62,10 +60,6 @@ export function OverlayClient({
   alertTheme: string;
   bigTipThreshold: number;
   tiers?: AlertTier[];
-  /** When set, the parent polls (single OBS link) and this component doesn't. */
-  feed?: { tips: FeedTip[]; test: TestAlert | null } | null;
-  /** Replaces the default top-centre placement (single OBS link anchors). */
-  positionClass?: string;
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
   // Sound/visual/duration chosen for the current alert (library random + tier).
@@ -195,12 +189,6 @@ export function OverlayClient({
     if (t) enqueue({ id: t.id, name: t.name, amount: t.amount, message: t.message, timerDelta: null });
   }
 
-  // Parent-polled mode (single OBS link): enqueue whatever the parent hands us.
-  useEffect(() => {
-    if (feed) take(feed.tips, feed.test);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feed]);
-
   useEffect(() => {
     let testIv: ReturnType<typeof setInterval> | undefined;
     if (test) {
@@ -225,8 +213,8 @@ export function OverlayClient({
     }
     // In test mode show ONLY the looping sample alerts — don't also poll real
     // confirmed tips (they'd appear with unexpected amounts mixed into the
-    // preview). When a parent feeds us, it does the polling.
-    if (test || !apiKey || feed !== undefined) {
+    // preview).
+    if (test || !apiKey) {
       return () => {
         if (testIv) clearInterval(testIv);
       };
@@ -277,9 +265,7 @@ export function OverlayClient({
         // scroll. The inner card runs the entrance animation (its own transform),
         // so the two never conflict.
         <div
-          className={`absolute w-[calc(100%-2rem)] ${
-            positionClass ?? "left-1/2 top-6 -translate-x-1/2"
-          } ${isBig ? "max-w-[34rem]" : "max-w-md"}`}
+          className={`absolute left-1/2 top-6 w-[calc(100%-2rem)] -translate-x-1/2 ${isBig ? "max-w-[34rem]" : "max-w-md"}`}
         >
           <AlertCard
             key={current.id}

@@ -241,10 +241,6 @@ model User {
   ttsEnabled    Boolean @default(false)
   // Feature hub: alerts can be switched off like goal/timer (default on).
   alertsEnabled Boolean @default(true)
-  // Positions on the single OBS link (src/lib/overlay-layout.ts anchors).
-  alertPosition String  @default("center")
-  goalPosition  String  @default("bottom-center")
-  timerPosition String  @default("top-right")
   // When the one-time feature-hub chooser was answered/skipped. Null = show it.
   featuresOnboardedAt DateTime?
   // When true, incoming tips are confirmed automatically (creator trusts the

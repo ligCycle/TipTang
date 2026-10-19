@@ -11,7 +11,7 @@ const PRESET_ICONS: Record<PresetId, IconName> = { basic: "bell", goal: "target"
 
 /**
  * One-time chooser on the first visit to the hub. If OBS was never
- * connected, it first shows the single link (the step most sign-ups drop at).
+ * connected, it first shows the alerts link (the step most sign-ups drop at).
  * A preset only switches features on.
  */
 export function FirstVisitPopup({ hub, onDone }: { hub: HubState; onDone: (h: HubState) => void }) {
@@ -21,6 +21,8 @@ export function FirstVisitPopup({ hub, onDone }: { hub: HubState; onDone: (h: Hu
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
+  // The alerts link — the one every streamer needs first.
+  const alertUrl = `${hub.overlayBase}?key=${hub.overlayKey}`;
 
   async function send(kind: "preset" | "onboardSkip") {
     setSaving(true);
@@ -42,7 +44,7 @@ export function FirstVisitPopup({ hub, onDone }: { hub: HubState; onDone: (h: Hu
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(hub.liveUrl);
+      await navigator.clipboard.writeText(alertUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -61,7 +63,7 @@ export function FirstVisitPopup({ hub, onDone }: { hub: HubState; onDone: (h: Hu
             </h2>
             <p className="text-sm text-brand-900/70">{t("fvObsSteps")}</p>
             <div className="flex flex-wrap gap-2">
-              <input readOnly value={hub.liveUrl} onFocus={(e) => e.currentTarget.select()} className="input min-w-0 flex-1 font-mono text-xs" aria-label={t("obsTitle")} />
+              <input readOnly value={alertUrl} onFocus={(e) => e.currentTarget.select()} className="input min-w-0 flex-1 font-mono text-xs" aria-label={t("obsTitle")} />
               <button type="button" onClick={copy} className="btn-primary px-4 py-2 text-sm">
                 {copied ? t("copied") : t("copy")}
               </button>

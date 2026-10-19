@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { FeatureHub } from "@/components/features/FeatureHub";
 
-/** The "ลูกเล่น" hub: single OBS link + on/off cards for every feature. */
+/** The "ลูกเล่น" hub: OBS status + on/off cards, each with its own OBS link. */
 export default async function FeaturesPage({
   params,
 }: {

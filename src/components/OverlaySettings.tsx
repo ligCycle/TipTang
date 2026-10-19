@@ -42,7 +42,6 @@ type Config = {
   timerState: "running" | "paused" | "stopped";
   timerColor: string | null;
   alertsEnabled: boolean;
-  positions: { alert: string; goal: string; timer: string };
   libraryVideos: LibItem[];
 };
 
@@ -69,16 +68,13 @@ export type OverlayConfig = Config;
 export function OverlaySettings({
   view = "all",
   aside,
-  positionSlot,
   tiersSlot,
   videosSlot,
 }: {
   view?: OverlayView;
   /** Left column on feature pages (e.g. the alert preview); gets the loaded config. */
   aside?: (config: Config) => ReactNode;
-  /** Position picker for the feature (single OBS link). */
-  positionSlot?: ReactNode;
-  /** Alert tiers editor (section ④ on the alerts page). */
+  /** Alert tiers editor (section ⑤ on the alerts page). */
   tiersSlot?: (config: Config) => ReactNode;
   /** Library page: the video list (gets a reload for after uploads). */
   videosSlot?: (config: Config, reload: () => Promise<void>) => ReactNode;
@@ -167,7 +163,6 @@ export function OverlaySettings({
           timerState: (d.timerState as Config["timerState"]) ?? "stopped",
           timerColor: d.timerColor ?? null,
           alertsEnabled: d.alertsEnabled !== false,
-          positions: d.positions ?? { alert: "center", goal: "bottom-center", timer: "top-right" },
           libraryVideos: d.libraryVideos ?? [],
         });
         setGoalTitle(d.goalTitle ?? "");
@@ -1632,33 +1627,31 @@ export function OverlaySettings({
   const body =
     view === "alerts" ? (
       <div className="space-y-3">
-        <SettingsSection index={1} title={tHub("secLook")} defaultOpen>
-          {positionSlot}
+        {/* This feature's own OBS link — open until OBS has connected once. */}
+        <SettingsSection index={1} title={tHub("secObs")} defaultOpen={!config.lastSeenAt}>
+          {obsBlock}
+        </SettingsSection>
+        <SettingsSection index={2} title={tHub("secLook")} defaultOpen>
           {lookBlock}
         </SettingsSection>
-        <SettingsSection index={2} title={tHub("secMedia")}>
+        <SettingsSection index={3} title={tHub("secMedia")}>
           {soundBlock}
           {imageBlock}
           {videoBlock}
         </SettingsSection>
-        <SettingsSection index={3} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
+        <SettingsSection index={4} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
         {tiersSlot && (
-          <SettingsSection index={4} title={tHub("secTiers")}>{tiersSlot(config)}</SettingsSection>
+          <SettingsSection index={5} title={tHub("secTiers")}>{tiersSlot(config)}</SettingsSection>
         )}
-        <SettingsSection index={tiersSlot ? 5 : 4} title={tHub("secMore")}>
-          {obsBlock}
-        </SettingsSection>
         {errorBlock}
       </div>
     ) : view === "goal" ? (
       <div className="space-y-3">
-        {positionSlot}
         {goalBlock}
         {errorBlock}
       </div>
     ) : view === "subathon" ? (
       <div className="space-y-3">
-        {positionSlot}
         {timerBlock}
         {errorBlock}
       </div>

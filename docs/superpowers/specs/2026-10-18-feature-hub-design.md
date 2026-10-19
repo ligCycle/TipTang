@@ -3,6 +3,13 @@
 **Date:** 2026-10-18 · **Status:** awaiting founder approval of this document
 **Project 1 of the donation-features roadmap** (see "Roadmap" at the end).
 
+> **Revision 2026-10-19 (founder):** the single 1920×1080 OBS link with 3×3 positions was dropped —
+> it made creators fit their scene to TipTang. Each feature keeps its own OBS link (the existing
+> alerts / goal / timer URLs), copied from its card on the hub or section ① of its settings page,
+> and creators move and resize it freely in OBS. Removed: `/overlay/[username]/live`, the combined
+> state endpoint, the position picker and the three position columns. Sections below that
+> describe the single link are superseded by this note.
+
 ## Why
 
 The founder wants many new donation gimmicks (sound picks, spin wheel, hype train, media share,

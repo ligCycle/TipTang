@@ -10,9 +10,8 @@ import type { GoalState } from "@/components/overlay/GoalView";
 import type { TimerState } from "@/components/overlay/TimerView";
 
 /**
- * What the OBS overlays poll: shared by the old per-feature endpoints
- * (alerts / goal / timer) and the single link's combined state endpoint, so
- * the two can never drift apart.
+ * What the OBS overlays poll: the per-feature endpoints (alerts / goal /
+ * timer) share these, one link per feature.
  */
 
 export const OVERLAY_USER_SELECT = {

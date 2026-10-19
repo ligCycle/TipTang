@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
-import { featureLayout } from "@/lib/feature-layout-server";
+import { prisma } from "@/lib/prisma";
 import { AlertsFeature } from "@/components/features/FeaturePages";
 
 export default async function Page({
@@ -15,8 +15,11 @@ export default async function Page({
   const sessionUser = await requireUser();
   if (!sessionUser) redirect(`/${locale}/login`);
 
-  const data = await featureLayout(sessionUser.id);
-  if (!data) return null;
+  const user = await prisma.user.findUnique({
+    where: { id: sessionUser.id },
+    select: { alertsEnabled: true },
+  });
+  if (!user) return null;
 
-  return <AlertsFeature alertsEnabled={data.alertsEnabled} layout={data.layout} />;
+  return <AlertsFeature alertsEnabled={user.alertsEnabled} />;
 }

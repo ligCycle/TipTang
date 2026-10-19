@@ -43,9 +43,6 @@ export async function POST() {
       timerReduceMinAmount: true,
       timerFloorSeconds: true,
       alertsEnabled: true,
-      alertPosition: true,
-      goalPosition: true,
-      timerPosition: true,
       featuresOnboardedAt: true,
     },
   });
@@ -100,11 +97,6 @@ export async function POST() {
       .filter((a) => a.kind === "VIDEO")
       .map((a) => ({ id: a.id, url: a.url })),
     alertsEnabled: user.alertsEnabled,
-    positions: {
-      alert: user.alertPosition,
-      goal: user.goalPosition,
-      timer: user.timerPosition,
-    },
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,
     imageUrl: user.alertImageUrl,

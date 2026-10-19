@@ -4,9 +4,9 @@ import { Redis } from "@upstash/redis";
 /**
  * "Test on OBS": a sample alert the creator fires from the dashboard. It lives
  * in Redis for TEST_TTL_MS keyed by creator — never in Postgres, so it can't
- * mix with real tips. Reads don't consume it: a creator running the old alert
- * link and the single link at once sees it on both (each overlay shows a
- * given id once). Without Upstash env (local dev / tests) an in-process map
+ * mix with real tips. Reads don't consume it: a creator with the alert link
+ * open in OBS and in a browser sees it on both (each overlay shows a given
+ * id once). Without Upstash env (local dev / tests) an in-process map
  * stands in, like src/lib/ratelimit.ts.
  */
 

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
-import { featureLayout } from "@/lib/feature-layout-server";
 import { GoalFeature } from "@/components/features/FeaturePages";
 
 export default async function Page({
@@ -15,8 +14,5 @@ export default async function Page({
   const sessionUser = await requireUser();
   if (!sessionUser) redirect(`/${locale}/login`);
 
-  const data = await featureLayout(sessionUser.id);
-  if (!data) return null;
-
-  return <GoalFeature layout={data.layout} />;
+  return <GoalFeature />;
 }

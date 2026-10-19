@@ -1,9 +1,6 @@
--- Feature hub: alert switch, positions on the single OBS link, onboarding flag,
+-- Feature hub: alert switch, onboarding flag,
 -- alert tiers by amount, and library videos (used only by tiers).
 ALTER TABLE "User" ADD COLUMN "alertsEnabled" BOOLEAN NOT NULL DEFAULT true;
-ALTER TABLE "User" ADD COLUMN "alertPosition" TEXT NOT NULL DEFAULT 'center';
-ALTER TABLE "User" ADD COLUMN "goalPosition" TEXT NOT NULL DEFAULT 'bottom-center';
-ALTER TABLE "User" ADD COLUMN "timerPosition" TEXT NOT NULL DEFAULT 'top-right';
 ALTER TABLE "User" ADD COLUMN "featuresOnboardedAt" TIMESTAMP(3);
 
 -- Creators who already set up an overlay never see the first-visit chooser.

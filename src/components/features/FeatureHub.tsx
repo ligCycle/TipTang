@@ -9,7 +9,9 @@ import { ObsLinkCard } from "@/components/features/ObsLinkCard";
 import { FirstVisitPopup } from "@/components/features/FirstVisitPopup";
 
 export type HubState = {
-  liveUrl: string;
+  /** `${origin}/overlay/<username>` — each feature adds its obsPath + ?key. */
+  overlayBase: string;
+  overlayKey: string;
   lastSeenAt: string | null;
   flags: FeatureFlags;
   featuresOnboardedAt: string | null;
@@ -21,7 +23,8 @@ export async function loadHub(): Promise<HubState | null> {
   const d = await res.json().catch(() => null);
   if (!res.ok || !d?.key) return null;
   return {
-    liveUrl: `${window.location.origin}/overlay/${d.username}/live?key=${d.key}`,
+    overlayBase: `${window.location.origin}/overlay/${d.username}`,
+    overlayKey: d.key,
     lastSeenAt: d.overlayLastSeenAt ?? null,
     flags: {
       alertsEnabled: d.alertsEnabled !== false,
@@ -32,11 +35,17 @@ export async function loadHub(): Promise<HubState | null> {
   };
 }
 
+/** A feature's own OBS browser-source link. */
+export function obsUrl(hub: HubState, f: FeatureDef): string {
+  return `${hub.overlayBase}${f.obsPath}?key=${hub.overlayKey}`;
+}
+
 const MAX_SUGGESTED = 3;
 
 /**
- * The "ลูกเล่น" hub: the single OBS link on top, then the features that are
- * on, up to three worth trying, and the full list folded away.
+ * The "ลูกเล่น" hub: OBS connection status on top, then the features that
+ * are on (each with its own OBS link), up to three worth trying, and the full
+ * list folded away.
  */
 export function FeatureHub() {
   const t = useTranslations("featureHub");
@@ -89,6 +98,7 @@ export function FeatureHub() {
       key={f.id}
       feature={f}
       enabled={hub.flags[f.flag]}
+      obsUrl={obsUrl(hub, f)}
       busy={busy === f.id}
       onToggle={(next) => toggle(f, next)}
     />
@@ -98,7 +108,7 @@ export function FeatureHub() {
     <div className="space-y-6">
       {/* One-time chooser on the first visit (shows the OBS step first if never connected). */}
       {!hub.featuresOnboardedAt && <FirstVisitPopup hub={hub} onDone={setHub} />}
-      <ObsLinkCard liveUrl={hub.liveUrl} lastSeenAt={hub.lastSeenAt} />
+      <ObsLinkCard lastSeenAt={hub.lastSeenAt} />
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
       <section>

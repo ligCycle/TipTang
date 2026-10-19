@@ -5,16 +5,9 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { OverlaySettings } from "@/components/OverlaySettings";
 import { AlertPreview } from "@/components/features/AlertPreview";
-import { PositionPicker } from "@/components/features/PositionPicker";
 import { Switch } from "@/components/features/FeatureCard";
 import { AlertTiersSection } from "@/components/features/AlertTiersSection";
 import type { AlertTier } from "@/lib/alert-tiers";
-import type { OnScreenFeature } from "@/lib/overlay-layout";
-
-type Layout = {
-  positions: Record<OnScreenFeature, string>;
-  enabled: Record<OnScreenFeature, boolean>;
-};
 
 /** Header shared by every feature settings page: back to the hub, title, switch. */
 export function FeatureSettingsLayout({
@@ -73,7 +66,7 @@ export function FeatureSettingsLayout({
   );
 }
 
-export function AlertsFeature({ alertsEnabled, layout }: { alertsEnabled: boolean; layout: Layout }) {
+export function AlertsFeature({ alertsEnabled }: { alertsEnabled: boolean }) {
   const t = useTranslations("featureHub");
   // Saved tiers, shared between the tiers editor and the preview.
   const [tiers, setTiers] = useState<AlertTier[]>([]);
@@ -82,27 +75,26 @@ export function AlertsFeature({ alertsEnabled, layout }: { alertsEnabled: boolea
       <OverlaySettings
         view="alerts"
         aside={(config) => <AlertPreview config={config} tiers={tiers} />}
-        positionSlot={<PositionPicker feature="alert" {...layout} />}
         tiersSlot={(config) => <AlertTiersSection config={config} onSaved={setTiers} />}
       />
     </FeatureSettingsLayout>
   );
 }
 
-export function GoalFeature({ layout }: { layout: Layout }) {
+export function GoalFeature() {
   const t = useTranslations("featureHub");
   return (
     <FeatureSettingsLayout title={t("f_goal")}>
-      <OverlaySettings view="goal" positionSlot={<PositionPicker feature="goal" {...layout} />} />
+      <OverlaySettings view="goal" />
     </FeatureSettingsLayout>
   );
 }
 
-export function SubathonFeature({ layout }: { layout: Layout }) {
+export function SubathonFeature() {
   const t = useTranslations("featureHub");
   return (
     <FeatureSettingsLayout title={t("f_subathon")}>
-      <OverlaySettings view="subathon" positionSlot={<PositionPicker feature="timer" {...layout} />} />
+      <OverlaySettings view="subathon" />
     </FeatureSettingsLayout>
   );
 }

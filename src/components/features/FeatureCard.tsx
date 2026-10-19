@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
@@ -38,21 +39,37 @@ export function Switch({
   );
 }
 
-/** One feature on the hub: icon, name, one line, switch, and its settings link. */
+/**
+ * One feature on the hub: icon, name, one line, switch, its own OBS link
+ * (while on) and its settings link.
+ */
 export function FeatureCard({
   feature,
   enabled,
+  obsUrl,
   busy,
   onToggle,
 }: {
   feature: FeatureDef;
   enabled: boolean;
+  obsUrl: string;
   busy?: boolean;
   onToggle: (next: boolean) => void;
 }) {
   const t = useTranslations("featureHub");
   const locale = useLocale();
   const name = t(`f_${feature.id}`);
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(obsUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <div
@@ -68,6 +85,19 @@ export function FeatureCard({
         <Switch checked={enabled} onChange={onToggle} label={name} disabled={busy} />
       </div>
       <p className="text-sm text-brand-900/65">{t(`d_${feature.id}`)}</p>
+      {enabled && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <button
+            type="button"
+            onClick={copy}
+            className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
+          >
+            <Icon name="link" className="h-3.5 w-3.5" />
+            {copied ? t("copied") : t("copyObs")}
+          </button>
+          <span className="text-xs text-brand-900/50">{t("obsSizeOf", { size: feature.obsSize })}</span>
+        </div>
+      )}
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
         <span className="flex flex-wrap gap-1.5">
           <span

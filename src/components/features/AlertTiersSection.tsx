@@ -28,7 +28,7 @@ const toTier = (r: Row): AlertTier => ({
 });
 
 /**
- * Section ④ on the alerts page: up to MAX_TIERS amount thresholds, each
+ * Section ⑤ on the alerts page: up to MAX_TIERS amount thresholds, each
  * overriding sound / visual / time on screen with files from the library.
  * Saved tiers are reported up so the preview can show them.
  */
