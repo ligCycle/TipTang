@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { overlayUser, timerState } from "@/lib/overlay-feed";
 
-// Polled by the old subathon-timer link. Validates the secret key and returns
+// Polled by the subathon-timer link. Validates the secret key and returns
 // the current remaining seconds (server-computed, so the client doesn't depend
 // on its own clock being correct).
 export async function GET(
@@ -20,5 +20,6 @@ export async function GET(
     running: t.state === "running",
     remainingSeconds: t.remainingSeconds,
     maxSeconds: t.maxSeconds,
+    rates: t.rates,
   });
 }

@@ -30,5 +30,5 @@ export type FeatureDef = {
 export const FEATURES: FeatureDef[] = [
   { id: "alerts", icon: "bell", flag: "alertsEnabled", href: "/dashboard/features/alerts", fanPage: false, toggleKind: "alertsToggle", obsPath: "", obsSize: "800×300" },
   { id: "goal", icon: "target", flag: "goalOverlayEnabled", href: "/dashboard/features/goal", fanPage: false, toggleKind: "goalToggle", obsPath: "/goal", obsSize: "700×140" },
-  { id: "subathon", icon: "clock", flag: "timerEnabled", href: "/dashboard/features/subathon", fanPage: false, toggleKind: "timerToggle", obsPath: "/timer", obsSize: "400×200" },
+  { id: "subathon", icon: "clock", flag: "timerEnabled", href: "/dashboard/features/subathon", fanPage: false, toggleKind: "timerToggle", obsPath: "/timer", obsSize: "400×260" },
 ];

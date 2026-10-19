@@ -30,6 +30,7 @@ export function TimerOverlayClient({
           state: d.state,
           remainingSeconds: d.remainingSeconds,
           maxSeconds: d.maxSeconds ?? 0,
+          rates: d.rates,
         });
       } catch {
         // ignore transient network errors

@@ -24,6 +24,8 @@ export const OVERLAY_USER_SELECT = {
   timerSecondsPerUnit: true,
   timerReduceBahtPerUnit: true,
   timerReduceSecondsPerUnit: true,
+  timerReduceEnabled: true,
+  timerReduceMinAmount: true,
   timerEndsAt: true,
   timerRemaining: true,
   timerInitialSeconds: true,
@@ -44,6 +46,8 @@ type OverlayUser = {
   timerSecondsPerUnit: number;
   timerReduceBahtPerUnit: number;
   timerReduceSecondsPerUnit: number;
+  timerReduceEnabled: boolean;
+  timerReduceMinAmount: number;
   timerEndsAt: Date | null;
   timerRemaining: number | null;
   timerInitialSeconds: number;
@@ -220,5 +224,16 @@ export function timerState(user: OverlayUser): TimerState {
     state,
     remainingSeconds,
     maxSeconds: user.timerMaxSeconds ?? 0,
+    // Shown under the clock so viewers know what a tip does to the time.
+    rates: {
+      add: { baht: user.timerBahtPerUnit, seconds: user.timerSecondsPerUnit },
+      reduce: user.timerReduceEnabled
+        ? {
+            baht: user.timerReduceBahtPerUnit,
+            seconds: user.timerReduceSecondsPerUnit,
+            minAmount: user.timerReduceMinAmount,
+          }
+        : null,
+    },
   };
 }

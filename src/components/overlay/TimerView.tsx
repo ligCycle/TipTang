@@ -8,7 +8,18 @@ export type TimerState = {
   state: "running" | "paused" | "stopped";
   remainingSeconds: number;
   maxSeconds: number;
+  /** Tip rates, shown under the clock. Missing on older payloads. */
+  rates?: {
+    add: { baht: number; seconds: number };
+    reduce: { baht: number; seconds: number; minAmount: number } | null;
+  };
 };
+
+// "1 นาที" / "30 วิ" / "1.5 นาที" for a rate's time step.
+function step(seconds: number): string {
+  if (seconds < 60) return `${seconds} วิ`;
+  return `${Math.round((seconds / 60) * 10) / 10} นาที`;
+}
 
 // Darken a #rrggbb color by mixing toward black (amount 0..1).
 function darken(hex: string, amount: number): string {
@@ -87,6 +98,23 @@ export function TimerView({ timer, color }: { timer: TimerState | null; color: s
       >
         {fmt(display)}
       </p>
+      {timer.rates && (
+        <div className="mt-2 space-y-0.5 border-t border-white/15 pt-2 text-center text-sm font-semibold text-white/85 drop-shadow">
+          <p>
+            ทิปทุก {timer.rates.add.baht} บาท{" "}
+            <span className="text-emerald-300">+{step(timer.rates.add.seconds)}</span>
+          </p>
+          {timer.rates.reduce && (
+            <p>
+              ทิปลดเวลาทุก {timer.rates.reduce.baht} บาท{" "}
+              <span className="text-rose-300">−{step(timer.rates.reduce.seconds)}</span>
+              {timer.rates.reduce.minAmount > timer.rates.reduce.baht && (
+                <span className="text-white/60"> (ขั้นต่ำ {timer.rates.reduce.minAmount} บาท)</span>
+              )}
+            </p>
+          )}
+        </div>
+      )}
       {timer.maxSeconds > 0 && (
         <p className="mt-1 text-center text-xs font-semibold text-white/70 drop-shadow">
           สูงสุด {fmt(timer.maxSeconds)}

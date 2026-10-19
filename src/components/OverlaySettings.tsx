@@ -1618,7 +1618,7 @@ export function OverlaySettings({
                       key={`${timerUrl}#${timerRefresh}`}
                       src={timerUrl}
                       title="timer preview"
-                      className="h-[200px] w-full border-0"
+                      className="h-[260px] w-full border-0"
                     />
                   </div>
                 </div>
