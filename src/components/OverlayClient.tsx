@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Confetti } from "./Confetti";
 import { AlertCard } from "@/components/overlay/AlertCard";
-import { pickTier, resolveAlert, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
+import { pickTier, resolveAlert, celebrates, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
 import type { TestAlert } from "@/lib/overlay-test";
 
 type Alert = {
@@ -41,7 +41,6 @@ export function OverlayClient({
   libraryVideos = [],
   alertStyle,
   alertTheme,
-  bigTipThreshold,
   tiers = [],
 }: {
   username: string;
@@ -58,7 +57,6 @@ export function OverlayClient({
   libraryVideos?: string[];
   alertStyle: string;
   alertTheme: string;
-  bigTipThreshold: number;
   tiers?: AlertTier[];
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
@@ -250,12 +248,9 @@ export function OverlayClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Big-tip celebration: threshold is an Int, amount may arrive as a decimal /
-  // string — coerce before comparing.
-  const isBig =
-    bigTipThreshold > 0 &&
-    current != null &&
-    Number(current.amount) >= bigTipThreshold;
+  // Big celebration when the amount's tier says so (amount may arrive as a
+  // decimal / string — coerce before comparing).
+  const isBig = current != null && celebrates(tiers, Number(current.amount));
 
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">

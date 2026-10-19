@@ -137,6 +137,8 @@ model AlertTier {
   imageUrl    String?
   videoUrl    String?
   durationSec Int?
+  // Big celebration: larger card + confetti + SUPER TIP badge.
+  celebrate   Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   @@unique([userId, minAmount])
@@ -234,8 +236,8 @@ model User {
   // Alert card look (src/lib/alertThemes.ts): "light" gradient card or
   // "dark" glow card. Existing creators keep "light".
   alertTheme    String  @default("light")
-  // Donations >= this amount (baht) get a bigger celebratory alert + confetti.
-  // 0 = disabled.
+  // No longer read: the feature-hub migration turned it into an AlertTier
+  // with celebrate = true. Kept so old rows stay intact.
   bigTipThreshold Int   @default(0)
   // Read the supporter's name + message aloud (TTS) when an alert fires.
   ttsEnabled    Boolean @default(false)

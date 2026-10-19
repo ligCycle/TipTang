@@ -25,7 +25,6 @@ export default async function OverlayPage({
       alertColor: true,
       alertStyle: true,
       alertTheme: true,
-      bigTipThreshold: true,
       ttsEnabled: true,
     },
   });
@@ -43,7 +42,7 @@ export default async function OverlayPage({
     prisma.alertTier.findMany({
       where: { userId: user.id },
       orderBy: { minAmount: "asc" },
-      select: { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true },
+      select: { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true, celebrate: true },
     }),
   ]);
   const librarySounds = assets
@@ -72,7 +71,6 @@ export default async function OverlayPage({
       tiers={tierRows}
       alertStyle={user.alertStyle}
       alertTheme={isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME}
-      bigTipThreshold={user.bigTipThreshold}
     />
   );
 }

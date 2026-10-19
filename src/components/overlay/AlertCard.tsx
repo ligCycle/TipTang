@@ -28,6 +28,7 @@ export function AlertCard({
   isBig,
   imageUrl,
   videoUrl,
+  loop = false,
 }: {
   name: string;
   amount: number;
@@ -39,6 +40,8 @@ export function AlertCard({
   isBig: boolean;
   imageUrl: string | null;
   videoUrl: string | null;
+  /** Dashboard preview: replay the in/out animation forever instead of once. */
+  loop?: boolean;
 }) {
   const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
   const dark = alertTheme === "dark";
@@ -56,7 +59,7 @@ export function AlertCard({
 
   return (
     <div
-      style={cardStyle}
+      style={loop ? { ...cardStyle, animationIterationCount: "infinite" } : cardStyle}
       className={`alert-${
         isAlertStyle(alertStyle) ? alertStyle : DEFAULT_ALERT_STYLE
       } ${

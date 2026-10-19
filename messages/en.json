@@ -310,9 +310,6 @@
     "obsTts": "Read donations aloud (TTS)",
     "obsTtsHint": "Speaks the supporter's name + amount + message when an alert pops (Thai voice).",
     "obsTtsTest": "Test voice",
-    "obsBigTip": "Special alert when a tip reaches",
-    "obsBigTipUnit": "baht or more (0 = off)",
-    "obsBigTipHint": "Tips at/above this amount get a bigger card + confetti + a SUPER TIP badge, to encourage larger donations.",
     "obsAlertTheme": "Alert card theme",
     "obsThemeLight": "Light card",
     "obsThemeDark": "Dark card",
@@ -731,7 +728,7 @@
     "n_alert": "Tip alerts",
     "n_goal": "Goal",
     "n_timer": "Subathon",
-    "tiersIntro": "Tips that reach a tier use that tier's sound, image or video, and time on screen. Anything left empty uses your normal alert.",
+    "tiersIntro": "Tips that reach a level use that level’s sound, image or video, time on screen and big celebration. Anything left empty uses the normal alert.",
     "tierFrom": "From (THB)",
     "tierSound": "Sound",
     "tierVisual": "Image or video",
@@ -784,7 +781,9 @@
     "autoSaveHintAll": "Settings save automatically",
     "styleHintPreview": "Pick one and the preview card plays that effect right away",
     "tierNeedAmount": "Enter the new level amount first; it then saves by itself",
-    "tierSaving": "Saving..."
+    "tierSaving": "Saving...",
+    "tierCelebrate": "Big celebration",
+    "tierCelebrateHint": "Bigger card + confetti + SUPER TIP badge, to nudge bigger donations"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pickTier, resolveAlert, normalizeTiers, type AlertTier } from "./alert-tiers.ts";
+import { pickTier, resolveAlert, normalizeTiers, celebrates, type AlertTier } from "./alert-tiers.ts";
 
 const tier = (minAmount: number, over: Partial<AlertTier> = {}): AlertTier => ({
   minAmount,
@@ -8,6 +8,7 @@ const tier = (minAmount: number, over: Partial<AlertTier> = {}): AlertTier => ({
   imageUrl: null,
   videoUrl: null,
   durationSec: null,
+  celebrate: false,
   ...over,
 });
 
@@ -81,4 +82,21 @@ test("normalizeTiers: sorts ascending", () => {
   const r = normalizeTiers([tier(500), tier(100)]);
   assert.ok(r.ok);
   if (r.ok) assert.deepEqual(r.tiers.map((t) => t.minAmount), [100, 500]);
+});
+
+test("celebrates: only amounts whose tier celebrates", () => {
+  const t = [tier(100), tier(500, { celebrate: true }), tier(1000)];
+  assert.equal(celebrates(t, 50), false);
+  assert.equal(celebrates(t, 100), false);
+  assert.equal(celebrates(t, 500), true);
+  assert.equal(celebrates(t, 999), true);
+  // A higher tier decides for itself.
+  assert.equal(celebrates(t, 1000), false);
+});
+
+test("normalizeTiers: keeps celebrate, defaults it to false, rejects non-boolean", () => {
+  const r = normalizeTiers([{ minAmount: 100, celebrate: true }, { minAmount: 200 }]);
+  assert.ok(r.ok);
+  if (r.ok) assert.deepEqual(r.tiers.map((t) => t.celebrate), [true, false]);
+  assert.deepEqual(normalizeTiers([{ minAmount: 100, celebrate: "yes" }]), { ok: false, error: "invalid" });
 });

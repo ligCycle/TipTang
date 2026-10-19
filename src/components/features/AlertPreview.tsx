@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCard } from "@/components/overlay/AlertCard";
-import { pickTier, resolveAlert, type AlertTier } from "@/lib/alert-tiers";
+import { pickTier, resolveAlert, celebrates, type AlertTier } from "@/lib/alert-tiers";
 import { formatBaht } from "@/lib/format";
 import type { OverlayConfig } from "@/components/OverlaySettings";
 
@@ -36,7 +36,7 @@ export function AlertPreview({ config, tiers = [] }: { config: OverlayConfig; ti
     pickTier(tiers, amount),
     library,
   );
-  const isBig = config.bigTipThreshold > 0 && amount >= config.bigTipThreshold;
+  const isBig = celebrates(tiers, amount);
 
   async function test() {
     setSending(true);
@@ -74,6 +74,7 @@ export function AlertPreview({ config, tiers = [] }: { config: OverlayConfig; ti
             isBig={isBig}
             imageUrl={media.videoUrl ? null : media.imageUrl}
             videoUrl={media.videoUrl}
+            loop
           />
         </div>
       </div>

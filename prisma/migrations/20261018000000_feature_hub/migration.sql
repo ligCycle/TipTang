@@ -17,6 +17,7 @@ CREATE TABLE "AlertTier" (
     "imageUrl" TEXT,
     "videoUrl" TEXT,
     "durationSec" INTEGER,
+    "celebrate" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "AlertTier_pkey" PRIMARY KEY ("id")
 );
@@ -26,3 +27,9 @@ ALTER TABLE "AlertTier" ADD CONSTRAINT "AlertTier_userId_fkey" FOREIGN KEY ("use
 -- Same as every other table (20260930000000_security_hardening): RLS on, no
 -- policies; the app's owner role bypasses it.
 ALTER TABLE "AlertTier" ENABLE ROW LEVEL SECURITY;
+
+-- The big-tip celebration moves into tiers: a creator's existing threshold
+-- becomes one tier that celebrates (User.bigTipThreshold is no longer read).
+INSERT INTO "AlertTier" ("id", "userId", "minAmount", "celebrate")
+SELECT gen_random_uuid()::text, "id", LEAST("bigTipThreshold", 1000000), true
+FROM "User" WHERE "bigTipThreshold" > 0;

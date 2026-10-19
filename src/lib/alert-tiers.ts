@@ -3,7 +3,8 @@
  * tip at or above a tier's minimum plays that tier's sound / visual / time on
  * screen instead of the normal alert's. Anything a tier leaves empty comes
  * from the normal alert. Tier assets are library URLs; one deleted from the
- * library falls back to the normal asset.
+ * library falls back to the normal asset. A tier can also celebrate (bigger
+ * card + confetti + SUPER TIP badge) — the old "big tip" threshold.
  */
 
 export const MAX_TIERS = 5;
@@ -16,6 +17,7 @@ export type AlertTier = {
   imageUrl: string | null;
   videoUrl: string | null;
   durationSec: number | null;
+  celebrate: boolean;
 };
 
 export type AlertBase = {
@@ -24,6 +26,11 @@ export type AlertBase = {
   videoUrl: string | null;
   durationSec: number;
 };
+
+/** Whether a tip of `amount` gets the big celebration (its tier says so). */
+export function celebrates(tiers: AlertTier[], amount: number): boolean {
+  return pickTier(tiers, amount)?.celebrate === true;
+}
 
 /** The tier with the highest minimum at or below `amount`; null below all. */
 export function pickTier(tiers: AlertTier[], amount: number): AlertTier | null {
@@ -87,12 +94,16 @@ export function normalizeTiers(
     if (!optUrl(r.soundUrl) || !optUrl(r.imageUrl) || !optUrl(r.videoUrl)) {
       return { ok: false, error: "invalid" };
     }
+    if (r.celebrate !== undefined && typeof r.celebrate !== "boolean") {
+      return { ok: false, error: "invalid" };
+    }
     tiers.push({
       minAmount: min,
       soundUrl: (r.soundUrl as string | null | undefined) ?? null,
       imageUrl: (r.imageUrl as string | null | undefined) ?? null,
       videoUrl: (r.videoUrl as string | null | undefined) ?? null,
       durationSec: dur as number | null,
+      celebrate: r.celebrate === true,
     });
   }
   if (new Set(tiers.map((t) => t.minAmount)).size !== tiers.length) {

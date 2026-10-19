@@ -12,13 +12,14 @@ const DURATIONS = [3, 5, 7, 10, 15, 20, 30, 45, 60].filter(
 
 const SAVE_DELAY_MS = 800;
 
-type Row = { minAmount: string; soundUrl: string; visual: string; durationSec: string };
+type Row = { minAmount: string; soundUrl: string; visual: string; durationSec: string; celebrate: boolean };
 
 const toRow = (t: AlertTier): Row => ({
   minAmount: String(t.minAmount),
   soundUrl: t.soundUrl ?? "",
   visual: t.videoUrl ? `v:${t.videoUrl}` : t.imageUrl ? `i:${t.imageUrl}` : "",
   durationSec: t.durationSec ? String(t.durationSec) : "",
+  celebrate: t.celebrate,
 });
 
 const toTier = (r: Row): AlertTier => ({
@@ -27,6 +28,7 @@ const toTier = (r: Row): AlertTier => ({
   imageUrl: r.visual.startsWith("i:") ? r.visual.slice(2) : null,
   videoUrl: r.visual.startsWith("v:") ? r.visual.slice(2) : null,
   durationSec: r.durationSec ? Number(r.durationSec) : null,
+  celebrate: r.celebrate,
 });
 
 /**
@@ -155,6 +157,18 @@ export function AlertTiersSection({
               ))}
             </select>
           </label>
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-tip-100/60 px-3 py-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={r.celebrate}
+              onChange={(e) => update(i, { celebrate: e.target.checked })}
+              className="mt-0.5 h-4 w-4 accent-brand-600"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-brand-900">{t("tierCelebrate")}</span>
+              <span className="block text-xs text-brand-900/60">{t("tierCelebrateHint")}</span>
+            </span>
+          </label>
           <div className="sm:col-span-2">
             <button
               type="button"
@@ -170,7 +184,7 @@ export function AlertTiersSection({
         {rows.length < MAX_TIERS ? (
           <button
             type="button"
-            onClick={() => change([...rows, { minAmount: "", soundUrl: "", visual: "", durationSec: "" }])}
+            onClick={() => change([...rows, { minAmount: "", soundUrl: "", visual: "", durationSec: "", celebrate: false }])}
             className="text-sm font-semibold text-brand-700 hover:underline"
           >
             {t("tierAdd")}

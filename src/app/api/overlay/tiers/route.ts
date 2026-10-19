@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeTiers } from "@/lib/alert-tiers";
 
-const SELECT = { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true } as const;
+const SELECT = { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true, celebrate: true } as const;
 
 /** The creator's alert tiers by amount, lowest first. */
 export async function GET() {

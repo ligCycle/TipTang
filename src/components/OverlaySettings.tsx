@@ -26,7 +26,6 @@ type Config = {
   color: string | null;
   alertStyle: string;
   alertTheme: string;
-  bigTipThreshold: number;
   ttsEnabled: boolean;
   hasGoal: boolean;
   goalEnabled: boolean;
@@ -118,9 +117,6 @@ export function OverlaySettings({
   const [libUploading, setLibUploading] = useState<"sound" | "sticker" | null>(
     null,
   );
-  const [bigTip, setBigTip] = useState("0");
-  const [bigTipSaved, setBigTipSaved] = useState(false);
-  const bigTipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Subathon timer config inputs (kept in minutes for the UI).
   const [tBaht, setTBaht] = useState("10");
   const [tMin, setTMin] = useState("1");
@@ -164,7 +160,6 @@ export function OverlaySettings({
           color: d.color ?? null,
           alertStyle: d.alertStyle ?? "pop",
           alertTheme: d.alertTheme ?? "light",
-          bigTipThreshold: d.bigTipThreshold ?? 0,
           ttsEnabled: Boolean(d.ttsEnabled),
           hasGoal: Boolean(d.hasGoal),
           goalEnabled: d.goalEnabled !== false,
@@ -195,7 +190,6 @@ export function OverlaySettings({
           setGoalTitle(d.goalTitle ?? "");
           setGoalAmount(d.goalAmount ?? "");
         }
-        setBigTip(String(d.bigTipThreshold ?? 0));
         setTBaht(String(d.timerBahtPerUnit ?? 10));
         setTMin(String(Math.round((d.timerSecondsPerUnit ?? 60) / 60)));
         setTInit(String(Math.round((d.timerInitialSeconds ?? 3600) / 60)));
@@ -563,26 +557,6 @@ export function OverlaySettings({
     await fetch("/api/overlay/asset", { method: "POST", body: fd });
   }
 
-  // Big-tip threshold (baht; 0 = off). Server coerces to a clean Int.
-  // Saves by itself shortly after typing stops (no save button).
-  async function saveBigTip(raw: string) {
-    const fd = new FormData();
-    fd.set("kind", "bigTipThreshold");
-    fd.set("value", raw || "0");
-    const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
-    if (!res.ok) return;
-    const d = await res.json().catch(() => ({}));
-    const value = d.value ?? 0;
-    setConfig((c) => (c ? { ...c, bigTipThreshold: value } : c));
-    setBigTipSaved(true);
-    setTimeout(() => setBigTipSaved(false), 1500);
-  }
-
-  function queueBigTipSave(raw: string) {
-    if (bigTipTimer.current) clearTimeout(bigTipTimer.current);
-    bigTipTimer.current = setTimeout(() => void saveBigTip(raw), GOAL_SAVE_DELAY_MS);
-  }
-
   // Goal-bar color — same shape, persisted under kind=goalColor; refresh the
   // embedded preview so the change shows immediately.
   async function saveGoalColor(color: string) {
@@ -869,35 +843,6 @@ export function OverlaySettings({
                 </p>
               </div>
 
-              {/* Big-tip celebration */}
-              <div className="rounded-xl bg-brand-50 p-3">
-                <p className="mb-1 flex items-center gap-2 text-sm font-medium text-brand-900/80">
-                  <Icon name="gift" />
-                  {t("obsBigTip")}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    value={bigTip}
-                    onChange={(e) => {
-                      setBigTip(e.target.value);
-                      queueBigTipSave(e.target.value);
-                    }}
-                    placeholder="0"
-                    className="input w-32! text-sm"
-                  />
-                  <span className="text-sm text-brand-900/70">
-                    {t("obsBigTipUnit")}
-                  </span>
-                  {bigTipSaved && (
-                    <span className="text-xs text-brand-900/55" aria-live="polite">{t("obsGoalSaved")}</span>
-                  )}
-                </div>
-                <p className="mt-1.5 text-xs text-brand-900/50">
-                  {t("obsBigTipHint")}
-                </p>
-              </div>
 
     </>
   );
