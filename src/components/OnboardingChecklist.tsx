@@ -41,7 +41,7 @@ export async function OnboardingChecklist({
       done: overlayDone,
       label: t("onboardingOverlay"),
       note: t("onboardingOverlayNote"),
-      href: `/${locale}/dashboard/overlay`,
+      href: `/${locale}/dashboard/features`,
       cta: t("goOverlay"),
     },
     {

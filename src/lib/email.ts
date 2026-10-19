@@ -134,7 +134,7 @@ export async function sendActivationNudgeEmail(opts: {
   const subject = "ติดตรงไหนบอกเราได้นะ — TipTang";
 
   const SETTINGS = "https://tiptang.com/th/dashboard/settings";
-  const OVERLAY = "https://tiptang.com/th/dashboard/overlay";
+  const OVERLAY = "https://tiptang.com/th/dashboard/features";
   // Each template: an intro paragraph, then one link per remaining step.
   const body =
     template === "NO_PROMPTPAY"

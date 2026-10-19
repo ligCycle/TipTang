@@ -90,7 +90,7 @@ export default async function StartPage({
             </ol>
           </div>
           {loggedIn && (
-            <StepButton href="/dashboard/overlay" label={t("step3Cta")} />
+            <StepButton href="/dashboard/features" label={t("step3Cta")} />
           )}
         </Step>
 

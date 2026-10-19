@@ -41,7 +41,7 @@ export const UPDATES: Update[] = [
     id: "2026-10-09-dark-alert-card",
     date: "2026-10-09",
     tags: ["creator"],
-    href: "/dashboard/overlay",
+    href: "/dashboard/features",
     th: {
       title: "การ์ดแจ้งเตือนแบบมืด",
       body: "เลือก \"การ์ดมืด\" ในหน้า OBS ได้แล้ว พื้นเข้มเรืองแสงตามสีการ์ดของคุณ ยอดทิปเด่นด้วยสีส้ม เห็นชัดบนเกมฉากสว่าง",
@@ -69,7 +69,7 @@ export const UPDATES: Update[] = [
     id: "2026-09-30-overlay-new-link",
     date: "2026-09-30",
     tags: ["creator", "security"],
-    href: "/dashboard/overlay",
+    href: "/dashboard/features/alerts",
     th: {
       title: "สร้างลิงก์ OBS ใหม่ได้",
       body: "ถ้าเผลอโชว์ลิงก์ overlay บนไลฟ์ กด \"สร้างลิงก์ใหม่\" ในหน้า OBS ลิงก์เก่าจะใช้ไม่ได้ทันที แล้วเอาลิงก์ใหม่ไปใส่ใน OBS",
@@ -166,7 +166,7 @@ export const UPDATES: Update[] = [
     id: "2026-09-16-subathon-choices",
     date: "2026-09-16",
     tags: ["creator", "supporter"],
-    href: "/dashboard/overlay",
+    href: "/dashboard/features",
     th: {
       title: "Subathon: คนดูเลือกได้ เพิ่มเวลา / ลดเวลา / แค่โดเนท",
       body: "เมื่อเปิดตัวจับเวลา Subathon คนดูเลือกได้ว่าทิปนี้จะทำอะไรกับเวลา และครีเอเตอร์เปิดโหมดลดเวลาได้เอง พร้อมตั้งอัตราและเวลาขั้นต่ำ",

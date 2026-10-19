@@ -130,7 +130,11 @@ export function AlertTiersSection({
             {t("tierDuration")}
             <select value={r.durationSec} onChange={(e) => update(i, { durationSec: e.target.value })} className={`${selectClass} mt-1`}>
               <option value="">{t("tierNormal")}</option>
-              {DURATIONS.map((n) => (
+              {/* Keep a saved value that is not in the list instead of showing it as "normal". */}
+              {(r.durationSec && !DURATIONS.includes(Number(r.durationSec))
+                ? [...DURATIONS, Number(r.durationSec)].sort((a, b) => a - b)
+                : DURATIONS
+              ).map((n) => (
                 <option key={n} value={String(n)}>{t("tierSeconds", { n })}</option>
               ))}
             </select>
