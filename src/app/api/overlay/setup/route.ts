@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { auth } from "@/lib/auth";
+import { getActiveSetId } from "@/lib/alert-sets-server";
 import { prisma } from "@/lib/prisma";
 
 // Auth required: return (generating if needed) the creator's overlay key + username.
@@ -43,6 +44,7 @@ export async function POST() {
       timerFloorSeconds: true,
       timerShowRates: true,
       alertsEnabled: true,
+      soundPickEnabled: true,
       featuresOnboardedAt: true,
     },
   });
@@ -80,9 +82,10 @@ export async function POST() {
   const assets = await prisma.alertAsset.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "asc" },
-    select: { id: true, kind: true, url: true, inRandom: true },
+    select: { id: true, kind: true, url: true, name: true },
   });
-  const lib = (a: { id: string; url: string; inRandom: boolean }) => ({ id: a.id, url: a.url, inRandom: a.inRandom });
+  const lib = (a: { id: string; url: string; name: string | null }) => ({ id: a.id, url: a.url, name: a.name });
+  const activeSetId = await getActiveSetId(session.user.id);
 
   return NextResponse.json({
     username: user.username,
@@ -98,6 +101,8 @@ export async function POST() {
       .filter((a) => a.kind === "VIDEO")
       .map(lib),
     alertsEnabled: user.alertsEnabled,
+    soundPickEnabled: user.soundPickEnabled,
+    activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,
     imageUrl: user.alertImageUrl,

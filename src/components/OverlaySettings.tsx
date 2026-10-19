@@ -16,7 +16,7 @@ import { Switch } from "@/components/features/FeatureCard";
 import { NormalMediaSummary } from "@/components/features/NormalMediaSummary";
 
 type Kind = "sound" | "image" | "video";
-type LibItem = { id: string; url: string; inRandom: boolean };
+type LibItem = { id: string; url: string; name: string | null };
 type Config = {
   url: string;
   /** Last time a live program loaded the alert overlay (ISO), null = never. */
@@ -484,11 +484,11 @@ export function OverlaySettings({
           ? {
               ...c,
               ...(kind === "sound"
-                ? { librarySounds: [...c.librarySounds, { id: d.id, url: d.url, inRandom: true }] }
+                ? { librarySounds: [...c.librarySounds, { id: d.id, url: d.url, name: d.name ?? null }] }
                 : {
                     libraryStickers: [
                       ...c.libraryStickers,
-                      { id: d.id, url: d.url, inRandom: true },
+                      { id: d.id, url: d.url, name: d.name ?? null },
                     ],
                   }),
             }

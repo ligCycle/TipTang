@@ -123,7 +123,6 @@ export function AlertTiersSection({
       const fd = new FormData();
       fd.append("kind", kind);
       fd.append("file", file);
-      fd.append("inRandom", "0"); // for this tier only, not every alert
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || typeof d.url !== "string") {

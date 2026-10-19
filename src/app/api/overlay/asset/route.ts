@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { isAlertStyle } from "@/lib/alertStyles";
 import { isAlertTheme } from "@/lib/alertThemes";
 import { isPresetId, presetChanges } from "@/lib/feature-presets";
+import { cleanName, MAX_NAME } from "@/lib/alert-sets";
+import { getActiveSetId, touchSet } from "@/lib/alert-sets-server";
 import {
   uploadImage,
   deleteFile,
@@ -311,22 +313,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, enabled });
   }
 
-  // Random-alert library (many sounds / stickers per creator).
-  // A library file in or out of the random pick (src: library page switch).
-  if (kind === "libraryRandom") {
-    const assetId = String(form?.get("assetId") ?? "");
+  // Feature hub card "แฟนเลือกเสียง": the sound picker on the donate page.
+  if (kind === "soundPickToggle") {
     const enabled = form?.get("enabled") === "1";
-    const res = await prisma.alertAsset.updateMany({
-      where: { id: assetId, userId: session.user.id },
-      data: { inRandom: enabled },
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { soundPickEnabled: enabled },
     });
-    if (res.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    revalidateOverlay();
     return NextResponse.json({ ok: true, enabled });
   }
 
+  // A library file's name (shown to fans when they pick a sound).
+  if (kind === "libraryName") {
+    const assetId = String(form?.get("assetId") ?? "");
+    const name = cleanName(form?.get("name"));
+    if (!name) return NextResponse.json({ error: "invalid" }, { status: 400 });
+    const res = await prisma.alertAsset.updateMany({
+      where: { id: assetId, userId: session.user.id },
+      data: { name },
+    });
+    if (res.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, name });
+  }
+
+  // Alert library (sounds / stickers / videos), organised in sets.
   if (kind === "librarySound" || kind === "librarySticker" || kind === "libraryVideo") {
-    // Library videos are only used by alert tiers (never random-picked).
     const assetKind = kind === "librarySound" ? "SOUND" : kind === "libraryVideo" ? "VIDEO" : "STICKER";
 
     if (remove) {
@@ -372,16 +383,23 @@ export async function POST(req: Request) {
       isSound ? "alert-lib-sounds" : isVideo ? "alert-lib-videos" : "alert-lib-stickers",
     );
     const created = await prisma.alertAsset.create({
-      // On for normal alerts unless asked otherwise (a tier row sends "0").
-      // Videos start off: one replaces the image and sound of every tip.
       data: {
         userId: session.user.id,
         kind: assetKind,
         url,
-        inRandom: isVideo ? form?.get("inRandom") === "1" : form?.get("inRandom") !== "0",
+        // The original file name (no extension) until the creator renames it.
+        name: cleanName(file.name.replace(/\.[^.]+$/, "").slice(0, MAX_NAME)),
       },
-      select: { id: true, url: true },
+      select: { id: true, url: true, name: true },
     });
+    // The library page's upload joins today's set; tier-row and create-set
+    // uploads don't (they place the file themselves). Videos never join on
+    // upload: one would replace the image and sound of every tip.
+    if (form?.get("addToActive") === "1" && !isVideo) {
+      const setId = await getActiveSetId(session.user.id);
+      await prisma.alertSetItem.create({ data: { setId, assetId: created.id } });
+      await touchSet(setId);
+    }
     revalidateOverlay();
     return NextResponse.json({ ok: true, ...created });
   }
