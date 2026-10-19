@@ -121,8 +121,9 @@ model AlertAsset {
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind      AlertAssetKind
   url       String
-  // Sounds/stickers: picked at random for every alert. Off = only used where
-  // a tier picks it (files uploaded from a tier row start off). Videos ignore it.
+  // On = used by normal alerts (several on = one at random per tip; a video
+  // replaces image and sound). Off = only where a tier picks it. Tier-row
+  // uploads and videos start off.
   inRandom  Boolean        @default(true)
   createdAt DateTime       @default(now())
 
@@ -228,7 +229,8 @@ model User {
   // When the one-time "you're stuck here" reminder was emailed. Non-null
   // means never send another one, whatever happens.
   activationNudgeSentAt DateTime?
-  // Creator-customizable donation-alert assets.
+  // Old single alert assets. No longer read: the feature-hub media migration
+  // moved them into AlertAsset (the library). Kept so old rows stay intact.
   alertSoundUrl String?
   alertImageUrl String?
   alertVideoUrl String?

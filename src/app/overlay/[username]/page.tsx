@@ -19,9 +19,6 @@ export default async function OverlayPage({
     select: {
       id: true,
       overlayKey: true,
-      alertSoundUrl: true,
-      alertImageUrl: true,
-      alertVideoUrl: true,
       alertColor: true,
       alertStyle: true,
       alertTheme: true,
@@ -45,34 +42,20 @@ export default async function OverlayPage({
       select: { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true, celebrate: true },
     }),
   ]);
-  // Random pick uses only files with the switch on; tiers may use any file.
-  const librarySounds = assets
-    .filter((a) => a.kind === "SOUND" && a.inRandom)
-    .map((a) => a.url);
-  const libraryStickers = assets
-    .filter((a) => a.kind === "STICKER" && a.inRandom)
-    .map((a) => a.url);
-  const libraryTierOnly = assets
-    .filter((a) => a.kind !== "VIDEO" && !a.inRandom)
-    .map((a) => a.url);
-  const libraryVideos = assets
-    .filter((a) => a.kind === "VIDEO")
-    .map((a) => a.url);
+  // Normal alerts pick from the files switched on; tiers may use any file.
+  const on = (kind: string) => assets.filter((a) => a.kind === kind && a.inRandom).map((a) => a.url);
+  const normal = { sounds: on("SOUND"), images: on("STICKER"), videos: on("VIDEO") };
+  const libraryAll = assets.map((a) => a.url);
 
   return (
     <OverlayClient
       username={username}
       apiKey={key}
       test={test}
-      soundUrl={user.alertSoundUrl}
-      imageUrl={user.alertImageUrl}
-      videoUrl={user.alertVideoUrl}
       color={user.alertColor}
       ttsEnabled={user.ttsEnabled}
-      librarySounds={librarySounds}
-      libraryStickers={libraryStickers}
-      libraryVideos={libraryVideos}
-      libraryTierOnly={libraryTierOnly}
+      normal={normal}
+      libraryAll={libraryAll}
       tiers={tierRows}
       alertStyle={user.alertStyle}
       alertTheme={isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME}

@@ -184,21 +184,19 @@ export function LibraryPage() {
                 </div>
                 <p className="text-sm font-bold text-brand-900">{label(item)}</p>
 
-                {item.kind === "video" ? (
-                  <p className="text-xs text-brand-900/60">{t("libVideoTierOnly")}</p>
-                ) : (
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-brand-900/85">{t("libRandom")}</span>
-                      <span className="block text-xs text-brand-900/55">{t("libRandomHint")}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-brand-900/85">{t("libRandom")}</span>
+                    <span className="block text-xs text-brand-900/55">
+                      {t(item.kind === "video" ? "libVideoHint" : "libRandomHint")}
                     </span>
-                    <Switch
-                      checked={item.inRandom}
-                      onChange={(next) => void setRandom(item, next)}
-                      label={`${t("libRandom")} ${label(item)}`}
-                    />
-                  </div>
-                )}
+                  </span>
+                  <Switch
+                    checked={item.inRandom}
+                    onChange={(next) => void setRandom(item, next)}
+                    label={`${t("libRandom")} ${label(item)}`}
+                  />
+                </div>
 
                 <div className="flex flex-wrap items-center gap-1.5">
                   {tierMins.length > 0 ? (
@@ -207,7 +205,7 @@ export function LibraryPage() {
                         {t("libUsedIn", { amount: min.toLocaleString() })}
                       </span>
                     ))
-                  ) : !item.inRandom || item.kind === "video" ? (
+                  ) : !item.inRandom ? (
                     <span className="text-xs text-brand-900/50">{t("libUnused")}</span>
                   ) : null}
                 </div>

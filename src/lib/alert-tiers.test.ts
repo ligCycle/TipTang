@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pickTier, resolveAlert, normalizeTiers, celebrates, type AlertTier } from "./alert-tiers.ts";
+import { pickTier, resolveAlert, normalizeTiers, celebrates, pickNormal, type AlertTier } from "./alert-tiers.ts";
 
 const tier = (minAmount: number, over: Partial<AlertTier> = {}): AlertTier => ({
   minAmount,
@@ -99,4 +99,26 @@ test("normalizeTiers: keeps celebrate, defaults it to false, rejects non-boolean
   assert.ok(r.ok);
   if (r.ok) assert.deepEqual(r.tiers.map((t) => t.celebrate), [true, false]);
   assert.deepEqual(normalizeTiers([{ minAmount: 100, celebrate: "yes" }]), { ok: false, error: "invalid" });
+});
+
+test("pickNormal: nothing switched on → no media", () => {
+  assert.deepEqual(pickNormal({ sounds: [], images: [], videos: [] }), { soundUrl: null, imageUrl: null, videoUrl: null });
+});
+
+test("pickNormal: one image and one sound always play", () => {
+  assert.deepEqual(pickNormal({ sounds: ["s.mp3"], images: ["i.png"], videos: [] }), {
+    soundUrl: "s.mp3",
+    imageUrl: "i.png",
+    videoUrl: null,
+  });
+});
+
+test("pickNormal: a picked video brings its own sound", () => {
+  // rand 0.99 → the last visual (the video).
+  assert.deepEqual(pickNormal({ sounds: ["s.mp3"], images: ["i.png"], videos: ["v.mp4"] }, () => 0.99), {
+    soundUrl: null,
+    imageUrl: null,
+    videoUrl: "v.mp4",
+  });
+  assert.equal(pickNormal({ sounds: ["s.mp3"], images: ["i.png"], videos: ["v.mp4"] }, () => 0).imageUrl, "i.png");
 });

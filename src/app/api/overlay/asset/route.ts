@@ -372,8 +372,14 @@ export async function POST(req: Request) {
       isSound ? "alert-lib-sounds" : isVideo ? "alert-lib-videos" : "alert-lib-stickers",
     );
     const created = await prisma.alertAsset.create({
-      // Uploaded from a tier row → only that tier uses it, not every alert.
-      data: { userId: session.user.id, kind: assetKind, url, inRandom: form?.get("inRandom") !== "0" },
+      // On for normal alerts unless asked otherwise (a tier row sends "0").
+      // Videos start off: one replaces the image and sound of every tip.
+      data: {
+        userId: session.user.id,
+        kind: assetKind,
+        url,
+        inRandom: isVideo ? form?.get("inRandom") === "1" : form?.get("inRandom") !== "0",
+      },
       select: { id: true, url: true },
     });
     revalidateOverlay();

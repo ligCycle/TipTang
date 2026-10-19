@@ -112,3 +112,21 @@ export function normalizeTiers(
   tiers.sort((a, b) => a.minAmount - b.minAmount);
   return { ok: true, tiers };
 }
+
+/**
+ * The normal alert's media: one random visual from the library images and
+ * videos switched on for normal alerts (a video brings its own sound), and
+ * one random sound when the visual isn't a video.
+ */
+export function pickNormal(
+  pools: { sounds: string[]; images: string[]; videos: string[] },
+  rand: () => number = Math.random,
+): Omit<AlertBase, "durationSec"> {
+  const pick = <T,>(arr: T[]): T | null => (arr.length ? arr[Math.floor(rand() * arr.length)] : null);
+  const visual = pick([
+    ...pools.images.map((url) => ({ url, video: false })),
+    ...pools.videos.map((url) => ({ url, video: true })),
+  ]);
+  if (visual?.video) return { soundUrl: null, imageUrl: null, videoUrl: visual.url };
+  return { soundUrl: pick(pools.sounds), imageUrl: visual?.url ?? null, videoUrl: null };
+}

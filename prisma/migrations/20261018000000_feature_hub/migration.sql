@@ -8,7 +8,7 @@ ALTER TABLE "User" ADD COLUMN "timerShowRates" BOOLEAN NOT NULL DEFAULT true;
 UPDATE "User" SET "featuresOnboardedAt" = NOW() WHERE "overlayKey" IS NOT NULL;
 
 ALTER TYPE "AlertAssetKind" ADD VALUE 'VIDEO';
--- Library files can stay out of the random pick (used only by tiers).
+-- Library files on/off for normal alerts (off = only where a tier picks them).
 ALTER TABLE "AlertAsset" ADD COLUMN "inRandom" BOOLEAN NOT NULL DEFAULT true;
 
 CREATE TABLE "AlertTier" (

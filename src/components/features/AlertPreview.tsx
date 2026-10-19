@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCard } from "@/components/overlay/AlertCard";
-import { pickTier, resolveAlert, celebrates, type AlertTier } from "@/lib/alert-tiers";
+import { pickTier, resolveAlert, celebrates, pickNormal, type AlertTier } from "@/lib/alert-tiers";
 import { formatBaht } from "@/lib/format";
 import type { OverlayConfig } from "@/components/OverlaySettings";
 
@@ -26,11 +26,15 @@ export function AlertPreview({ config, tiers = [] }: { config: OverlayConfig; ti
     ...config.libraryStickers.map((i) => i.url),
     ...config.libraryVideos.map((i) => i.url),
   ]);
+  // The first of the files switched on for normal alerts (the overlay picks
+  // one at random each time).
+  const on = (list: { url: string; inRandom: boolean }[]) => list.filter((x) => x.inRandom).map((x) => x.url);
   const media = resolveAlert(
     {
-      soundUrl: config.soundUrl,
-      imageUrl: config.imageUrl ?? config.libraryStickers.find((s) => s.inRandom)?.url ?? null,
-      videoUrl: config.videoUrl,
+      ...pickNormal(
+        { sounds: on(config.librarySounds), images: on(config.libraryStickers), videos: on(config.libraryVideos) },
+        () => 0,
+      ),
       durationSec: 7,
     },
     pickTier(tiers, amount),

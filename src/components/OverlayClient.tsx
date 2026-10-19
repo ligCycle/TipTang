@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Confetti } from "./Confetti";
 import { AlertCard } from "@/components/overlay/AlertCard";
-import { pickTier, resolveAlert, celebrates, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
+import { pickTier, resolveAlert, celebrates, pickNormal, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
 import type { TestAlert } from "@/lib/overlay-test";
 
 type Alert = {
@@ -31,15 +31,10 @@ export function OverlayClient({
   username,
   apiKey,
   test,
-  soundUrl,
-  imageUrl,
-  videoUrl,
   color,
   ttsEnabled,
-  librarySounds,
-  libraryStickers,
-  libraryVideos = [],
-  libraryTierOnly = [],
+  normal,
+  libraryAll,
   alertStyle,
   alertTheme,
   tiers = [],
@@ -47,17 +42,12 @@ export function OverlayClient({
   username: string;
   apiKey: string;
   test: boolean;
-  soundUrl: string | null;
-  imageUrl: string | null;
-  videoUrl: string | null;
   color: string | null;
   ttsEnabled: boolean;
-  librarySounds: string[];
-  libraryStickers: string[];
-  /** Library videos — only alert tiers use them (never random-picked). */
-  libraryVideos?: string[];
-  /** Library sounds/stickers kept out of the random pick — tiers may still use them. */
-  libraryTierOnly?: string[];
+  /** Library files switched on for normal alerts (random pick each alert). */
+  normal: { sounds: string[]; images: string[]; videos: string[] };
+  /** Every library file — what a tier may use. */
+  libraryAll: string[];
   alertStyle: string;
   alertTheme: string;
   tiers?: AlertTier[];
@@ -69,20 +59,14 @@ export function OverlayClient({
   const seen = useRef<Set<string>>(new Set());
   const lastSeen = useRef<string>(new Date().toISOString());
   const showing = useRef(false);
-  const libraryUrls = useRef(
-    new Set([...librarySounds, ...libraryStickers, ...libraryVideos, ...libraryTierOnly]),
-  );
-
-  function pickRandom(arr: string[]): string | null {
-    return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
-  }
+  const libraryUrls = useRef(new Set(libraryAll));
 
   // Sequentially preload library assets so a randomly-picked one plays instantly
   // (one at a time to avoid a network/RAM spike when OBS opens the overlay).
   useEffect(() => {
     const items = [
-      ...libraryStickers.map((u) => ({ u, img: true })),
-      ...librarySounds.map((u) => ({ u, img: false })),
+      ...normal.images.map((u) => ({ u, img: true })),
+      ...normal.sounds.map((u) => ({ u, img: false })),
     ];
     let i = 0;
     let cancelled = false;
@@ -131,15 +115,10 @@ export function OverlayClient({
     if (!next) return;
     showing.current = true;
     setCurrent(next);
-    // Random pick from the library each alert (fall back to the single asset),
-    // then the amount's tier overrides whatever it sets.
+    // Random pick from the files switched on for normal alerts, then the
+    // amount's tier overrides whatever it sets.
     const chosen = resolveAlert(
-      {
-        soundUrl: pickRandom(librarySounds) ?? soundUrl,
-        imageUrl: pickRandom(libraryStickers) ?? imageUrl,
-        videoUrl,
-        durationSec: BASE_DURATION_SEC,
-      },
+      { ...pickNormal(normal), durationSec: BASE_DURATION_SEC },
       pickTier(tiers, Number(next.amount)),
       libraryUrls.current,
     );
