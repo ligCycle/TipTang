@@ -159,6 +159,8 @@ model AlertSetItem {
   asset       AlertAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@id([setId, assetId])
+  // Library deletes look items up by file (cascade + bumping the sets).
+  @@index([assetId])
 }
 
 // Alert tier by amount (src/lib/alert-tiers.ts): tips >= minAmount use these
@@ -395,4 +397,6 @@ model Tip {
   confirmedAt     DateTime?
 
   @@index([creatorId, status])
+  // Library deletes null this out (ON DELETE SET NULL); avoid a full scan.
+  @@index([pickedSoundId])
 }

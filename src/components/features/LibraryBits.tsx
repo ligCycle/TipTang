@@ -138,6 +138,7 @@ export function AutoSaveInput({
   ariaLabel,
   placeholder,
   inputMode,
+  maxLength,
   className = "",
 }: {
   value: string;
@@ -145,6 +146,7 @@ export function AutoSaveInput({
   ariaLabel: string;
   placeholder?: string;
   inputMode?: "numeric";
+  maxLength?: number;
   className?: string;
 }) {
   const t = useTranslations("featureHub");
@@ -170,10 +172,11 @@ export function AutoSaveInput({
         aria-label={ariaLabel}
         placeholder={placeholder}
         inputMode={inputMode}
+        maxLength={maxLength}
         className="input w-full! py-1.5 text-sm"
       />
       {state === "saved" && <Icon name="check" className="h-4 w-4 shrink-0 text-emerald-600" aria-label={t("tierSaved")} />}
-      {state === "error" && <Icon name="alert-triangle" className="h-4 w-4 shrink-0 text-red-600" aria-label={t("tierErr_invalid")} />}
+      {state === "error" && <Icon name="alert-triangle" className="h-4 w-4 shrink-0 text-red-600" aria-label={t("saveInvalid")} />}
     </span>
   );
 }

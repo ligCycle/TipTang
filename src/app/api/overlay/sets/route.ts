@@ -17,7 +17,11 @@ export async function GET() {
     select: {
       id: true,
       name: true,
-      items: { select: { assetId: true, fanPickable: true, minAmount: true } },
+      // Stable order (oldest file first) so rows don't jump after an edit.
+      items: {
+        orderBy: { asset: { createdAt: "asc" } },
+        select: { assetId: true, fanPickable: true, minAmount: true },
+      },
     },
   });
   return NextResponse.json({ activeSetId, sets });

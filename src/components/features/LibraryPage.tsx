@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { cleanName, MAX_SETS } from "@/lib/alert-sets";
+import { cleanName, MAX_NAME, MAX_SETS } from "@/lib/alert-sets";
 import { SetEditor } from "@/components/features/SetEditor";
 import { CreateSetDialog } from "@/components/features/CreateSetDialog";
 import {
@@ -177,6 +177,7 @@ export function LibraryPage() {
                       value={f.name ?? ""}
                       placeholder={label(f)}
                       ariaLabel={t("libNameLabel")}
+                      maxLength={MAX_NAME}
                       save={(next) => rename(f, next)}
                     />
                     <div className="flex flex-wrap items-center gap-1.5">

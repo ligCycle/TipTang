@@ -96,16 +96,19 @@ export function TipForm({
   const [pickNote, setPickNote] = useState(false);
   const [pickDropped, setPickDropped] = useState(false);
 
-  // Every amount change goes through here: a pick the new amount no longer
-  // covers is cleared (never the other way round — the amount isn't raised).
-  function changeAmount(next: string) {
-    setAmountStr(next);
-    const n = next.trim() === "" ? 0 : Number(next);
+  // A pick the amount no longer covers is cleared (never the other way round
+  // — the amount isn't raised). Chips check at once; typing checks when the
+  // field is left, so "100" typed over "50" doesn't drop the pick at "1".
+  function checkPick(n: number) {
     const picked = soundChoices?.find((c) => c.id === pickedSoundId);
     if (picked && n < soundFloor(picked, minAmount)) {
       setPickedSoundId(null);
       setPickNote(true);
     }
+  }
+  function changeAmount(next: string, typing = false) {
+    setAmountStr(next);
+    if (!typing) checkPick(next.trim() === "" ? 0 : Number(next));
   }
   const reduceTooSmall =
     timerChoice !== null &&
@@ -352,7 +355,8 @@ export function TipForm({
               max={100000}
               inputMode="numeric"
               value={amountStr}
-              onChange={(e) => changeAmount(e.target.value)}
+              onChange={(e) => changeAmount(e.target.value, true)}
+              onBlur={(e) => checkPick(e.target.value.trim() === "" ? 0 : Number(e.target.value))}
               className="input"
               required
             />

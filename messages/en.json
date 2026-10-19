@@ -833,7 +833,7 @@
     "mediaOne": "1 file",
     "mediaRandom": "Random from {count} files",
     "mediaVideoNote": "A tip that lands on a video plays the video instead of the image and sound (it has its own audio).",
-    "mediaEmpty": "No file is on yet, so alerts show a plain card with no sound.",
+    "mediaEmpty": "The set in use has no files yet, so alerts show a plain card with no sound.",
     "mediaManage": "Manage files in the library",
     "libTabAll": "All files",
     "libNewSet": "+ New set",
@@ -889,7 +889,8 @@
     "d_soundpick": "Fans pick a sound from today's set when they tip; set a minimum tip per sound",
     "switchTitle": "Today's live sound set",
     "switchHint": "Every tip's alert sound and image + the sounds fans can pick",
-    "switchManage": "Manage sets"
+    "switchManage": "Manage sets",
+    "saveInvalid": "Not saved; check what you typed"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

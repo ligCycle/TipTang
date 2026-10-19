@@ -67,5 +67,8 @@ ALTER TABLE "User" ADD CONSTRAINT "User_activeSetId_fkey" FOREIGN KEY ("activeSe
 ALTER TABLE "Tip" ADD COLUMN "pickedSoundId" TEXT;
 ALTER TABLE "Tip" ADD CONSTRAINT "Tip_pickedSoundId_fkey" FOREIGN KEY ("pickedSoundId") REFERENCES "AlertAsset"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
+CREATE INDEX "AlertSetItem_assetId_idx" ON "AlertSetItem"("assetId");
+CREATE INDEX "Tip_pickedSoundId_idx" ON "Tip"("pickedSoundId");
+
 ALTER TABLE "AlertSet" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "AlertSetItem" ENABLE ROW LEVEL SECURITY;

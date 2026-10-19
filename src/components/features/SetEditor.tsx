@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Switch } from "@/components/features/FeatureCard";
-import { cleanName, cleanPrice } from "@/lib/alert-sets";
+import { cleanName, cleanPrice, MAX_NAME } from "@/lib/alert-sets";
 import {
   AutoSaveInput,
   FileThumb,
@@ -94,6 +94,7 @@ export function SetEditor({
             key={set.id}
             value={set.name}
             ariaLabel={t("setNameLabel")}
+            maxLength={MAX_NAME}
             className="mt-1 w-full"
             save={async (next) => (cleanName(next) ? patch({ name: next }) : false)}
           />
