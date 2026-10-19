@@ -1,6 +1,6 @@
 # Fan sound pick ("แฟนเลือกเสียง") + sound sets ("ชุด") — design
 
-**Date:** 2026-10-19 · **Status:** awaiting founder approval of this document
+**Date:** 2026-10-19 · **Status:** approved by the founder 2026-10-19
 **Project 2 of the donation-features roadmap.** Built on branch `feature-hub` (project 1, not yet
 merged or deployed; its two migrations are not applied in production yet). **The founder decided
 projects 1 and 2 ship together in one deploy.**
@@ -102,9 +102,10 @@ amount.
   showing today's set name. Shown only when the feature is switched on, alerts are on, and the
   active set has at least one fan-pickable sound.
 - Each sound: a play/preview button, its name, and its minimum ("ฟรี" or "฿50").
-- Sounds whose minimum is above the currently entered amount look disabled. **Tapping a disabled
-  sound raises the amount to that sound's minimum and selects it** (Claude's call, shown in the
-  approved mockup as a guess; the founder did not object).
+- Sounds whose minimum is above the currently entered amount are disabled and **cannot be
+  picked**; they show "ทิป ฿X ขึ้นไป". TipTang never raises the fan's amount by itself (founder:
+  adding money on the fan's behalf could cause problems). If the fan lowers the amount below the
+  picked sound's minimum, the pick is cleared and a short note says why.
 - Picking is optional; the hint says no pick = random from today's set. Tapping the selected
   sound again unselects it.
 - A line under the picker says sounds play on screen while the creator is live (Claude's call:
