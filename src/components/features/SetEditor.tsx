@@ -139,6 +139,8 @@ export function SetEditor({
                       : t("setImageRow")}
                 </p>
               </div>
+              {/* Controls drop to their own line on phones so the name stays readable. */}
+              <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
               {file.kind === "sound" && (
                 <>
                   <Switch
@@ -170,6 +172,7 @@ export function SetEditor({
               >
                 {t("setRemoveItem")}
               </button>
+              </div>
             </li>
           ))}
         </ul>
