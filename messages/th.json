@@ -358,7 +358,14 @@
     "slipDeletesOn": "สลิปจะถูกลบ {date}",
     "obsReduceBahtEq": "บาท ลดเวลา",
     "obsTimerRateExample": "ตัวอย่าง: ทิป {baht} บาท → เวลาเพิ่ม {min} นาที",
-    "obsReduceExample": "ตัวอย่าง: ทิปลดเวลา {baht} บาท → เวลาลด {min} นาที"
+    "obsReduceExample": "ตัวอย่าง: ทิปลดเวลา {baht} บาท → เวลาลด {min} นาที",
+    "filterAll": "ทั้งหมด",
+    "filterPending": "รอยืนยัน",
+    "filterConfirmed": "ยืนยันแล้ว",
+    "filterRejected": "ปฏิเสธแล้ว",
+    "noTipsInFilter": "ไม่มีทิปในหมวดนี้",
+    "autoBadge": "ยืนยันอัตโนมัติ",
+    "autoBadgeTitle": "ระบบตรวจสลิปกับธนาคารแล้วตรง จึงยืนยันทิปให้อัตโนมัติ"
   },
   "settings": {
     "title": "ตั้งค่าหน้าโดเนท",

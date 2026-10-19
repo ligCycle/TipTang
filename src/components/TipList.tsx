@@ -8,26 +8,38 @@ import { Icon } from "@/components/Icon";
 
 const FULL_LIST = 100;
 
+export const TIP_FILTERS = ["all", "PENDING", "CONFIRMED", "REJECTED"] as const;
+export type TipFilter = (typeof TIP_FILTERS)[number];
+const FILTER_LABEL: Record<TipFilter, string> = {
+  all: "filterAll",
+  PENDING: "filterPending",
+  CONFIRMED: "filterConfirmed",
+  REJECTED: "filterRejected",
+};
+
 /**
  * The creator's tips, newest first, with confirm/reject on each row. The
  * dashboard home shows the latest few (`limit`) with a link to the full list
- * on /dashboard/tips.
+ * on /dashboard/tips, which can also filter by status (?status=).
  */
 export async function TipList({
   userId,
   locale,
   limit,
+  filter,
 }: {
   userId: string;
   locale: string;
   limit?: number;
+  /** Full list only: show tabs and keep tips of this status. */
+  filter?: TipFilter;
 }) {
   const t = await getTranslations("dashboard");
   const tNav = await getTranslations("dashNav");
   const now = new Date();
 
   const tips = await prisma.tip.findMany({
-    where: { creatorId: userId },
+    where: { creatorId: userId, ...(filter && filter !== "all" ? { status: filter } : {}) },
     orderBy: { createdAt: "desc" },
     take: limit ?? FULL_LIST,
     select: {
@@ -49,9 +61,19 @@ export async function TipList({
   });
   // The "clear rejected" action counts the creator's rejected tips overall,
   // not just the few shown on the home page.
-  const rejectedCount = await prisma.tip.count({
-    where: { creatorId: userId, status: "REJECTED" },
+  const byStatus = await prisma.tip.groupBy({
+    by: ["status"],
+    where: { creatorId: userId },
+    _count: { _all: true },
   });
+  const countOf = (st: string) => byStatus.find((g) => g.status === st)?._count._all ?? 0;
+  const rejectedCount = countOf("REJECTED");
+  const counts: Record<TipFilter, number> = {
+    all: byStatus.reduce((n, g) => n + g._count._all, 0),
+    PENDING: countOf("PENDING"),
+    CONFIRMED: countOf("CONFIRMED"),
+    REJECTED: rejectedCount,
+  };
 
   // When the retention job will delete a decided tip's slip, and whether that
   // is within a week (highlighted). Worked out here, not in the client row,
@@ -91,9 +113,40 @@ export async function TipList({
   return (
     <div id="tips">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold text-brand-900">{t("tipsTitle")}</h2>
+        {/* Its own page gets the page heading; on the home page it's a section. */}
+        {filter ? (
+          <h1 className="text-2xl font-extrabold text-brand-900">{t("tipsTitle")}</h1>
+        ) : (
+          <h2 className="text-lg font-bold text-brand-900">{t("tipsTitle")}</h2>
+        )}
         {rejectedCount > 0 && <ClearRejectedButton count={rejectedCount} />}
       </div>
+      {filter && (
+        <nav aria-label={t("tipsTitle")} className="mb-4 flex flex-wrap gap-1.5">
+          {TIP_FILTERS.map((f) => {
+            const active = f === filter;
+            return (
+              <Link
+                key={f}
+                href={f === "all" ? `/${locale}/dashboard/tips` : `/${locale}/dashboard/tips?status=${f}`}
+                aria-current={active ? "page" : undefined}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                  active ? "bg-brand-600 text-white" : "bg-brand-100 text-brand-800 hover:bg-brand-200"
+                }`}
+              >
+                {t(FILTER_LABEL[f])}
+                <span
+                  className={`rounded-full px-1.5 text-xs tabular-nums ${
+                    active ? "bg-white/25" : f === "PENDING" && counts.PENDING > 0 ? "bg-amber-200 text-amber-900" : "bg-white/60"
+                  }`}
+                >
+                  {counts[f]}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
       {clientTips.length > 0 && (
         <p className="-mt-2 mb-4 flex items-start gap-1.5 text-sm text-brand-900/60">
           <Icon name="clock" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -101,7 +154,9 @@ export async function TipList({
         </p>
       )}
       {clientTips.length === 0 ? (
-        <p className="card rounded-2xl p-6 text-center text-brand-900/60">{t("noTips")}</p>
+        <p className="card rounded-2xl p-6 text-center text-brand-900/60">
+          {filter && filter !== "all" && counts.all > 0 ? t("noTipsInFilter") : t("noTips")}
+        </p>
       ) : (
         <ul className="space-y-3">
           {clientTips.map((tip) => (

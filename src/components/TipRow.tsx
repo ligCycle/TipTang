@@ -155,11 +155,11 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           )}
           {tip.autoVerified && tip.verifyDetail !== "ocr" ? (
             <span
-              title="auto-verified"
+              title={t("autoBadgeTitle")}
               className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700"
             >
               <Icon name="zap" className="h-3 w-3" />
-              auto
+              {t("autoBadge")}
             </span>
           ) : (
             tip.verifyCode &&

@@ -358,7 +358,14 @@
     "slipDeletesOn": "Slip deleted on {date}",
     "obsReduceBahtEq": "baht tipped takes off",
     "obsTimerRateExample": "Example: a {baht} baht tip → {min} more minutes",
-    "obsReduceExample": "Example: a {baht} baht reduce tip → {min} fewer minutes"
+    "obsReduceExample": "Example: a {baht} baht reduce tip → {min} fewer minutes",
+    "filterAll": "All",
+    "filterPending": "Pending",
+    "filterConfirmed": "Confirmed",
+    "filterRejected": "Rejected",
+    "noTipsInFilter": "No tips here",
+    "autoBadge": "Auto-confirmed",
+    "autoBadgeTitle": "The slip matched the bank record, so the tip was confirmed automatically"
   },
   "settings": {
     "title": "Donate page settings",
