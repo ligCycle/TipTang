@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_SET_NAME, type NormalMedia } from "@/lib/alert-sets";
+import { DEFAULT_SET_NAME, setVersion, type NormalMedia } from "@/lib/alert-sets";
 
 /**
  * The creator's active set id. Every creator has one: the feature-hub
@@ -34,7 +34,7 @@ export async function activeSetMedia(userId: string): Promise<{ version: string;
   });
   const items = set?.items ?? [];
   return {
-    version: `${setId}:${set?.updatedAt.getTime() ?? 0}`,
+    version: setVersion(setId, set?.updatedAt ?? null),
     normal: {
       sounds: items
         .filter((i) => i.asset.kind === "SOUND")

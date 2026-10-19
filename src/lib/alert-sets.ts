@@ -82,3 +82,8 @@ export function cleanPrice(raw: unknown): number | null {
 export function libraryNumber(orderedIds: string[], id: string): number {
   return orderedIds.indexOf(id) + 1;
 }
+
+/** Version of a creator's active-set media; overlays refresh when it changes. */
+export function setVersion(setId: string | null, updatedAt: Date | null): string {
+  return `${setId ?? ""}:${updatedAt?.getTime() ?? 0}`;
+}

@@ -7,6 +7,7 @@ import {
   cleanName,
   cleanPrice,
   libraryNumber,
+  setVersion,
   MAX_NAME,
   type NormalMedia,
   type PickCandidate,
@@ -103,4 +104,12 @@ test("libraryNumber: unnamed sounds are numbered by whole-library order, everywh
   assert.equal(libraryNumber(sounds, "s2"), 2);
   assert.equal(libraryNumber(sounds, "s3"), 3);
   assert.equal(libraryNumber(sounds, "gone"), 0);
+});
+
+test("setVersion: changes with the set or its last change, stable otherwise", () => {
+  const t = new Date("2026-10-19T00:00:00Z");
+  assert.equal(setVersion("a", t), setVersion("a", new Date(t.getTime())));
+  assert.notEqual(setVersion("a", t), setVersion("b", t));
+  assert.notEqual(setVersion("a", t), setVersion("a", new Date(t.getTime() + 1)));
+  assert.equal(setVersion(null, null), setVersion(null, null));
 });

@@ -6,7 +6,7 @@ import { goalRaised, goalPercent } from "@/lib/goal";
 import { readTestAlert, type TestAlert } from "@/lib/overlay-test";
 import { nextCursor } from "@/lib/overlay-cursor";
 import { activeSetMedia } from "@/lib/alert-sets-server";
-import type { NormalMedia } from "@/lib/alert-sets";
+import { setVersion, type NormalMedia } from "@/lib/alert-sets";
 import type { FeedTip } from "@/components/OverlayClient";
 import type { GoalState } from "@/components/overlay/GoalView";
 import type { TimerState } from "@/components/overlay/TimerView";
@@ -37,6 +37,9 @@ export const OVERLAY_USER_SELECT = {
   goalAmount: true,
   goalStartedAt: true,
   goalOverlayEnabled: true,
+  // Cheap check each poll: has the active sound set changed? (alertFeed)
+  activeSetId: true,
+  activeSet: { select: { updatedAt: true } },
 } as const;
 
 type OverlayUser = {
@@ -60,6 +63,8 @@ type OverlayUser = {
   goalAmount: unknown;
   goalStartedAt: Date | null;
   goalOverlayEnabled: boolean;
+  activeSetId: string | null;
+  activeSet: { updatedAt: Date } | null;
 };
 
 /** The creator for `username` when `key` is their overlay key, else null. */
@@ -148,7 +153,10 @@ export async function alertFeed(
           select: { id: true, buyerName: true, itemTitle: true, amount: true, confirmedAt: true },
         }),
     off ? null : readTestAlert(user.id),
-    activeSetMedia(user.id),
+    // Set items load only when the overlay's copy is stale (or no set yet).
+    user.activeSetId && setVersion(user.activeSetId, user.activeSet?.updatedAt ?? null) === mediaVersion
+      ? null
+      : activeSetMedia(user.id),
   ]);
 
   const timerDeltaFor = (effect: "ADD" | "REDUCE" | "NONE", amount: number) => {
@@ -205,7 +213,7 @@ export async function alertFeed(
     tips: feedTips,
     test,
     cursor,
-    ...(media.version !== mediaVersion ? { media } : {}),
+    ...(media && media.version !== mediaVersion ? { media } : {}),
   };
 }
 
