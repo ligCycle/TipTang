@@ -346,6 +346,12 @@ export async function POST(req: Request) {
         where: { id: assetId, userId: session.user.id },
       });
       if (asset) {
+        // Sets holding it lose the item (FK cascade); bump them so running
+        // overlays drop the file from their random pool.
+        const inSets = await prisma.alertSetItem.findMany({
+          where: { assetId: asset.id },
+          select: { setId: true },
+        });
         await deleteFile(asset.url); // free the storage before dropping the row
         // Tiers pointing at this file fall back to the normal alert.
         await prisma.$transaction([
@@ -354,6 +360,12 @@ export async function POST(req: Request) {
           prisma.alertTier.updateMany({ where: { userId: session.user.id, imageUrl: asset.url }, data: { imageUrl: null } }),
           prisma.alertTier.updateMany({ where: { userId: session.user.id, videoUrl: asset.url }, data: { videoUrl: null } }),
         ]);
+        if (inSets.length > 0) {
+          await prisma.alertSet.updateMany({
+            where: { id: { in: inSets.map((i) => i.setId) } },
+            data: { updatedAt: new Date() },
+          });
+        }
         revalidateOverlay();
       }
       return NextResponse.json({ ok: true, id: assetId });
