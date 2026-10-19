@@ -6,6 +6,8 @@ export type FeatureFlags = {
   alertsEnabled: boolean;
   goalOverlayEnabled: boolean;
   timerEnabled: boolean;
+  /** Sound pick on the donate page (not part of any preset). */
+  soundPickEnabled: boolean;
 };
 
 export const PRESETS = {
@@ -20,7 +22,7 @@ export function isPresetId(v: unknown): v is PresetId {
   return typeof v === "string" && Object.hasOwn(PRESETS, v);
 }
 
-export function presetChanges(current: FeatureFlags, preset: PresetId): Partial<FeatureFlags> {
+export function presetChanges(current: Partial<FeatureFlags>, preset: PresetId): Partial<FeatureFlags> {
   const out: Partial<FeatureFlags> = {};
   for (const k of PRESETS[preset]) if (!current[k]) out[k] = true;
   return out;

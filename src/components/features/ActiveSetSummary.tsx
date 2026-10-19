@@ -1,23 +1,22 @@
 "use client";
 
-import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import type { OverlayConfig } from "@/components/OverlaySettings";
+import { SetSwitcher } from "@/components/features/SetSwitcher";
+import { useSoundSets } from "@/components/features/useSoundSets";
 
 /**
- * Section ③ on the alerts page: which library files normal alerts use (the
- * ones switched on there), with a link to manage them. Files live only in
- * the library now.
+ * Section ③ on the alerts page: what normal alerts play (the active set's
+ * images, sounds and videos), the set switcher, and a link to the library.
  */
-export function NormalMediaSummary({ config }: { config: OverlayConfig }) {
+export function ActiveSetSummary({ config }: { config: OverlayConfig }) {
   const t = useTranslations("featureHub");
-  const locale = useLocale();
-  const on = <T extends { inRandom: boolean }>(list: T[]) => list.filter((x) => x.inRandom);
-  const images = on(config.libraryStickers);
-  const sounds = on(config.librarySounds);
-  const videos = on(config.libraryVideos);
-  const none = images.length + sounds.length + videos.length === 0;
+  const { active } = useSoundSets();
+  const ids = new Set(active?.items.map((i) => i.assetId) ?? []);
+  const images = config.libraryStickers.filter((f) => ids.has(f.id));
+  const sounds = config.librarySounds.filter((f) => ids.has(f.id));
+  const videos = config.libraryVideos.filter((f) => ids.has(f.id));
 
   const row = (icon: "image" | "volume" | "video", label: string, count: number) => (
     <li className="flex items-center gap-2 text-sm text-brand-900/80">
@@ -32,6 +31,7 @@ export function NormalMediaSummary({ config }: { config: OverlayConfig }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-brand-900/65">{t("mediaIntro")}</p>
+      <SetSwitcher showManage />
       {images.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {images.slice(0, 6).map((img) => (
@@ -46,14 +46,9 @@ export function NormalMediaSummary({ config }: { config: OverlayConfig }) {
         {row("video", t("mediaVideos"), videos.length)}
       </ul>
       {videos.length > 0 && <p className="text-xs text-brand-900/60">{t("mediaVideoNote")}</p>}
-      {none && <p className="text-xs text-brand-900/60">{t("mediaEmpty")}</p>}
-      <Link
-        href={`/${locale}/dashboard/library`}
-        className="btn-secondary inline-flex items-center gap-1.5 px-4 py-2 text-sm"
-      >
-        {t("mediaManage")}
-        <Icon name="arrow-right" className="h-4 w-4" />
-      </Link>
+      {images.length + sounds.length + videos.length === 0 && (
+        <p className="text-xs text-brand-900/60">{t("mediaEmpty")}</p>
+      )}
     </div>
   );
 }

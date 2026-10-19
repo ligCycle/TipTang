@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCard } from "@/components/overlay/AlertCard";
 import { pickTier, resolveAlert, celebrates, pickNormal, type AlertTier } from "@/lib/alert-tiers";
+import { poolsForAmount, type NormalMedia } from "@/lib/alert-sets";
+import { useSoundSets } from "@/components/features/useSoundSets";
 import { formatBaht } from "@/lib/format";
 import type { OverlayConfig } from "@/components/OverlaySettings";
 
@@ -18,6 +20,7 @@ const OBS_SEEN_WINDOW_MS = 5 * 60_000;
 export function AlertPreview({ config, tiers = [] }: { config: OverlayConfig; tiers?: AlertTier[] }) {
   const t = useTranslations("featureHub");
   const [amount, setAmount] = useState(AMOUNTS[0]);
+  const { active } = useSoundSets();
   const [status, setStatus] = useState<"sent" | "noObs" | "failed" | null>(null);
   const [sending, setSending] = useState(false);
 
@@ -26,17 +29,17 @@ export function AlertPreview({ config, tiers = [] }: { config: OverlayConfig; ti
     ...config.libraryStickers.map((i) => i.url),
     ...config.libraryVideos.map((i) => i.url),
   ]);
-  // The first of the files switched on for normal alerts (the overlay picks
-  // one at random each time).
-  const on = (list: { url: string; inRandom: boolean }[]) => list.filter((x) => x.inRandom).map((x) => x.url);
+  // The active set's media for this amount; the preview shows the first
+  // (the overlay picks one at random each time).
+  const items = new Map((active?.items ?? []).map((i) => [i.assetId, i]));
+  const inSet = <T extends { id: string }>(list: T[]) => list.filter((f) => items.has(f.id));
+  const normal: NormalMedia = {
+    sounds: inSet(config.librarySounds).map((f) => ({ url: f.url, minAmount: items.get(f.id)?.minAmount ?? 0 })),
+    images: inSet(config.libraryStickers).map((f) => f.url),
+    videos: inSet(config.libraryVideos).map((f) => f.url),
+  };
   const media = resolveAlert(
-    {
-      ...pickNormal(
-        { sounds: on(config.librarySounds), images: on(config.libraryStickers), videos: on(config.libraryVideos) },
-        () => 0,
-      ),
-      durationSec: 7,
-    },
+    { ...pickNormal(poolsForAmount(normal, amount), () => 0), durationSec: 7 },
     pickTier(tiers, amount),
     library,
   );

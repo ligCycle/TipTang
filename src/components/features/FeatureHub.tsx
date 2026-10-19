@@ -6,6 +6,7 @@ import { FEATURES, type FeatureDef } from "@/lib/feature-registry";
 import type { FeatureFlags } from "@/lib/feature-presets";
 import { FeatureCard } from "@/components/features/FeatureCard";
 import { ObsLinkCard } from "@/components/features/ObsLinkCard";
+import { SetSwitcher } from "@/components/features/SetSwitcher";
 import { FirstVisitPopup } from "@/components/features/FirstVisitPopup";
 
 export type HubState = {
@@ -30,6 +31,7 @@ export async function loadHub(): Promise<HubState | null> {
       alertsEnabled: d.alertsEnabled !== false,
       goalOverlayEnabled: Boolean(d.goalEnabled),
       timerEnabled: Boolean(d.timerEnabled),
+      soundPickEnabled: Boolean(d.soundPickEnabled),
     },
     featuresOnboardedAt: d.featuresOnboardedAt ?? null,
   };
@@ -98,7 +100,7 @@ export function FeatureHub() {
       key={f.id}
       feature={f}
       enabled={hub.flags[f.flag]}
-      obsUrl={obsUrl(hub, f)}
+      obsUrl={f.obsPath === null ? null : obsUrl(hub, f)}
       busy={busy === f.id}
       onToggle={(next) => toggle(f, next)}
     />
@@ -109,6 +111,7 @@ export function FeatureHub() {
       {/* One-time chooser on the first visit (shows the OBS step first if never connected). */}
       {!hub.featuresOnboardedAt && <FirstVisitPopup hub={hub} onDone={setHub} />}
       <ObsLinkCard lastSeenAt={hub.lastSeenAt} />
+      <SetSwitcher showManage />
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
       <section>

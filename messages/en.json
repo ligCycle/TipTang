@@ -826,7 +826,7 @@
     "libRemoveUsed": "A tier uses this file. Removing it sends that tier back to the normal alert. Remove anyway?",
     "libTierHint": "Pick files for each amount tier on the tip alerts page, under Split by amount",
     "libTierLink": "Open tip alerts",
-    "mediaIntro": "Normal alerts use the library files with \"Use in normal alerts\" on. With several on, each tip gets one at random.",
+    "mediaIntro": "Normal alerts play a random sound and image from the set in use; a priced sound only plays on tips that reach its price.",
     "mediaImages": "Images / GIFs",
     "mediaSounds": "Sounds",
     "mediaVideos": "Videos",
@@ -885,7 +885,12 @@
     "csNext": "Next",
     "csBack": "Back",
     "csCancel": "Cancel",
-    "csCreate": "Create set"
+    "csCreate": "Create set",
+    "f_soundpick": "Fan sound pick",
+    "d_soundpick": "Fans pick a sound from today's set when they tip; set a minimum tip per sound",
+    "switchTitle": "Today's live sound set",
+    "switchHint": "Every tip's alert sound and image + the sounds fans can pick",
+    "switchManage": "Manage sets"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

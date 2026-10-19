@@ -13,7 +13,7 @@ import { OverlayConnectionStatus } from "@/components/OverlayConnectionStatus";
 import { tipSeconds } from "@/lib/subathon-math";
 import { SettingsSection } from "@/components/features/SettingsSection";
 import { Switch } from "@/components/features/FeatureCard";
-import { NormalMediaSummary } from "@/components/features/NormalMediaSummary";
+import { ActiveSetSummary } from "@/components/features/ActiveSetSummary";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string; name: string | null };
@@ -1674,7 +1674,7 @@ export function OverlaySettings({
           {lookBlock}
         </SettingsSection>
         <SettingsSection index={3} title={tHub("secMedia")}>
-          <NormalMediaSummary config={config} />
+          <ActiveSetSummary config={config} />
         </SettingsSection>
         <SettingsSection index={4} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
         {tiersSlot && (

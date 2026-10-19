@@ -24,6 +24,7 @@ import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { overlaySetUp } from "@/lib/overlay-connection";
 import { ReportButton } from "@/components/ReportButton";
+import { SetSwitcher } from "@/components/features/SetSwitcher";
 import { SHOP_ENABLED } from "@/lib/features";
 import { Icon } from "@/components/Icon";
 
@@ -193,6 +194,9 @@ export default async function DashboardPage({
           </Link>
         </div>
       </section>
+
+      {/* Today's sound set, one tap before going live. */}
+      <SetSwitcher showManage />
 
       {/* Overview — one range at a time, chosen via ?range= so the page
           stays a server component and the choice survives a reload. */}

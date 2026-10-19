@@ -52,7 +52,8 @@ export function FeatureCard({
 }: {
   feature: FeatureDef;
   enabled: boolean;
-  obsUrl: string;
+  /** Its own OBS link; null = none (shown nowhere on the card). */
+  obsUrl: string | null;
   busy?: boolean;
   onToggle: (next: boolean) => void;
 }) {
@@ -63,7 +64,7 @@ export function FeatureCard({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(obsUrl);
+      if (obsUrl) await navigator.clipboard.writeText(obsUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -85,7 +86,7 @@ export function FeatureCard({
         <Switch checked={enabled} onChange={onToggle} label={name} disabled={busy} />
       </div>
       <p className="text-sm text-brand-900/65">{t(`d_${feature.id}`)}</p>
-      {enabled && (
+      {enabled && obsUrl && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <button
             type="button"
