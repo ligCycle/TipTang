@@ -14,8 +14,16 @@ export async function getActiveSetId(userId: string): Promise<string> {
     data: { userId, name: DEFAULT_SET_NAME },
     select: { id: true },
   });
-  await prisma.user.update({ where: { id: userId }, data: { activeSetId: set.id } });
-  return set.id;
+  // Only claim the slot if it's still empty: pages fire several requests at
+  // once, and two of them may both get here for a brand-new creator.
+  const claimed = await prisma.user.updateMany({
+    where: { id: userId, activeSetId: null },
+    data: { activeSetId: set.id },
+  });
+  if (claimed.count === 1) return set.id;
+  await prisma.alertSet.delete({ where: { id: set.id } });
+  const winner = await prisma.user.findUnique({ where: { id: userId }, select: { activeSetId: true } });
+  return winner?.activeSetId ?? set.id;
 }
 
 /**

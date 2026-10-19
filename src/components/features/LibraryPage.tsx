@@ -88,7 +88,7 @@ export function LibraryPage() {
 
   const tiersUsing = (url: string) =>
     data.tiers.filter((x) => x.soundUrl === url || x.imageUrl === url || x.videoUrl === url).map((x) => x.minAmount);
-  const setsWith = (id: string) => data.sets.filter((s) => s.items.some((i) => i.assetId === id)).map((s) => s.name);
+  const setsWith = (id: string) => data.sets.filter((s) => s.items.some((i) => i.assetId === id));
   const currentSet = data.sets.find((s) => s.id === tab) ?? null;
   const tabClass = (on: boolean) =>
     `inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
@@ -180,9 +180,9 @@ export function LibraryPage() {
                       save={(next) => rename(f, next)}
                     />
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {inSets.map((n) => (
-                        <span key={n} className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
-                          {n}
+                      {inSets.map((s) => (
+                        <span key={s.id} className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+                          {s.name}
                         </span>
                       ))}
                       {tierMins.map((min) => (
