@@ -111,17 +111,26 @@ export function TipForm({
   // — the amount isn't raised): the spin first, then the sound if it still
   // doesn't fit alone. Chips check at once; typing checks when the field is
   // left, so "100" typed over "50" doesn't drop the pick at "1".
-  function checkPick(n: number) {
+  // Set when a check clears a pick, so the next "continue" stays on the form
+  // once and the fan sees why (a click on the button blurs the amount first).
+  const justCleared = useRef(false);
+  // Returns whether anything was cleared.
+  function checkPick(n: number): boolean {
+    let cleared = false;
     let spinning = spin;
     if (spinning && wheelChoice && n < spinFloor(minAmount, wheelChoice.price, pickedSound?.minAmount ?? null)) {
       spinning = false;
+      cleared = true;
       setSpin(false);
       setSpinNote(true);
     }
     if (pickedSound && n < soundFloor(pickedSound, minAmount, spinning && wheelChoice ? wheelChoice.price : 0)) {
       setPickedSoundId(null);
       setPickNote(true);
+      cleared = true;
     }
+    if (cleared) justCleared.current = true;
+    return cleared;
   }
   function changeAmount(next: string, typing = false) {
     setAmountStr(next);
@@ -145,6 +154,12 @@ export function TipForm({
     e.preventDefault();
     setError(null);
     if (!Number.isFinite(amount) || amount < 1) return;
+    // Enter in the amount field skips the blur check: run it here, and stay
+    // on the form (with the note) if a pick no longer fits the amount.
+    if (checkPick(amount) || justCleared.current) {
+      justCleared.current = false;
+      return;
+    }
     if (method === "PAYPAL") {
       setStep("pay");
       return;

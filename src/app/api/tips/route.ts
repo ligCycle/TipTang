@@ -303,7 +303,15 @@ export async function POST(req: Request) {
   if (status === "CONFIRMED") {
     after(() => applySubathonTip(creator.id, parsed.data.amount, timerEffect));
     // Draw now (not after the response) so the overlay sees it on its next poll.
-    if (spinWheelId) await startSpin(tip.id).catch((err) => console.error("[wheel] spin failed:", err));
+    // Another tip may have taken the last segment since the check above: the
+    // fan is told the spin didn't happen (the tip row says so too).
+    if (spinWheelId) {
+      const spun = await startSpin(tip.id).catch((err) => {
+        console.error("[wheel] spin failed:", err);
+        return "empty" as const;
+      });
+      if (spun !== "started") spinDropped = true;
+    }
   }
 
   // Notify the creator by email after the response is sent (best-effort — never

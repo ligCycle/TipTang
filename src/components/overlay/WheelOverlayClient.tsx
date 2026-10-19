@@ -11,8 +11,9 @@ const RESULT_MS = 5000;
 
 /**
  * The wheel OBS link: hidden until a spin arrives, then the wheel spins to
- * the server's result, shows "<fan> หมุนได้ <task>!" and hides again. Spins
- * queue and play one after another.
+ * the server's result, shows "<fan> หมุนได้ <task>!" and hides again. It only
+ * asks for the next spin when idle: fetching claims a spin for this source, so
+ * waiting spins stay on the server (a reload or a reject can't lose them).
  */
 export function WheelOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
   const [current, setCurrent] = useState<OverlaySpin | null>(null);
@@ -20,6 +21,7 @@ export function WheelOverlayClient({ username, apiKey }: { username: string; api
   const seen = useRef(new Set<string>());
   const queue = useRef<OverlaySpin[]>([]);
   const playing = useRef(false);
+  const fetching = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -31,6 +33,7 @@ export function WheelOverlayClient({ username, apiKey }: { username: string; api
         playing.current = false;
         setCurrent(null);
         setShowResult(false);
+        if (active) void poll();
         return;
       }
       playing.current = true;
@@ -47,6 +50,8 @@ export function WheelOverlayClient({ username, apiKey }: { username: string; api
     }
 
     async function poll() {
+      if (playing.current || fetching.current) return;
+      fetching.current = true;
       try {
         const res = await fetch(`/api/overlay/${username}/wheel?key=${encodeURIComponent(apiKey)}`);
         if (!res.ok) return;
@@ -57,6 +62,8 @@ export function WheelOverlayClient({ username, apiKey }: { username: string; api
         if (!playing.current) playNext();
       } catch {
         // ignore transient network errors
+      } finally {
+        fetching.current = false;
       }
     }
     poll();

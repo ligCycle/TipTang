@@ -192,7 +192,7 @@
     "wheelSlotCount": "{count, plural, one {# slot} other {# slots}}",
     "wheelEqualOdds": "Every slot has the same odds",
     "wheelSpinCleared": "The amount no longer covers the spin, so the spin was removed.",
-    "wheelSpinDropped": "This tip didn’t spin the wheel — the creator changed or turned off the wheel while you were tipping."
+    "wheelSpinDropped": "This tip didn’t spin the wheel (the amount didn’t cover the spin, or the wheel was changed, turned off or ran out while you were tipping). Your tip still reached the creator as usual."
   },
   "tipSuccess": {
     "title": "Tip sent!",
