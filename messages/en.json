@@ -780,7 +780,8 @@
     "obsSizeOf": "Suggested size {size}",
     "secObs": "OBS link",
     "goalDefaultTitle": "My goal",
-    "autoSaveHint": "Saves automatically when you stop typing"
+    "autoSaveHint": "Saves automatically when you stop typing",
+    "timerPreview": "Live preview (same as on OBS)"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

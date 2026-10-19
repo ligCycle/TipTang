@@ -112,6 +112,8 @@ export function OverlaySettings({
   const [resettingGoal, setResettingGoal] = useState(false);
   const [goalResetOpen, setGoalResetOpen] = useState(false);
   const [goalRefresh, setGoalRefresh] = useState(0);
+  // Bumped after the timer settings save, to reload its live preview.
+  const [timerRefresh, setTimerRefresh] = useState(0);
   const [libUploading, setLibUploading] = useState<"sound" | "sticker" | null>(
     null,
   );
@@ -282,6 +284,7 @@ export function OverlaySettings({
       if (res.ok) {
         setTimerSaved(true);
         setTimeout(() => setTimerSaved(false), 1500);
+        setTimerRefresh((n) => n + 1);
         // If the timer is idle (stopped), reflect the new starting time now.
         if (config?.timerState === "stopped") {
           timerBaseRef.current = null;
@@ -1603,6 +1606,21 @@ export function OverlaySettings({
                   <p className="mt-1 text-xs text-brand-900/55">
                     {t("obsTimerHint")}
                   </p>
+                </div>
+
+                {/* Live clock preview — the real overlay, as OBS shows it */}
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-brand-900/50">
+                    {tHub("timerPreview")}
+                  </p>
+                  <div className="overflow-hidden rounded-xl bg-neutral-800 ring-1 ring-black/20">
+                    <iframe
+                      key={`${timerUrl}#${timerRefresh}`}
+                      src={timerUrl}
+                      title="timer preview"
+                      className="h-[200px] w-full border-0"
+                    />
+                  </div>
                 </div>
               </div>
             )}

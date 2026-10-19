@@ -780,7 +780,8 @@
     "obsSizeOf": "ขนาดแนะนำ {size}",
     "secObs": "ลิงก์ OBS",
     "goalDefaultTitle": "เป้าหมายของฉัน",
-    "autoSaveHint": "บันทึกให้อัตโนมัติเมื่อพิมพ์เสร็จ"
+    "autoSaveHint": "บันทึกให้อัตโนมัติเมื่อพิมพ์เสร็จ",
+    "timerPreview": "พรีวิวสด (หน้าตาเดียวกับบนจอ OBS)"
   },
   "dashNav": {
     "menuLabel": "เมนูแดชบอร์ด",
