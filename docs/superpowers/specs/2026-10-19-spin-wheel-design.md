@@ -165,3 +165,6 @@ feature-hub migrations, as project 2 did).
   Reset restores every segment. The wheel is empty (spin option hidden) when no segments remain.
 - Limits: 2–24 tasks per wheel; at most 48 segments drawn (if tasks × slots exceeds 48, the
   slots-per-task picker caps itself and says why); 20 wheels per creator; task text ≤ 40 chars.
+
+**Control (founder):** "แต่ละภารกิจมีกี่ช่อง" is a **slider** (1–4) on the wheel page, with the
+resulting total shown beside it ("6 ภารกิจ × 3 = 18 ช่อง") and the wheel preview updating live.
