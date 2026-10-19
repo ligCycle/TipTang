@@ -15,7 +15,7 @@ import { SettingsSection } from "@/components/features/SettingsSection";
 import { Switch } from "@/components/features/FeatureCard";
 
 type Kind = "sound" | "image" | "video";
-type LibItem = { id: string; url: string };
+type LibItem = { id: string; url: string; inRandom: boolean };
 type Config = {
   url: string;
   /** Last time a live program loaded the alert overlay (ISO), null = never. */
@@ -74,22 +74,19 @@ const FIELD: Record<Kind, keyof Config> = {
   video: "videoUrl",
 };
 
-export type OverlayView = "all" | "alerts" | "goal" | "subathon" | "library";
+export type OverlayView = "all" | "alerts" | "goal" | "subathon";
 export type OverlayConfig = Config;
 
 export function OverlaySettings({
   view = "all",
   aside,
   tiersSlot,
-  videosSlot,
 }: {
   view?: OverlayView;
   /** Left column on feature pages (e.g. the alert preview); gets the loaded config. */
   aside?: (config: Config) => ReactNode;
   /** Alert tiers editor (section ⑤ on the alerts page). */
   tiersSlot?: (config: Config, reload: () => Promise<void>) => ReactNode;
-  /** Library page: the video list (gets a reload for after uploads). */
-  videosSlot?: (config: Config, reload: () => Promise<void>) => ReactNode;
 } = {}) {
   const t = useTranslations("dashboard");
   const tHub = useTranslations("featureHub");
@@ -486,11 +483,11 @@ export function OverlaySettings({
           ? {
               ...c,
               ...(kind === "sound"
-                ? { librarySounds: [...c.librarySounds, { id: d.id, url: d.url }] }
+                ? { librarySounds: [...c.librarySounds, { id: d.id, url: d.url, inRandom: true }] }
                 : {
                     libraryStickers: [
                       ...c.libraryStickers,
-                      { id: d.id, url: d.url },
+                      { id: d.id, url: d.url, inRandom: true },
                     ],
                   }),
             }
@@ -1691,16 +1688,9 @@ export function OverlaySettings({
         {goalBlock}
         {errorBlock}
       </div>
-    ) : view === "subathon" ? (
+    ) : (
       <div className="space-y-3">
         {timerBlock}
-        {errorBlock}
-      </div>
-    ) : (
-      <div className="space-y-4">
-        {libSoundsBlock}
-        {libStickersBlock}
-        {videosSlot?.(config, load)}
         {errorBlock}
       </div>
     );

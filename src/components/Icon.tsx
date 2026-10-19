@@ -61,7 +61,9 @@ export type IconName =
   | "x-circle"
   | "zap"
   | "home"
-  | "list";
+  | "list"
+  | "play"
+  | "upload";
 
 const paths: Record<IconName, ReactElement> = {
   "alert-triangle": (
@@ -131,6 +133,14 @@ const paths: Record<IconName, ReactElement> = {
     <>
       <rect width="20" height="14" x="2" y="5" rx="2" />
       <path d="M2 10h20" />
+    </>
+  ),
+  play: <path d="M6 3.5v17l14-8.5-14-8.5Z" />,
+  upload: (
+    <>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m17 8-5-5-5 5" />
+      <path d="M12 3v12" />
     </>
   ),
   download: (

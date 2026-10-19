@@ -37,7 +37,7 @@ export default async function OverlayPage({
   const [assets, tierRows] = await Promise.all([
     prisma.alertAsset.findMany({
       where: { userId: user.id },
-      select: { kind: true, url: true },
+      select: { kind: true, url: true, inRandom: true },
     }),
     prisma.alertTier.findMany({
       where: { userId: user.id },
@@ -45,11 +45,15 @@ export default async function OverlayPage({
       select: { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true, celebrate: true },
     }),
   ]);
+  // Random pick uses only files with the switch on; tiers may use any file.
   const librarySounds = assets
-    .filter((a) => a.kind === "SOUND")
+    .filter((a) => a.kind === "SOUND" && a.inRandom)
     .map((a) => a.url);
   const libraryStickers = assets
-    .filter((a) => a.kind === "STICKER")
+    .filter((a) => a.kind === "STICKER" && a.inRandom)
+    .map((a) => a.url);
+  const libraryTierOnly = assets
+    .filter((a) => a.kind !== "VIDEO" && !a.inRandom)
     .map((a) => a.url);
   const libraryVideos = assets
     .filter((a) => a.kind === "VIDEO")
@@ -68,6 +72,7 @@ export default async function OverlayPage({
       librarySounds={librarySounds}
       libraryStickers={libraryStickers}
       libraryVideos={libraryVideos}
+      libraryTierOnly={libraryTierOnly}
       tiers={tierRows}
       alertStyle={user.alertStyle}
       alertTheme={isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME}

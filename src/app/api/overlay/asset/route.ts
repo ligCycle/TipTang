@@ -312,6 +312,19 @@ export async function POST(req: Request) {
   }
 
   // Random-alert library (many sounds / stickers per creator).
+  // A library file in or out of the random pick (src: library page switch).
+  if (kind === "libraryRandom") {
+    const assetId = String(form?.get("assetId") ?? "");
+    const enabled = form?.get("enabled") === "1";
+    const res = await prisma.alertAsset.updateMany({
+      where: { id: assetId, userId: session.user.id },
+      data: { inRandom: enabled },
+    });
+    if (res.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    revalidateOverlay();
+    return NextResponse.json({ ok: true, enabled });
+  }
+
   if (kind === "librarySound" || kind === "librarySticker" || kind === "libraryVideo") {
     // Library videos are only used by alert tiers (never random-picked).
     const assetKind = kind === "librarySound" ? "SOUND" : kind === "libraryVideo" ? "VIDEO" : "STICKER";
@@ -359,7 +372,8 @@ export async function POST(req: Request) {
       isSound ? "alert-lib-sounds" : isVideo ? "alert-lib-videos" : "alert-lib-stickers",
     );
     const created = await prisma.alertAsset.create({
-      data: { userId: session.user.id, kind: assetKind, url },
+      // Uploaded from a tier row → only that tier uses it, not every alert.
+      data: { userId: session.user.id, kind: assetKind, url, inRandom: form?.get("inRandom") !== "0" },
       select: { id: true, url: true },
     });
     revalidateOverlay();

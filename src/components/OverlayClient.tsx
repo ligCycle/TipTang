@@ -39,6 +39,7 @@ export function OverlayClient({
   librarySounds,
   libraryStickers,
   libraryVideos = [],
+  libraryTierOnly = [],
   alertStyle,
   alertTheme,
   tiers = [],
@@ -55,6 +56,8 @@ export function OverlayClient({
   libraryStickers: string[];
   /** Library videos — only alert tiers use them (never random-picked). */
   libraryVideos?: string[];
+  /** Library sounds/stickers kept out of the random pick — tiers may still use them. */
+  libraryTierOnly?: string[];
   alertStyle: string;
   alertTheme: string;
   tiers?: AlertTier[];
@@ -66,7 +69,9 @@ export function OverlayClient({
   const seen = useRef<Set<string>>(new Set());
   const lastSeen = useRef<string>(new Date().toISOString());
   const showing = useRef(false);
-  const libraryUrls = useRef(new Set([...librarySounds, ...libraryStickers, ...libraryVideos]));
+  const libraryUrls = useRef(
+    new Set([...librarySounds, ...libraryStickers, ...libraryVideos, ...libraryTierOnly]),
+  );
 
   function pickRandom(arr: string[]): string | null {
     return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;

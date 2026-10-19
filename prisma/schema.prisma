@@ -121,6 +121,9 @@ model AlertAsset {
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind      AlertAssetKind
   url       String
+  // Sounds/stickers: picked at random for every alert. Off = only used where
+  // a tier picks it (files uploaded from a tier row start off). Videos ignore it.
+  inRandom  Boolean        @default(true)
   createdAt DateTime       @default(now())
 
   @@index([userId, kind])

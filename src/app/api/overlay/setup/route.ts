@@ -80,8 +80,9 @@ export async function POST() {
   const assets = await prisma.alertAsset.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "asc" },
-    select: { id: true, kind: true, url: true },
+    select: { id: true, kind: true, url: true, inRandom: true },
   });
+  const lib = (a: { id: string; url: string; inRandom: boolean }) => ({ id: a.id, url: a.url, inRandom: a.inRandom });
 
   return NextResponse.json({
     username: user.username,
@@ -89,13 +90,13 @@ export async function POST() {
     overlayLastSeenAt: user.overlayLastSeenAt?.toISOString() ?? null,
     librarySounds: assets
       .filter((a) => a.kind === "SOUND")
-      .map((a) => ({ id: a.id, url: a.url })),
+      .map(lib),
     libraryStickers: assets
       .filter((a) => a.kind === "STICKER")
-      .map((a) => ({ id: a.id, url: a.url })),
+      .map(lib),
     libraryVideos: assets
       .filter((a) => a.kind === "VIDEO")
-      .map((a) => ({ id: a.id, url: a.url })),
+      .map(lib),
     alertsEnabled: user.alertsEnabled,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,

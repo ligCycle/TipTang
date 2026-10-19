@@ -29,7 +29,7 @@ export function AlertPreview({ config, tiers = [] }: { config: OverlayConfig; ti
   const media = resolveAlert(
     {
       soundUrl: config.soundUrl,
-      imageUrl: config.imageUrl ?? config.libraryStickers[0]?.url ?? null,
+      imageUrl: config.imageUrl ?? config.libraryStickers.find((s) => s.inRandom)?.url ?? null,
       videoUrl: config.videoUrl,
       durationSec: 7,
     },
