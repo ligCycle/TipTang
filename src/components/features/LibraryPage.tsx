@@ -173,13 +173,23 @@ export function LibraryPage() {
                 return (
                   <li key={f.id} className="flex flex-col gap-2.5 rounded-2xl border border-brand-200 p-3">
                     <FileThumb file={f} label={label(f)} />
-                    <AutoSaveInput
-                      value={f.name ?? ""}
-                      placeholder={label(f)}
-                      ariaLabel={t("libNameLabel")}
-                      maxLength={MAX_NAME}
-                      save={(next) => rename(f, next)}
-                    />
+                    {/* Rename in place — sounds show this name to fans when they pick. */}
+                    <label className="block">
+                      <span className="mb-1 flex items-center gap-1 text-xs font-semibold text-brand-900/70">
+                        <Icon name="pencil" className="h-3.5 w-3.5" />
+                        {t("libRenameLabel")}
+                      </span>
+                      <AutoSaveInput
+                        value={f.name ?? ""}
+                        placeholder={label(f)}
+                        ariaLabel={t("libNameLabel")}
+                        maxLength={MAX_NAME}
+                        save={(next) => rename(f, next)}
+                      />
+                      {f.kind === "sound" && (
+                        <span className="mt-1 block text-xs text-brand-900/50">{t("libRenameHint")}</span>
+                      )}
+                    </label>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {inSets.map((s) => (
                         <span key={s.id} className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">

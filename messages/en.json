@@ -890,7 +890,9 @@
     "switchTitle": "Today's live sound set",
     "switchHint": "Every tip's alert sound and image + the sounds fans can pick",
     "switchManage": "Manage sets",
-    "saveInvalid": "Not saved; check what you typed"
+    "saveInvalid": "Not saved; check what you typed",
+    "libRenameLabel": "Name (editable, saves by itself)",
+    "libRenameHint": "Fans see this name when they pick a sound on your donate page"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",
