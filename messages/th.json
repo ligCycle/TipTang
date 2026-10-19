@@ -261,7 +261,6 @@
     "obsGoalNameLabel": "ชื่อเป้าหมาย",
     "obsGoalNamePlaceholder": "เช่น ไมค์ตัวใหม่",
     "obsGoalAmountLabel": "จำนวนเป้าหมาย (บาท)",
-    "obsGoalSave": "บันทึกเป้าหมาย",
     "obsGoalSaving": "กำลังบันทึก...",
     "obsGoalSaved": "บันทึกแล้ว",
     "obsGoalReset": "เริ่มรอบใหม่",
@@ -776,7 +775,9 @@
     "fvFailed": "บันทึกไม่สำเร็จ ลองอีกครั้ง",
     "copyObs": "คัดลอกลิงก์ OBS",
     "obsSizeOf": "ขนาดแนะนำ {size}",
-    "secObs": "ลิงก์ OBS"
+    "secObs": "ลิงก์ OBS",
+    "goalDefaultTitle": "เป้าหมายของฉัน",
+    "autoSaveHint": "บันทึกให้อัตโนมัติเมื่อพิมพ์เสร็จ"
   },
   "dashNav": {
     "menuLabel": "เมนูแดชบอร์ด",

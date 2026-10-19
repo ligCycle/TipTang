@@ -261,7 +261,6 @@
     "obsGoalNameLabel": "Goal name",
     "obsGoalNamePlaceholder": "e.g. New microphone",
     "obsGoalAmountLabel": "Goal amount (THB)",
-    "obsGoalSave": "Save goal",
     "obsGoalSaving": "Saving...",
     "obsGoalSaved": "Saved!",
     "obsGoalReset": "Start a new round",
@@ -776,7 +775,9 @@
     "fvFailed": "Could not save, please try again",
     "copyObs": "Copy OBS link",
     "obsSizeOf": "Suggested size {size}",
-    "secObs": "OBS link"
+    "secObs": "OBS link",
+    "goalDefaultTitle": "My goal",
+    "autoSaveHint": "Saves automatically when you stop typing"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

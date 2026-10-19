@@ -56,6 +56,10 @@ function fmtDuration(total: number): string {
 }
 
 
+// Sample goal a creator starts from on the goal page (baht).
+const DEFAULT_GOAL_AMOUNT = "1000";
+const GOAL_SAVE_DELAY_MS = 800;
+
 const FIELD: Record<Kind, keyof Config> = {
   sound: "soundUrl",
   image: "imageUrl",
@@ -94,6 +98,8 @@ export function OverlaySettings({
   const [goalTitle, setGoalTitle] = useState("");
   const [goalAmount, setGoalAmount] = useState("");
   const [goalSaved, setGoalSaved] = useState(false);
+  // Goal name/amount save by themselves shortly after typing stops.
+  const goalSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [savingGoal, setSavingGoal] = useState(false);
   const [resettingGoal, setResettingGoal] = useState(false);
   const [goalResetOpen, setGoalResetOpen] = useState(false);
@@ -165,8 +171,17 @@ export function OverlaySettings({
           alertsEnabled: d.alertsEnabled !== false,
           libraryVideos: d.libraryVideos ?? [],
         });
-        setGoalTitle(d.goalTitle ?? "");
-        setGoalAmount(d.goalAmount ?? "");
+        // On the goal page, a creator with no goal yet starts from a sample one
+        // (saved right away) so the live preview shows a real bar, not a blank.
+        if (view === "goal" && !d.goalTitle && !d.goalAmount) {
+          const title = tHub("goalDefaultTitle");
+          setGoalTitle(title);
+          setGoalAmount(DEFAULT_GOAL_AMOUNT);
+          void saveGoal(title, DEFAULT_GOAL_AMOUNT);
+        } else {
+          setGoalTitle(d.goalTitle ?? "");
+          setGoalAmount(d.goalAmount ?? "");
+        }
         setBigTip(String(d.bigTipThreshold ?? 0));
         setTBaht(String(d.timerBahtPerUnit ?? 10));
         setTMin(String(Math.round((d.timerSecondsPerUnit ?? 60) / 60)));
@@ -287,13 +302,13 @@ export function OverlaySettings({
     }
   }
 
-  async function saveGoal() {
+  async function saveGoal(title: string, amount: string) {
     setSavingGoal(true);
     try {
       const fd = new FormData();
       fd.set("kind", "goalSet");
-      fd.set("title", goalTitle);
-      fd.set("amount", goalAmount || "0");
+      fd.set("title", title);
+      fd.set("amount", amount || "0");
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
       const d = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -301,8 +316,8 @@ export function OverlaySettings({
           c
             ? {
                 ...c,
-                goalTitle,
-                goalAmount: goalAmount,
+                goalTitle: title,
+                goalAmount: amount,
                 hasGoal: Boolean(d.hasGoal),
               }
             : c,
@@ -314,6 +329,12 @@ export function OverlaySettings({
     } finally {
       setSavingGoal(false);
     }
+  }
+
+  // Debounced autosave for the goal name/amount inputs.
+  function queueGoalSave(title: string, amount: string) {
+    if (goalSaveTimer.current) clearTimeout(goalSaveTimer.current);
+    goalSaveTimer.current = setTimeout(() => void saveGoal(title, amount), GOAL_SAVE_DELAY_MS);
   }
 
   // Runs after the creator confirms in the dialog (it lands on stream within
@@ -1168,7 +1189,10 @@ export function OverlaySettings({
                     </span>
                     <input
                       value={goalTitle}
-                      onChange={(e) => setGoalTitle(e.target.value)}
+                      onChange={(e) => {
+                        setGoalTitle(e.target.value);
+                        queueGoalSave(e.target.value, goalAmount);
+                      }}
                       placeholder={t("obsGoalNamePlaceholder")}
                       maxLength={80}
                       className="input text-sm"
@@ -1183,22 +1207,18 @@ export function OverlaySettings({
                       min={0}
                       max={100000000}
                       value={goalAmount}
-                      onChange={(e) => setGoalAmount(e.target.value)}
-                      placeholder="5000"
+                      onChange={(e) => {
+                        setGoalAmount(e.target.value);
+                        queueGoalSave(goalTitle, e.target.value);
+                      }}
+                      placeholder={DEFAULT_GOAL_AMOUNT}
                       className="input text-sm"
                     />
                   </label>
-                  <button
-                    onClick={saveGoal}
-                    disabled={savingGoal}
-                    className="btn-primary mt-3 w-full py-2 text-sm"
-                  >
-                    {savingGoal
-                      ? t("obsGoalSaving")
-                      : goalSaved
-                        ? t("obsGoalSaved")
-                        : t("obsGoalSave")}
-                  </button>
+                  {/* No save button: changes save by themselves. */}
+                  <p className="mt-2 h-4 text-xs text-brand-900/55" aria-live="polite">
+                    {savingGoal ? t("obsGoalSaving") : goalSaved ? t("obsGoalSaved") : tHub("autoSaveHint")}
+                  </p>
                   {config.hasGoal && (
                     <button
                       type="button"
@@ -1288,7 +1308,7 @@ export function OverlaySettings({
                       />
                     </div>
                   ) : (
-                    <p className="rounded-xl border border-dashed border-brand-300 bg-white px-4 py-3 text-sm text-brand-900/60">
+                    <p className="rounded-xl border border-dashed border-brand-300 px-4 py-3 text-sm text-brand-900/60">
                       {t("obsGoalEmpty")}
                     </p>
                   )}
