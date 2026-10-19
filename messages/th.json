@@ -361,7 +361,7 @@
     "obsReduceExample": "ตัวอย่าง: ทิปลดเวลา {baht} บาท → เวลาลด {min} นาที"
   },
   "settings": {
-    "title": "ตั้งค่า",
+    "title": "ตั้งค่าหน้าโดเนท",
     "connectedAccounts": "การเชื่อมบัญชี",
     "connectedAccountsHint": "เชื่อมบัญชีโซเชียลเพื่อล็อกอินได้เร็วขึ้น",
     "connected": "เชื่อมแล้ว",
@@ -433,7 +433,13 @@
     "deleteErrorUsername": "ชื่อผู้ใช้ไม่ตรง",
     "deleteErrorPassword": "รหัสผ่านไม่ถูกต้อง",
     "deleteErrorLimited": "ลองหลายครั้งเกินไป รอสักครู่แล้วลองใหม่",
-    "deleteErrorGeneric": "เกิดข้อผิดพลาด กรุณาลองใหม่"
+    "deleteErrorGeneric": "เกิดข้อผิดพลาด กรุณาลองใหม่",
+    "viewPage": "ดูหน้าโดเนทของฉัน",
+    "previewTitle": "พรีวิวหน้าโดเนท",
+    "previewNameFallback": "ชื่อของคุณ",
+    "previewTipButton": "ส่งทิป",
+    "previewThanksTitle": "หลังส่งทิป แฟนจะเห็น",
+    "previewHint": "พรีวิวเปลี่ยนตามที่พิมพ์ทันที แต่ต้องกดบันทึกก่อนแฟนถึงจะเห็น"
   },
   "notFound": {
     "title": "ไม่พบหน้านี้",

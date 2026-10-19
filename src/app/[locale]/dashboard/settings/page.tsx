@@ -37,7 +37,7 @@ export default async function SettingsPage({
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-xl">
+    <div className="mx-auto max-w-4xl">
       <SettingsForm
         initial={{
           displayName: user.displayName,

@@ -361,7 +361,7 @@
     "obsReduceExample": "Example: a {baht} baht reduce tip → {min} fewer minutes"
   },
   "settings": {
-    "title": "Settings",
+    "title": "Donate page settings",
     "connectedAccounts": "Connected accounts",
     "connectedAccountsHint": "Link a social account to sign in faster.",
     "connected": "Connected",
@@ -433,7 +433,13 @@
     "deleteErrorUsername": "Username doesn't match",
     "deleteErrorPassword": "Incorrect password",
     "deleteErrorLimited": "Too many attempts. Please wait a moment.",
-    "deleteErrorGeneric": "Something went wrong. Please try again."
+    "deleteErrorGeneric": "Something went wrong. Please try again.",
+    "viewPage": "View my donate page",
+    "previewTitle": "Donate page preview",
+    "previewNameFallback": "Your name",
+    "previewTipButton": "Send a tip",
+    "previewThanksTitle": "After tipping, fans see",
+    "previewHint": "The preview follows your typing; fans see changes after you save"
   },
   "notFound": {
     "title": "Page not found",

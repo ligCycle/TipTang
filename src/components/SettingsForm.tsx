@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ImageCropper } from "./ImageCropper";
 import { ColorField } from "./ColorField";
@@ -12,6 +12,7 @@ import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { Icon, type IconName } from "@/components/Icon";
 import { normalizePaypalHandle } from "@/lib/paypal";
 import { isValidPromptpayId } from "@/lib/promptpay-id";
+import { DonatePreview } from "@/components/DonatePreview";
 
 type Initial = {
   displayName: string;
@@ -112,6 +113,7 @@ export function SettingsForm({
   const t = useTranslations("settings");
   const tc = useTranslations("common");
   const router = useRouter();
+  const locale = useLocale();
   const [form, setForm] = useState(initial);
   // What the database currently holds. Updated after every successful save.
   const [savedForm, setSavedForm] = useState(initial);
@@ -298,9 +300,22 @@ export function SettingsForm({
           onCropped={(blob) => doUpload(cropping.kind, blob)}
         />
       )}
-      <h1 className="mb-6 text-2xl font-extrabold text-brand-900">
-        {t("title")}
-      </h1>
+      {/* Form on the left, a live picture of the donate page on the right
+          (below the form on small screens). */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-8">
+      <div className="min-w-0">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-extrabold text-brand-900">{t("title")}</h1>
+        <a
+          href={`/${locale}/${savedForm.username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-secondary inline-flex items-center gap-1.5 px-4 py-2 text-sm"
+        >
+          {t("viewPage")}
+          <Icon name="arrow-right" className="h-4 w-4" />
+        </a>
+      </div>
 
       <form onSubmit={onSubmit} className="divide-y divide-brand-900/10">
         <Section icon="user" title={t("sectionProfile")}>
@@ -607,6 +622,21 @@ export function SettingsForm({
           </div>
         )}
       </form>
+      </div>
+      <aside className="mt-10 lg:sticky lg:top-4 lg:mt-0">
+        <DonatePreview
+          displayName={form.displayName}
+          username={form.username}
+          bio={form.bio}
+          avatarUrl={form.avatarUrl}
+          coverUrl={form.coverUrl}
+          color={form.profileColor}
+          socialLinks={form.socialLinks}
+          thankYouMessage={form.thankYouMessage}
+          minTipAmount={Math.max(1, Number(minTipStr) || 1)}
+        />
+      </aside>
+      </div>
     </div>
   );
 }
