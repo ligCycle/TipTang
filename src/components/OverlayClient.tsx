@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Confetti } from "./Confetti";
 import { AlertCard } from "@/components/overlay/AlertCard";
 import { pickTier, resolveAlert, celebrates, pickNormal, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
+import { poolsForAmount, applyPick, type NormalMedia } from "@/lib/alert-sets";
 import type { TestAlert } from "@/lib/overlay-test";
 
 type Alert = {
@@ -13,6 +14,8 @@ type Alert = {
   message: string | null;
   /** Seconds the tip moved the subathon clock (negative = sabotage); null = none. */
   timerDelta?: number | null;
+  /** The sound the fan picked (beats tier and set); null = none. */
+  soundUrl?: string | null;
 };
 
 /** One tip as the overlay feeds return it. */
@@ -23,6 +26,8 @@ export type FeedTip = {
   amount: number;
   confirmedAt: string | null;
   timerDelta: number | null;
+  /** The sound the fan picked; null if none or the file is gone. */
+  soundUrl: string | null;
 };
 
 const BASE_DURATION_SEC = 7;
@@ -34,6 +39,7 @@ export function OverlayClient({
   color,
   ttsEnabled,
   normal,
+  mediaVersion,
   libraryAll,
   alertStyle,
   alertTheme,
@@ -44,8 +50,10 @@ export function OverlayClient({
   test: boolean;
   color: string | null;
   ttsEnabled: boolean;
-  /** Library files switched on for normal alerts (random pick each alert). */
-  normal: { sounds: string[]; images: string[]; videos: string[] };
+  /** The active sound set's media (random pick each alert, sounds by amount). */
+  normal: NormalMedia;
+  /** Version of `normal`; the feed sends new media when the set changes. */
+  mediaVersion: string;
   /** Every library file — what a tier may use. */
   libraryAll: string[];
   alertStyle: string;
@@ -54,19 +62,22 @@ export function OverlayClient({
 }) {
   const [current, setCurrent] = useState<Alert | null>(null);
   // Sound/visual/duration chosen for the current alert (library random + tier).
-  const [media, setMedia] = useState<AlertBase | null>(null);
+  const [media, setMedia] = useState<(AlertBase & { videoMuted: boolean }) | null>(null);
   const queue = useRef<Alert[]>([]);
   const seen = useRef<Set<string>>(new Set());
   const lastSeen = useRef<string>(new Date().toISOString());
   const showing = useRef(false);
   const libraryUrls = useRef(new Set(libraryAll));
+  // Swapped in place when the creator switches or edits the active set.
+  const normalRef = useRef(normal);
+  const versionRef = useRef(mediaVersion);
 
   // Sequentially preload library assets so a randomly-picked one plays instantly
   // (one at a time to avoid a network/RAM spike when OBS opens the overlay).
   useEffect(() => {
     const items = [
       ...normal.images.map((u) => ({ u, img: true })),
-      ...normal.sounds.map((u) => ({ u, img: false })),
+      ...normal.sounds.map((s) => ({ u: s.url, img: false })),
     ];
     let i = 0;
     let cancelled = false;
@@ -117,15 +128,20 @@ export function OverlayClient({
     setCurrent(next);
     // Random pick from the files switched on for normal alerts, then the
     // amount's tier overrides whatever it sets.
-    const chosen = resolveAlert(
-      { ...pickNormal(normal), durationSec: BASE_DURATION_SEC },
-      pickTier(tiers, Number(next.amount)),
-      libraryUrls.current,
+    const amount = Number(next.amount);
+    const chosen = applyPick(
+      resolveAlert(
+        { ...pickNormal(poolsForAmount(normalRef.current, amount)), durationSec: BASE_DURATION_SEC },
+        pickTier(tiers, amount),
+        libraryUrls.current,
+      ),
+      next.soundUrl ?? null,
     );
     setMedia(chosen);
     // Video carries its own audio; only play the separate sound / TTS when no
     // video. TTS follows the alert sound so they don't overlap.
-    if (chosen.soundUrl && !chosen.videoUrl) {
+    // A fan's picked sound plays over a (muted) video too.
+    if (chosen.soundUrl && (!chosen.videoUrl || chosen.videoMuted)) {
       // OBS browser sources allow autoplay; normal browsers may block until a
       // user gesture (fine — the overlay runs inside OBS in real use).
       try {
@@ -165,6 +181,7 @@ export function OverlayClient({
         amount: tip.amount,
         message: tip.message,
         timerDelta: tip.timerDelta ?? null,
+        soundUrl: tip.soundUrl ?? null,
       });
     }
     // A test from the dashboard: shown once per id, never moves the timer.
@@ -206,12 +223,16 @@ export function OverlayClient({
     async function poll() {
       try {
         const res = await fetch(
-          `/api/overlay/${username}?key=${encodeURIComponent(apiKey)}&after=${encodeURIComponent(lastSeen.current)}`,
+          `/api/overlay/${username}?key=${encodeURIComponent(apiKey)}&after=${encodeURIComponent(lastSeen.current)}&v=${encodeURIComponent(versionRef.current)}`,
         );
         if (!res.ok) return;
         const data = await res.json();
         // The server's cursor also jumps forward while alerts are switched off,
         // so tips from that time never replay when they come back on.
+        if (data.media && typeof data.media.version === "string") {
+          normalRef.current = data.media.normal;
+          versionRef.current = data.media.version;
+        }
         if (typeof data.cursor === "string" && data.cursor > lastSeen.current) {
           lastSeen.current = data.cursor;
         }
@@ -258,6 +279,7 @@ export function OverlayClient({
             isBig={isBig}
             imageUrl={media.videoUrl ? null : media.imageUrl}
             videoUrl={media.videoUrl}
+            videoMuted={media.videoMuted}
           />
         </div>
       )}

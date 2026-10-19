@@ -28,6 +28,7 @@ export function AlertCard({
   isBig,
   imageUrl,
   videoUrl,
+  videoMuted = false,
   loop = false,
 }: {
   name: string;
@@ -40,6 +41,8 @@ export function AlertCard({
   isBig: boolean;
   imageUrl: string | null;
   videoUrl: string | null;
+  /** Mute the video (a fan's picked sound plays instead). */
+  videoMuted?: boolean;
   /** Dashboard preview: replay the in/out animation forever instead of once. */
   loop?: boolean;
 }) {
@@ -89,6 +92,7 @@ export function AlertCard({
         <video
           src={videoUrl}
           autoPlay
+          muted={videoMuted}
           playsInline
           className="mx-auto mb-3 max-h-48 w-auto rounded-xl"
         />

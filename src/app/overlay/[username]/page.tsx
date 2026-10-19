@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { OverlayClient } from "@/components/OverlayClient";
+import { activeSetMedia } from "@/lib/alert-sets-server";
 import { DEFAULT_ALERT_THEME, isAlertTheme } from "@/lib/alertThemes";
 
 export default async function OverlayPage({
@@ -31,20 +32,20 @@ export default async function OverlayPage({
     return null;
   }
 
-  const [assets, tierRows] = await Promise.all([
+  const [assets, tierRows, media] = await Promise.all([
     prisma.alertAsset.findMany({
       where: { userId: user.id },
-      select: { kind: true, url: true, inRandom: true },
+      select: { url: true },
     }),
     prisma.alertTier.findMany({
       where: { userId: user.id },
       orderBy: { minAmount: "asc" },
       select: { minAmount: true, soundUrl: true, imageUrl: true, videoUrl: true, durationSec: true, celebrate: true },
     }),
+    // Normal alerts draw from the active set (refreshed live via the feed).
+    activeSetMedia(user.id),
   ]);
-  // Normal alerts pick from the files switched on; tiers may use any file.
-  const on = (kind: string) => assets.filter((a) => a.kind === kind && a.inRandom).map((a) => a.url);
-  const normal = { sounds: on("SOUND"), images: on("STICKER"), videos: on("VIDEO") };
+  // Tiers may use any library file.
   const libraryAll = assets.map((a) => a.url);
 
   return (
@@ -54,7 +55,8 @@ export default async function OverlayPage({
       test={test}
       color={user.alertColor}
       ttsEnabled={user.ttsEnabled}
-      normal={normal}
+      normal={media.normal}
+      mediaVersion={media.version}
       libraryAll={libraryAll}
       tiers={tierRows}
       alertStyle={user.alertStyle}

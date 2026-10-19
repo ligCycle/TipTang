@@ -5,6 +5,8 @@ import { tipSeconds } from "@/lib/subathon-math";
 import { goalRaised, goalPercent } from "@/lib/goal";
 import { readTestAlert, type TestAlert } from "@/lib/overlay-test";
 import { nextCursor } from "@/lib/overlay-cursor";
+import { activeSetMedia } from "@/lib/alert-sets-server";
+import type { NormalMedia } from "@/lib/alert-sets";
 import type { FeedTip } from "@/components/OverlayClient";
 import type { GoalState } from "@/components/overlay/GoalView";
 import type { TimerState } from "@/components/overlay/TimerView";
@@ -106,7 +108,13 @@ export function touchOverlaySeen(user: { id: string; overlayLastSeenAt: Date | n
 export async function alertFeed(
   user: OverlayUser,
   after: string | null,
-): Promise<{ tips: FeedTip[]; test: TestAlert | null; cursor: string }> {
+  mediaVersion: string | null = null,
+): Promise<{
+  tips: FeedTip[];
+  test: TestAlert | null;
+  cursor: string;
+  media?: { version: string; normal: NormalMedia };
+}> {
   const serverNow = new Date().toISOString();
   const off = !user.alertsEnabled;
   const afterDate = after ? new Date(after) : null;
@@ -114,7 +122,7 @@ export async function alertFeed(
   const gt = validAfter ? { gt: validAfter } : undefined;
 
   // Union confirmed tips + confirmed shop orders → both pop on the stream.
-  const [tips, orders, test] = await Promise.all([
+  const [tips, orders, test, media] = await Promise.all([
     off
       ? []
       : prisma.tip.findMany({
@@ -128,6 +136,7 @@ export async function alertFeed(
             amount: true,
             confirmedAt: true,
             timerEffect: true,
+            pickedSound: { select: { url: true } },
           },
         }),
     off
@@ -139,6 +148,7 @@ export async function alertFeed(
           select: { id: true, buyerName: true, itemTitle: true, amount: true, confirmedAt: true },
         }),
     off ? null : readTestAlert(user.id),
+    activeSetMedia(user.id),
   ]);
 
   const timerDeltaFor = (effect: "ADD" | "REDUCE" | "NONE", amount: number) => {
@@ -160,6 +170,8 @@ export async function alertFeed(
       // Seconds this tip moved the subathon clock (negative = sabotage), or
       // null when the timer is off / the supporter chose "just donate".
       timerDelta: timerDeltaFor(t.timerEffect, Number(t.amount)),
+      // The sound the fan picked; null if none or the file is gone.
+      soundUrl: t.pickedSound?.url ?? null,
     })),
     ...orders.map((o) => ({
       id: `order_${o.id}`,
@@ -168,6 +180,7 @@ export async function alertFeed(
       amount: Number(o.amount),
       confirmedAt: o.confirmedAt,
       timerDelta: null as number | null,
+      soundUrl: null as string | null,
     })),
   ]
     .sort((a, b) => (a.confirmedAt?.getTime() ?? 0) - (b.confirmedAt?.getTime() ?? 0))
@@ -180,6 +193,7 @@ export async function alertFeed(
     amount: m.amount,
     confirmedAt: m.confirmedAt?.toISOString() ?? null,
     timerDelta: m.timerDelta,
+    soundUrl: m.soundUrl,
   }));
   const cursor = nextCursor(
     validAfter ? validAfter.toISOString() : "",
@@ -187,7 +201,12 @@ export async function alertFeed(
     serverNow,
     !off,
   );
-  return { tips: feedTips, test, cursor };
+  return {
+    tips: feedTips,
+    test,
+    cursor,
+    ...(media.version !== mediaVersion ? { media } : {}),
+  };
 }
 
 /** The creator's goal and how much confirmed tips have raised toward it. */
