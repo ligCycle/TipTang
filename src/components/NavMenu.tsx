@@ -46,6 +46,10 @@ export function NavMenu({
     };
   }, []);
 
+  // The dashboard has its own sidebar with these links (and logout), so the
+  // header there keeps only the logo, theme and language.
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return null;
+
   return (
     <>
       {/* Desktop: inline nav (unchanged from before) */}

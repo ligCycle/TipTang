@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Icon, type IconName } from "@/components/Icon";
+import { LogoutButton } from "@/components/LogoutButton";
 
 type Item = { path: string; label: string; icon: IconName; exact?: boolean };
 
@@ -12,6 +13,8 @@ type Item = { path: string; label: string; icon: IconName; exact?: boolean };
  * The dashboard menu, grouped by where things show up. Every item has its own
  * route, so the active item is simply the current route. Desktop: a sticky
  * sidebar. Below md: one horizontally scrolling row, every item one tap away.
+ * The guide and logout live here too (the header hides its links on the
+ * dashboard).
  */
 export function DashboardNav({ admin }: { admin: boolean }) {
   const t = useTranslations("dashNav");
@@ -65,6 +68,18 @@ export function DashboardNav({ admin }: { admin: boolean }) {
         ? "bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-200"
         : "text-brand-900/70 hover:bg-brand-100/60"
     }`;
+  const logoutClass =
+    "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold text-brand-900/70 transition hover:bg-brand-100/60 disabled:opacity-50";
+  const guide = (
+    <Link href={`/${locale}/start`} className={linkClass(false)}>
+      <Icon name="book-open" className="h-4 w-4" />
+      {t("guide")}
+    </Link>
+  );
+  const logout = (
+    <LogoutButton label={t("logout")} className={logoutClass} icon={<Icon name="log-out" className="h-4 w-4" />} />
+  );
+
 
   return (
     <nav aria-label={t("menuLabel")} className="md:w-52 md:shrink-0">
@@ -81,6 +96,8 @@ export function DashboardNav({ admin }: { admin: boolean }) {
             {item.label}
           </Link>
         ))}
+        {guide}
+        {logout}
       </div>
       {/* Desktop: grouped sidebar. */}
       <div className="sticky top-4 hidden space-y-4 md:block">
@@ -104,6 +121,10 @@ export function DashboardNav({ admin }: { admin: boolean }) {
             </div>
           </div>
         ))}
+        <div className="space-y-0.5 border-t border-brand-900/10 pt-3">
+          {guide}
+          {logout}
+        </div>
       </div>
     </nav>
   );

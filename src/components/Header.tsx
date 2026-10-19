@@ -5,6 +5,7 @@ import { isAdminEmail } from "@/lib/admin";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { NavMenu } from "./NavMenu";
 import { ThemeToggle } from "./ThemeToggle";
+import { HeaderContainer } from "./HeaderContainer";
 
 export async function Header() {
   const t = await getTranslations("common");
@@ -24,7 +25,7 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-brand-900/10 bg-brand-50/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
+      <HeaderContainer>
         <Link href="/" className="flex items-center gap-2 font-extrabold text-brand-700">
           <svg
             viewBox="0 0 64 64"
@@ -65,7 +66,7 @@ export async function Header() {
             menuLabel={t("menu")}
           />
         </nav>
-      </div>
+      </HeaderContainer>
     </header>
   );
 }

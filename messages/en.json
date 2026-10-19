@@ -804,6 +804,8 @@
     "library": "Sounds & images",
     "account": "Account settings",
     "admin": "Admin",
-    "seeAllTips": "See all"
+    "seeAllTips": "See all",
+    "guide": "Guide",
+    "logout": "Log out"
   }
 }
