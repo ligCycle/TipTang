@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { formatBaht, formatDate } from "@/lib/format";
@@ -28,6 +29,10 @@ type Tip = {
   createdAt: string;
   /** Name (or "เสียง N") of the sound the fan picked; null = no pick. */
   pickedSound?: string | null;
+  /** The wheel the fan asked to spin; null = no spin asked. */
+  spinWheelId?: string | null;
+  /** What the wheel landed on (confirmed tips). */
+  spinResult?: string | null;
 };
 
 // Dashboard flag styling per verifier verdict. `ok` = amount + receiver matched
@@ -66,6 +71,9 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // Confirming a tip whose wheel is gone or empty asks first (409 wheel_empty).
+  const [wheelEmpty, setWheelEmpty] = useState(false);
+  const [resetFailed, setResetFailed] = useState(false);
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
 
   const statusLabel = {
@@ -96,18 +104,40 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
     }
   })();
 
-  async function act(action: "confirm" | "reject") {
+  async function act(action: "confirm" | "reject", force = false) {
     setLoading(true);
     try {
       const res = await fetch(`/api/tips/${tip.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, force }),
       });
+      if (res.status === 409) {
+        setWheelEmpty(true);
+        return;
+      }
+      setWheelEmpty(false);
       if (res.ok) router.refresh();
     } finally {
       setLoading(false);
     }
+  }
+
+  // "รีเซ็ตวงล้อแล้วยืนยัน": bring every segment back, then confirm (spins now).
+  async function resetAndConfirm() {
+    setLoading(true);
+    setResetFailed(false);
+    const res = await fetch(`/api/wheels/${tip.spinWheelId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reset: true }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setResetFailed(true);
+      setLoading(false);
+      return;
+    }
+    await act("confirm");
   }
 
   // Runs after the creator confirms in the dialog.
@@ -161,6 +191,17 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
               {t("pickedSoundBadge", { name: tip.pickedSound })}
             </span>
           )}
+          {tip.spinResult ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+              <Icon name="wheel" className="h-3 w-3" />
+              {t("spinBadge", { task: tip.spinResult })}
+            </span>
+          ) : tip.spinWheelId ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-900/60">
+              <Icon name="wheel" className="h-3 w-3" />
+              {tip.status === "CONFIRMED" ? t("spinNone") : t("spinAsked")}
+            </span>
+          ) : null}
           {tip.autoVerified && tip.verifyDetail !== "ocr" ? (
             <span
               title={t("autoBadgeTitle")}
@@ -268,6 +309,40 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           )}
         </div>
       </div>
+      {/* Portal: the card's own styling would trap a fixed overlay inside it. */}
+      {wheelEmpty && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+          <div className="card w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <p className="text-base font-semibold leading-relaxed text-brand-900">{t("spinEmptyTitle")}</p>
+            <p className="mt-1 text-sm text-brand-900/65">{t("spinEmptyBody")}</p>
+            {resetFailed && <p className="mt-2 text-sm font-medium text-red-600">{t("spinResetFailed")}</p>}
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setWheelEmpty(false)}
+                disabled={loading}
+                className="btn-secondary px-4 py-2 text-sm"
+              >
+                {t("spinEmptyCancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => act("confirm", true)}
+                disabled={loading}
+                className="btn-secondary px-4 py-2 text-sm"
+              >
+                {t("spinEmptyForce")}
+              </button>
+              {!resetFailed && (
+                <button type="button" onClick={resetAndConfirm} disabled={loading} className="btn-primary px-4 py-2 text-sm">
+                  {t("spinEmptyReset")}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </li>
   );
 }

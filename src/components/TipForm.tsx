@@ -7,6 +7,8 @@ import { SlipDropzone } from "@/components/SlipDropzone";
 import { Icon } from "@/components/Icon";
 import { PaypalPayPanel } from "@/components/PaypalPayPanel";
 import { SoundPicker, soundFloor, type SoundChoice } from "@/components/SoundPicker";
+import { WheelPicker, type WheelChoice } from "@/components/WheelPicker";
+import { spinFloor } from "@/lib/wheel";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
 
@@ -37,6 +39,7 @@ export function TipForm({
   creatorAvatar = null,
   soundChoices = null,
   soundSetName = null,
+  wheelChoice = null,
 }: {
   username: string;
   creatorName: string;
@@ -51,6 +54,8 @@ export function TipForm({
   /** Sounds the fan may pick from today's set; null = picker hidden. */
   soundChoices?: SoundChoice[] | null;
   soundSetName?: string | null;
+  /** The wheel in use, when the card is on and it has segments left; null = hidden. */
+  wheelChoice?: WheelChoice | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -95,13 +100,25 @@ export function TipForm({
   const [pickedSoundId, setPickedSoundId] = useState<string | null>(null);
   const [pickNote, setPickNote] = useState(false);
   const [pickDropped, setPickDropped] = useState(false);
+  // "หมุนวงล้อ": ticked by the fan; its price adds to a picked sound's.
+  const [spin, setSpin] = useState(false);
+  const [spinNote, setSpinNote] = useState(false);
+  const [spinDropped, setSpinDropped] = useState(false);
+  const pickedSound = soundChoices?.find((c) => c.id === pickedSoundId) ?? null;
+  const spinPrice = spin && wheelChoice ? wheelChoice.price : 0;
 
   // A pick the amount no longer covers is cleared (never the other way round
-  // — the amount isn't raised). Chips check at once; typing checks when the
-  // field is left, so "100" typed over "50" doesn't drop the pick at "1".
+  // — the amount isn't raised): the spin first, then the sound if it still
+  // doesn't fit alone. Chips check at once; typing checks when the field is
+  // left, so "100" typed over "50" doesn't drop the pick at "1".
   function checkPick(n: number) {
-    const picked = soundChoices?.find((c) => c.id === pickedSoundId);
-    if (picked && n < soundFloor(picked, minAmount)) {
+    let spinning = spin;
+    if (spinning && wheelChoice && n < spinFloor(minAmount, wheelChoice.price, pickedSound?.minAmount ?? null)) {
+      spinning = false;
+      setSpin(false);
+      setSpinNote(true);
+    }
+    if (pickedSound && n < soundFloor(pickedSound, minAmount, spinning && wheelChoice ? wheelChoice.price : 0)) {
       setPickedSoundId(null);
       setPickNote(true);
     }
@@ -186,6 +203,7 @@ export function TipForm({
       fd.set("timerEffect", timerChoice ? timerEffect : "ADD");
       fd.set("paymentMethod", method);
       if (pickedSoundId) fd.set("pickedSoundId", pickedSoundId);
+      if (spin && wheelChoice) fd.set("spinWheel", wheelChoice.id);
       fd.set("slip", slip);
 
       const res = await fetch("/api/tips", { method: "POST", body: fd });
@@ -207,6 +225,7 @@ export function TipForm({
       const data = await res.json().catch(() => ({}));
       setAutoVerified(Boolean(data.autoVerified) || Boolean(data.confirmed));
       setPickDropped(Boolean(data.pickDropped));
+      setSpinDropped(Boolean(data.spinDropped));
       setStep("done");
     } catch {
       setError(tErr("notFound"));
@@ -227,6 +246,9 @@ export function TipForm({
     setPickedSoundId(null);
     setPickNote(false);
     setPickDropped(false);
+    setSpin(false);
+    setSpinNote(false);
+    setSpinDropped(false);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -284,6 +306,11 @@ export function TipForm({
         {pickDropped && (
           <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
             {t("soundPickDropped")}
+          </p>
+        )}
+        {spinDropped && (
+          <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
+            {t("wheelSpinDropped")}
           </p>
         )}
         <button onClick={reset} className="btn-secondary mt-6">
@@ -373,6 +400,27 @@ export function TipForm({
             )}
           </label>
 
+          {wheelChoice && (
+            <div>
+              <p className="mb-2 text-sm font-medium text-brand-900/80">{t("extrasLabel")}</p>
+              <WheelPicker
+                wheel={wheelChoice}
+                amount={amount}
+                floor={spinFloor(minAmount, wheelChoice.price, pickedSound?.minAmount ?? null)}
+                checked={spin}
+                onChange={(next) => {
+                  setSpin(next);
+                  setSpinNote(false);
+                }}
+              />
+              {spinNote && (
+                <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
+                  {t("wheelSpinCleared")}
+                </p>
+              )}
+            </div>
+          )}
+
           {soundChoices && soundChoices.length > 0 && (
             <div>
               <SoundPicker
@@ -380,6 +428,7 @@ export function TipForm({
                 setName={soundSetName ?? ""}
                 amount={amount}
                 creatorMin={minAmount}
+                addOn={spinPrice}
                 value={pickedSoundId}
                 onChange={(id) => {
                   setPickedSoundId(id);

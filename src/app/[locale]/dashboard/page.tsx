@@ -25,6 +25,7 @@ import { ReviewsSection } from "@/components/ReviewsSection";
 import { overlaySetUp } from "@/lib/overlay-connection";
 import { ReportButton } from "@/components/ReportButton";
 import { SetSwitcher } from "@/components/features/SetSwitcher";
+import { SpinTodo } from "@/components/features/SpinTodo";
 import { SHOP_ENABLED } from "@/lib/features";
 import { Icon } from "@/components/Icon";
 
@@ -197,6 +198,9 @@ export default async function DashboardPage({
 
       {/* Today's sound set, one tap before going live. */}
       <SetSwitcher showManage />
+
+      {/* Wheel results still to do (hidden when there are none). */}
+      <SpinTodo compact />
 
       {/* Overview — one range at a time, chosen via ?range= so the page
           stays a server component and the choice survives a reload. */}

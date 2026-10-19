@@ -14,6 +14,8 @@ import { SocialIcon } from "@/components/SocialIcon";
 import { Icon } from "@/components/Icon";
 import { CreatorTheme } from "@/components/CreatorTheme";
 import { libraryNumber } from "@/lib/alert-sets";
+import { clampSlots, taskOdds } from "@/lib/wheel";
+import { wheelForFans } from "@/lib/wheel-server";
 import { jsonLdString } from "@/lib/jsonld";
 
 export async function generateMetadata({
@@ -146,6 +148,18 @@ export default async function ProfilePage({
           minAmount: i.minAmount,
         }))
       : null;
+
+  // "วงล้อสุ่ม": the wheel in use, when the card is on and segments remain.
+  // Fans see every task with its remaining segment count.
+  const wheel = await wheelForFans(creator.id);
+  const wheelChoice = wheel
+    ? {
+        id: wheel.id,
+        name: wheel.name,
+        price: wheel.price,
+        odds: taskOdds(wheel.tasks, clampSlots(wheel.tasks.length, wheel.slots), wheel.removed).filter((o) => o.remaining > 0),
+      }
+    : null;
 
   // Subathon: whenever the creator runs a timer, tell the supporter what the
   // tip does to it (add / just donate). "Reduce" joins only when the creator
@@ -355,6 +369,7 @@ export default async function ProfilePage({
             creatorAvatar={creator.avatarUrl}
             soundChoices={soundChoices}
             soundSetName={soundSet?.name ?? null}
+            wheelChoice={wheelChoice}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">

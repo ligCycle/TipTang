@@ -8,6 +8,8 @@ export type FeatureFlags = {
   timerEnabled: boolean;
   /** Sound pick on the donate page (not part of any preset). */
   soundPickEnabled: boolean;
+  /** Spin wheel on the donate page (not part of any preset; needs the rules checklist). */
+  wheelEnabled: boolean;
 };
 
 export const PRESETS = {

@@ -114,7 +114,7 @@ export type WheelTemplate = {
 /** Starter wheels (Thai copy; the creator edits freely). No "spin again" — one spin per tip. */
 export const TEMPLATES: Record<TemplateKey, WheelTemplate> = {
   task: {
-    name: "วงล้อภารกิจ",
+    name: "ภารกิจ",
     removeWhenHit: false,
     tasks: [
       { text: "ร้องเพลง 1 ท่อน" },
@@ -127,7 +127,7 @@ export const TEMPLATES: Record<TemplateKey, WheelTemplate> = {
     ],
   },
   reward: {
-    name: "วงล้อรางวัลแฟน",
+    name: "รางวัลแฟน",
     removeWhenHit: true,
     tasks: [
       { text: "ได้ตะโกนชื่อบนไลฟ์" },
@@ -139,7 +139,7 @@ export const TEMPLATES: Record<TemplateKey, WheelTemplate> = {
     ],
   },
   game: {
-    name: "วงล้อเกม",
+    name: "เกม",
     removeWhenHit: false,
     tasks: [
       { text: "ใช้แค่ปืนพก" },

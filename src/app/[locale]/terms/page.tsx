@@ -40,6 +40,7 @@ export default async function TermsPage({
     { title: t("s4Title"), body: t("s4Body") },
     { title: t("s5Title"), body: t("s5Body") },
     { title: t("s6Title"), body: t("s6Body") },
+    { title: t("randomTitle"), body: t("randomBody"), id: "random-features" },
     { title: t("s7Title"), body: t("s7Body") },
   ];
 

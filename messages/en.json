@@ -184,7 +184,15 @@
     "soundPickHint": "No pick = a random sound from today's set · Sounds play on screen while the creator is live",
     "soundPickCleared": "The amount is below the picked sound's price, so the pick was cleared",
     "soundPickDropped": "The sound you picked is no longer available, so a random one from today's set will play",
-    "soundNumber": "Sound {n}"
+    "soundNumber": "Sound {n}",
+    "extrasLabel": "Extras with your tip (optional)",
+    "wheelSpin": "Spin the wheel: {name}",
+    "wheelResultOnStream": "The result shows when the wheel spins on stream",
+    "wheelSeeSlots": "See the slots ({count})",
+    "wheelSlotCount": "{count, plural, one {# slot} other {# slots}}",
+    "wheelEqualOdds": "Every slot has the same odds",
+    "wheelSpinCleared": "The amount no longer covers the spin, so the spin was removed.",
+    "wheelSpinDropped": "This tip didn’t spin the wheel — the creator changed or turned off the wheel while you were tipping."
   },
   "tipSuccess": {
     "title": "Tip sent!",
@@ -375,7 +383,16 @@
     "noTipsInFilter": "No tips here",
     "autoBadge": "Auto-confirmed",
     "autoBadgeTitle": "The slip matched the bank record, so the tip was confirmed automatically",
-    "pickedSoundBadge": "Sound: {name}"
+    "pickedSoundBadge": "Sound: {name}",
+    "spinBadge": "Wheel: {task}",
+    "spinAsked": "Asked to spin",
+    "spinNone": "Wheel was empty — no spin",
+    "spinEmptyTitle": "This tip asked to spin, but the wheel is empty",
+    "spinEmptyBody": "Reset the wheel so it can spin, or confirm the tip without a spin (the fan has paid; the tip counts as usual).",
+    "spinEmptyCancel": "Cancel",
+    "spinEmptyForce": "Confirm without spin",
+    "spinEmptyReset": "Reset wheel and confirm",
+    "spinResetFailed": "Couldn’t reset — the wheel may have been deleted. You can confirm without a spin."
   },
   "settings": {
     "title": "Donate page settings",
@@ -697,7 +714,7 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "lastUpdated": "Last updated: 16 September 2026",
+    "lastUpdated": "Last updated: 19 October 2026",
     "intro": "Please read these terms before using TipTang. By signing up or using the service, you agree to them.",
     "s1Title": "Our service",
     "s1Body": "TipTang is a free tool that helps creators receive PromptPay donations and show on-stream alerts (overlays). TipTang is not an intermediary that holds or transfers funds — donations go directly from the supporter to the creator's bank/PromptPay account. Transfer slips are used only to confirm transactions.",
@@ -712,7 +729,9 @@
     "s6Title": "Termination & changes",
     "s6Body": "You may stop using the service at any time, and request account deletion by emailing support@tiptang.com — we delete it within 7 days. We may improve or discontinue the service and may update these terms from time to time. Continued use means you accept the updated terms.",
     "s7Title": "Governing law & contact",
-    "s7Body": "These terms are governed by the laws of Thailand. For questions, contact support@tiptang.com"
+    "s7Body": "These terms are governed by the laws of Thailand. For questions, contact support@tiptang.com",
+    "randomTitle": "Random features (such as the spin wheel)",
+    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task."
   },
   "featureHub": {
     "secLook": "Look",

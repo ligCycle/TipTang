@@ -63,7 +63,8 @@ export type IconName =
   | "home"
   | "list"
   | "play"
-  | "upload";
+  | "upload"
+  | "wheel";
 
 const paths: Record<IconName, ReactElement> = {
   "alert-triangle": (
@@ -290,6 +291,15 @@ const paths: Record<IconName, ReactElement> = {
       <circle cx="12" cy="12" r="10" />
       <circle cx="12" cy="12" r="6" />
       <circle cx="12" cy="12" r="2" />
+    </>
+  ),
+  // Spin wheel: rim, hub, four spokes and the pointer on top.
+  wheel: (
+    <>
+      <circle cx="12" cy="13" r="9" />
+      <circle cx="12" cy="13" r="1.5" />
+      <path d="M12 4v7.5M12 14.5V22M3 13h7.5M13.5 13H21" />
+      <path d="M10 1.5h4L12 4z" />
     </>
   ),
   trash: (

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { FEATURES, type FeatureDef } from "@/lib/feature-registry";
 import type { FeatureFlags } from "@/lib/feature-presets";
 import { FeatureCard } from "@/components/features/FeatureCard";
 import { ObsLinkCard } from "@/components/features/ObsLinkCard";
 import { SetSwitcher } from "@/components/features/SetSwitcher";
 import { FirstVisitPopup } from "@/components/features/FirstVisitPopup";
+import { WheelRulesDialog, WheelTemplatePicker } from "@/components/features/WheelRulesDialog";
 
 export type HubState = {
   /** `${origin}/overlay/<username>` — each feature adds its obsPath + ?key. */
@@ -16,6 +18,8 @@ export type HubState = {
   lastSeenAt: string | null;
   flags: FeatureFlags;
   featuresOnboardedAt: string | null;
+  /** The wheel's first-enable checklist was ticked. */
+  wheelRulesAccepted: boolean;
 };
 
 /** Loads what the hub needs from /api/overlay/setup (which also makes the key). */
@@ -32,8 +36,10 @@ export async function loadHub(): Promise<HubState | null> {
       goalOverlayEnabled: Boolean(d.goalEnabled),
       timerEnabled: Boolean(d.timerEnabled),
       soundPickEnabled: Boolean(d.soundPickEnabled),
+      wheelEnabled: Boolean(d.wheelEnabled),
     },
     featuresOnboardedAt: d.featuresOnboardedAt ?? null,
+    wheelRulesAccepted: Boolean(d.wheelRulesAccepted),
   };
 }
 
@@ -52,11 +58,15 @@ const MAX_SUGGESTED = 3;
 export function FeatureHub() {
   const t = useTranslations("featureHub");
   const tDash = useTranslations("dashboard");
+  const locale = useLocale();
+  const router = useRouter();
   const [hub, setHub] = useState<HubState | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  // Wheel: turning it on the first time goes through the rules, then a template.
+  const [wheelStep, setWheelStep] = useState<"rules" | "template" | null>(null);
 
   useEffect(() => {
     loadHub()
@@ -74,6 +84,10 @@ export function FeatureHub() {
 
   async function toggle(f: FeatureDef, next: boolean) {
     if (!hub) return;
+    if (f.id === "wheel" && next && !hub.wheelRulesAccepted) {
+      setWheelStep("rules");
+      return;
+    }
     const prev = hub;
     setError(null);
     setBusy(f.id);
@@ -84,6 +98,11 @@ export function FeatureHub() {
       fd.append("kind", f.toggleKind);
       fd.append("enabled", next ? "1" : "0");
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      if (res.status === 409 && f.id === "wheel") {
+        setHub(prev);
+        setWheelStep("rules");
+        return;
+      }
       if (!res.ok) throw new Error();
     } catch {
       setHub(prev);
@@ -137,6 +156,23 @@ export function FeatureHub() {
             {off.slice(0, MAX_SUGGESTED).map(card)}
           </div>
         </section>
+      )}
+
+      {wheelStep === "rules" && (
+        <WheelRulesDialog
+          onCancel={() => setWheelStep(null)}
+          onAccepted={async () => {
+            setHub((h) => (h ? { ...h, wheelRulesAccepted: true, flags: { ...h.flags, wheelEnabled: true } } : h));
+            const d = await fetch("/api/wheels").then((r) => r.json()).catch(() => null);
+            setWheelStep(d && d.wheels?.length === 0 ? "template" : null);
+          }}
+        />
+      )}
+      {wheelStep === "template" && (
+        <WheelTemplatePicker
+          onCancel={() => setWheelStep(null)}
+          onCreated={() => router.push(`/${locale}/dashboard/features/wheel`)}
+        />
       )}
 
       <section className="rounded-2xl border border-dashed border-brand-200 p-4">

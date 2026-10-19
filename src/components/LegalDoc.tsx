@@ -10,7 +10,8 @@ export function LegalDoc({
   title: string;
   lastUpdated: string;
   intro: string;
-  sections: { title: string; body: string }[];
+  /** `id` makes a section linkable (e.g. /terms#random-features). */
+  sections: { title: string; body: string; id?: string }[];
 }) {
   return (
     <article className="mx-auto max-w-3xl">
@@ -34,7 +35,7 @@ export function LegalDoc({
             >
               {String(i + 1).padStart(2, "0")}
             </span>
-            <section className="min-w-0">
+            <section id={s.id} className="min-w-0 scroll-mt-24">
               <h2 className="text-xl font-bold text-brand-900">{s.title}</h2>
               <p className="mt-2 whitespace-pre-line break-words leading-relaxed text-brand-900/75">
                 {s.body}

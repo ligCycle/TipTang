@@ -6,9 +6,12 @@ import { Icon } from "@/components/Icon";
 
 export type SoundChoice = { id: string; name: string; url: string; minAmount: number };
 
-/** The tip a sound needs: its own minimum, never below the creator's. */
-export function soundFloor(choice: SoundChoice, creatorMin: number): number {
-  return Math.max(choice.minAmount, creatorMin);
+/**
+ * The tip a sound needs: its own minimum plus `addOn` (the spin price when
+ * the fan also spins the wheel — prices add up), never below the creator's.
+ */
+export function soundFloor(choice: SoundChoice, creatorMin: number, addOn = 0): number {
+  return Math.max(creatorMin, addOn + choice.minAmount);
 }
 
 /**
@@ -21,6 +24,7 @@ export function SoundPicker({
   setName,
   amount,
   creatorMin,
+  addOn = 0,
   value,
   onChange,
 }: {
@@ -28,6 +32,8 @@ export function SoundPicker({
   setName: string;
   amount: number;
   creatorMin: number;
+  /** Price of other picks in the same tip (the wheel spin). */
+  addOn?: number;
   value: string | null;
   onChange: (id: string | null) => void;
 }) {
@@ -58,7 +64,7 @@ export function SoundPicker({
       </legend>
       <div className="grid gap-2 sm:grid-cols-2">
         {choices.map((c) => {
-          const floor = soundFloor(c, creatorMin);
+          const floor = soundFloor(c, creatorMin, addOn);
           const locked = amount < floor;
           const selected = value === c.id;
           return (

@@ -22,7 +22,7 @@ import { linkBase } from "@/lib/site";
 import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
 import { validatePick } from "@/lib/alert-sets";
 import { spinFloor } from "@/lib/wheel";
-import { startSpin, wheelForFans, wheelSegments } from "@/lib/wheel-server";
+import { startSpin, wheelForFans } from "@/lib/wheel-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 export async function POST(req: Request) {
@@ -128,16 +128,16 @@ export async function POST(req: Request) {
     } else pickDropped = true;
   }
 
-  // "หมุนวงล้อ" (src/lib/wheel.ts): stands only if the wheel card is on, the
-  // wheel in use has segments left and the amount covers spin + picked sound.
-  // The tip remembers which wheel the fan saw; the draw happens on confirm.
+  // "หมุนวงล้อ" (src/lib/wheel.ts): `spinWheel` is the wheel the fan saw. It
+  // stands only if that is still the wheel in use (card on, segments left)
+  // and the amount covers spin + picked sound. The draw happens on confirm.
   let spinWheelId: string | null = null;
   let spinDropped = false;
-  if (form.get("spinWheel") === "1") {
+  const spinRaw = form.get("spinWheel");
+  if (typeof spinRaw === "string" && spinRaw.length > 0) {
     const wheel = await wheelForFans(creator.id);
     if (
-      wheel &&
-      wheelSegments(wheel).length > 0 &&
+      wheel?.id === spinRaw &&
       parsed.data.amount >= spinFloor(creator.minTipAmount, wheel.price, pickedSoundPrice)
     ) {
       spinWheelId = wheel.id;

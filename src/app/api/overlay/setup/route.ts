@@ -45,6 +45,8 @@ export async function POST() {
       timerShowRates: true,
       alertsEnabled: true,
       soundPickEnabled: true,
+      wheelEnabled: true,
+      wheelRulesAcceptedAt: true,
       featuresOnboardedAt: true,
     },
   });
@@ -102,6 +104,8 @@ export async function POST() {
       .map(lib),
     alertsEnabled: user.alertsEnabled,
     soundPickEnabled: user.soundPickEnabled,
+    wheelEnabled: user.wheelEnabled,
+    wheelRulesAccepted: user.wheelRulesAcceptedAt !== null,
     activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,

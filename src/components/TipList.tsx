@@ -59,6 +59,8 @@ export async function TipList({
       paymentMethod: true,
       createdAt: true,
       pickedSound: { select: { id: true, name: true } },
+      spinWheelId: true,
+      spin: { select: { taskText: true, status: true } },
     },
   });
   // Unnamed picked sounds show their library number ("เสียง 2"), as everywhere.
@@ -126,6 +128,9 @@ export async function TipList({
     pickedSound: tip.pickedSound
       ? (tip.pickedSound.name ?? tProfile("soundNumber", { n: libraryNumber(soundIds, tip.pickedSound.id) }))
       : null,
+    // Wheel: the wheel the fan asked to spin, and the result once confirmed.
+    spinWheelId: tip.spinWheelId,
+    spinResult: tip.spin?.status === "ACTIVE" ? tip.spin.taskText : null,
   }));
 
   return (
