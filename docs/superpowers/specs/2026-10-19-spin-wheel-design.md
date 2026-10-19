@@ -151,3 +151,17 @@ feature-hub migrations, as project 2 did).
 - **Rejecting a confirmed tip cancels its spin.** The to-do item goes, a removed slice comes back
   to its wheel, an unplayed spin is cancelled. Confirming again restores the same result (no
   re-roll).
+
+## Slots per task and limits (founder, 2026-10-19 — supersedes the limits above)
+
+- A wheel has **tasks** (what was called slices above) and one wheel-level setting
+  **"แต่ละภารกิจมีกี่ช่อง"** (1–4, default 1) applied to **every** task equally (founder: "บังคับ
+  ให้หมดเลย" — no per-task counts, so every task keeps equal odds). The wheel drawn on stream has
+  tasks × slots-per-task segments; copies of the same task are spread evenly around the wheel.
+- The random draw is uniform over the **remaining segments**.
+- With "ลบช่องที่ออกแล้ว" on, only the **segment that came up** is removed (founder); the task's
+  other segments stay. "ดูช่องในวงล้อ" on the donate page lists each task with its remaining
+  segment count (e.g. "วิดพื้น 10 ครั้ง · 2 ช่อง"), and the line says "ทุกช่องมีโอกาสออกเท่ากัน".
+  Reset restores every segment. The wheel is empty (spin option hidden) when no segments remain.
+- Limits: 2–24 tasks per wheel; at most 48 segments drawn (if tasks × slots exceeds 48, the
+  slots-per-task picker caps itself and says why); 20 wheels per creator; task text ≤ 40 chars.
