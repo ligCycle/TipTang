@@ -1,6 +1,6 @@
 # Spin wheel ("วงล้อสุ่ม") — design
 
-**Date:** 2026-10-19 · **Status:** awaiting founder approval of the full document
+**Date:** 2026-10-19 · **Status:** approved by the founder 2026-10-19
 **Project 3 of the donation-features roadmap.** Built on branch `feature-hub` after projects 1–2
 (not yet deployed; the founder ships them together).
 
