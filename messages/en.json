@@ -439,7 +439,14 @@
     "previewNameFallback": "Your name",
     "previewTipButton": "Send a tip",
     "previewThanksTitle": "After tipping, fans see",
-    "previewHint": "The preview follows your typing; fans see changes after you save"
+    "previewHint": "The preview follows your typing; fans see changes after you save",
+    "pwChangeTitle": "Change password",
+    "pwSetTitle": "Set a password",
+    "pwHint": "We email you a link to set a new password (valid for 1 hour). Afterwards every device is signed out, for safety.",
+    "pwSend": "Email me a link",
+    "pwSending": "Sending...",
+    "pwSent": "Link sent",
+    "pwSentHint": "Open the email at {email} and press the link. Not there? Check your spam folder."
   },
   "notFound": {
     "title": "Page not found",

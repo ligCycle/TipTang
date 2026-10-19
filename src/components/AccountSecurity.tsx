@@ -6,8 +6,8 @@ import { signOut } from "next-auth/react";
 import { Icon } from "@/components/Icon";
 
 /**
- * Account safety controls under the settings form: email verification
- * status, "sign out everywhere", and permanent account deletion. Lives
+ * Account safety controls: email verification status, a password reset link
+ * by email, "sign out everywhere", and permanent account deletion. Lives
  * outside SettingsForm's <form> so none of these buttons can submit it.
  */
 export function AccountSecurity({
@@ -27,6 +27,7 @@ export function AccountSecurity({
   const [verifyState, setVerifyState] = useState<
     "idle" | "sending" | "sent" | "error" | "limited"
   >("idle");
+  const [resetState, setResetState] = useState<"idle" | "sending" | "sent" | "error" | "limited">("idle");
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -46,6 +47,22 @@ export function AccountSecurity({
       setVerifyState(res.ok ? "sent" : res.status === 429 ? "limited" : "error");
     } catch {
       setVerifyState("error");
+    }
+  }
+
+  // Same flow as "forgot password": a one-hour link to the account email;
+  // setting the new password signs out every device.
+  async function sendResetLink() {
+    setResetState("sending");
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, locale }),
+      });
+      setResetState(res.ok ? "sent" : res.status === 429 ? "limited" : "error");
+    } catch {
+      setResetState("error");
     }
   }
 
@@ -138,6 +155,26 @@ export function AccountSecurity({
       {verifyState === "limited" && (
         <p className="-mt-4 text-sm text-red-600 dark:text-red-400">{t("verifyLimited")}</p>
       )}
+
+      {/* Password: change (or set, for Google-only accounts) via an email link */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-900/10 pt-6">
+        <div className="min-w-0">
+          <p className="font-medium text-brand-900">{hasPassword ? t("pwChangeTitle") : t("pwSetTitle")}</p>
+          <p className="mt-0.5 text-sm text-brand-900/60">{t("pwHint")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={sendResetLink}
+          disabled={resetState === "sending" || resetState === "sent"}
+          className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
+        >
+          <Icon name="mail" className="h-4 w-4" />
+          {resetState === "sent" ? t("pwSent") : resetState === "sending" ? t("pwSending") : t("pwSend")}
+        </button>
+      </div>
+      {resetState === "sent" && <p className="-mt-4 text-sm text-brand-900/70">{t("pwSentHint", { email })}</p>}
+      {resetState === "error" && <p className="-mt-4 text-sm text-red-600 dark:text-red-400">{t("verifyError")}</p>}
+      {resetState === "limited" && <p className="-mt-4 text-sm text-red-600 dark:text-red-400">{t("verifyLimited")}</p>}
 
       {/* Sign out everywhere */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-900/10 pt-6">
