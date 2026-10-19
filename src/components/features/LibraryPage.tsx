@@ -5,102 +5,60 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Switch } from "@/components/features/FeatureCard";
-import type { AlertTier } from "@/lib/alert-tiers";
-
-type Kind = "sound" | "image" | "video";
-type Item = { id: string; url: string; inRandom: boolean; kind: Kind; n: number };
-
-const UPLOAD_KIND: Record<Kind, string> = {
-  sound: "librarySound",
-  image: "librarySticker",
-  video: "libraryVideo",
-};
-
-type Raw = { id: string; url: string; inRandom?: boolean };
-
-/** Library files (images, sounds, videos) and the tiers, for the cards' tags. */
-async function fetchLibrary(): Promise<{ items: Item[]; tiers: AlertTier[] }> {
-  const [setup, tierRes] = await Promise.all([
-    fetch("/api/overlay/setup", { method: "POST" }).then((r) => r.json()),
-    fetch("/api/overlay/tiers").then((r) => r.json()),
-  ]);
-  const map = (list: Raw[] | undefined, kind: Kind): Item[] =>
-    (list ?? []).map((a, i) => ({ id: a.id, url: a.url, inRandom: a.inRandom !== false, kind, n: i + 1 }));
-  return {
-    items: [
-      ...map(setup.libraryStickers, "image"),
-      ...map(setup.librarySounds, "sound"),
-      ...map(setup.libraryVideos, "video"),
-    ],
-    tiers: tierRes.tiers ?? [],
-  };
-}
-
-function kindOf(file: File): Kind {
-  if (file.type.startsWith("audio/")) return "sound";
-  if (file.type.startsWith("video/")) return "video";
-  return "image";
-}
+import { cleanName, MAX_SETS } from "@/lib/alert-sets";
+import { SetEditor } from "@/components/features/SetEditor";
+import { CreateSetDialog } from "@/components/features/CreateSetDialog";
+import {
+  AutoSaveInput,
+  FileThumb,
+  fetchLibrary,
+  removeFile,
+  uploadFile,
+  useFileLabel,
+  useUploadError,
+  type LibFile,
+  type LibraryData,
+} from "@/components/features/LibraryBits";
 
 /**
- * Every library file as a card: what it is (play / thumbnail), whether it is
- * picked at random for every alert, and which amount tiers use it.
+ * The library ("คลังเสียงและรูป"): every file under "ไฟล์ทั้งหมด", and one tab
+ * per sound set. The active set drives normal alerts and the sounds fans may
+ * pick; "+ สร้างชุด" opens the two-step create-set window.
  */
 export function LibraryPage() {
   const t = useTranslations("featureHub");
   const locale = useLocale();
-  const [items, setItems] = useState<Item[] | null>(null);
-  const [tiers, setTiers] = useState<AlertTier[]>([]);
+  const label = useFileLabel();
+  const uploadError = useUploadError();
+  const [data, setData] = useState<LibraryData | null>(null);
+  const [tab, setTab] = useState<string>("all");
+  const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [removing, setRemoving] = useState<Item | null>(null);
+  const [removing, setRemoving] = useState<LibFile | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
     const d = await fetchLibrary();
-    setItems(d.items);
-    setTiers(d.tiers);
+    setData(d);
+    return d;
   }
 
   useEffect(() => {
     fetchLibrary()
-      .then((d) => {
-        setItems(d.items);
-        setTiers(d.tiers);
-      })
-      .catch(() => setItems([]));
+      .then(setData)
+      .catch(() => setData({ files: [], tiers: [], sets: [], activeSetId: "" }));
   }, []);
 
   async function upload(file: File) {
     setUploading(true);
     setError(null);
     try {
-      const fd = new FormData();
-      fd.append("kind", UPLOAD_KIND[kindOf(file)]);
-      fd.append("file", file);
-      const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const key = `tierUpErr_${d.error}`;
-        setError(t.has(key) ? t(key) : t("tierUpErr"));
-        return;
-      }
+      const up = await uploadFile(file, true);
+      if (!up.ok) setError(uploadError(up.error));
       await load();
     } finally {
       setUploading(false);
-    }
-  }
-
-  async function setRandom(item: Item, enabled: boolean) {
-    setItems((list) => list?.map((x) => (x.id === item.id ? { ...x, inRandom: enabled } : x)) ?? null);
-    const fd = new FormData();
-    fd.append("kind", "libraryRandom");
-    fd.append("assetId", item.id);
-    fd.append("enabled", enabled ? "1" : "0");
-    const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
-    if (!res.ok) {
-      setItems((list) => list?.map((x) => (x.id === item.id ? { ...x, inRandom: !enabled } : x)) ?? null);
     }
   }
 
@@ -108,11 +66,7 @@ export function LibraryPage() {
     if (!removing) return;
     setBusy(true);
     try {
-      const fd = new FormData();
-      fd.append("kind", UPLOAD_KIND[removing.kind]);
-      fd.append("remove", "1");
-      fd.append("assetId", removing.id);
-      await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      await removeFile(removing);
       setRemoving(null);
       await load();
     } finally {
@@ -120,119 +74,165 @@ export function LibraryPage() {
     }
   }
 
-  const usedIn = (url: string) =>
-    tiers
-      .filter((tier) => tier.soundUrl === url || tier.imageUrl === url || tier.videoUrl === url)
-      .map((tier) => tier.minAmount);
+  async function rename(f: LibFile, next: string) {
+    if (!cleanName(next)) return false;
+    const fd = new FormData();
+    fd.append("kind", "libraryName");
+    fd.append("assetId", f.id);
+    fd.append("name", next);
+    const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+    return res.ok;
+  }
 
-  const label = (item: Item) =>
-    t(item.kind === "sound" ? "tierSoundN" : item.kind === "video" ? "tierVideoN" : "tierImageN", { n: item.n });
+  if (!data) return null;
+
+  const tiersUsing = (url: string) =>
+    data.tiers.filter((x) => x.soundUrl === url || x.imageUrl === url || x.videoUrl === url).map((x) => x.minAmount);
+  const setsWith = (id: string) => data.sets.filter((s) => s.items.some((i) => i.assetId === id)).map((s) => s.name);
+  const currentSet = data.sets.find((s) => s.id === tab) ?? null;
+  const tabClass = (on: boolean) =>
+    `inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+      on ? "bg-brand-600 text-white" : "bg-brand-100 text-brand-800 hover:bg-brand-200"
+    }`;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold text-brand-900">{t("libTitle")}</h1>
-          <p className="mt-1 text-sm text-brand-900/65">{t("libDesc")}</p>
-        </div>
-        <label className="btn-primary cursor-pointer px-4 py-2 text-sm">
-          <Icon name="upload" className="h-4 w-4" />
-          {uploading ? t("libUploading") : t("libUpload")}
-          <input
-            type="file"
-            accept="audio/*,image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm"
-            className="hidden"
-            disabled={uploading}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (f) void upload(f);
-            }}
-          />
-        </label>
+      <div>
+        <h1 className="text-2xl font-extrabold text-brand-900">{t("libTitle")}</h1>
+        <p className="mt-1 text-sm text-brand-900/65">{t("libDesc")}</p>
       </div>
-      <p className="text-xs text-brand-900/55">{t("libLimits")}</p>
-      {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-      {items === null ? null : items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-brand-300 p-6 text-center text-sm text-brand-900/60">
-          {t("libEmpty")}
-        </p>
+      <nav className="flex flex-wrap gap-1.5" aria-label={t("libTitle")}>
+        <button type="button" onClick={() => setTab("all")} className={tabClass(tab === "all")}>
+          {t("libTabAll")}
+        </button>
+        {data.sets.map((s) => (
+          <button key={s.id} type="button" onClick={() => setTab(s.id)} className={tabClass(tab === s.id)}>
+            {s.name}
+            {s.id === data.activeSetId && (
+              <span className="rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white">{t("setInUse")}</span>
+            )}
+          </button>
+        ))}
+        {data.sets.length < MAX_SETS ? (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="rounded-full border border-dashed border-brand-400 px-3.5 py-1.5 text-sm font-semibold text-brand-700 hover:bg-brand-50"
+          >
+            {t("libNewSet")}
+          </button>
+        ) : (
+          <span className="self-center text-xs text-brand-900/55">{t("setTooMany")}</span>
+        )}
+      </nav>
+
+      {currentSet ? (
+        <SetEditor
+          key={currentSet.id}
+          set={currentSet}
+          files={data.files}
+          active={currentSet.id === data.activeSetId}
+          onChanged={async () => {
+            const d = await load();
+            if (!d.sets.some((s) => s.id === currentSet.id)) setTab("all");
+          }}
+        />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => {
-            const tierMins = usedIn(item.url);
-            return (
-              <li key={item.id} className="flex flex-col gap-3 rounded-2xl border border-brand-200 p-3">
-                <div className="flex h-32 items-center justify-center overflow-hidden rounded-xl bg-[#0b1220]">
-                  {item.kind === "image" ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.url} alt={label(item)} className="max-h-full max-w-full object-contain" />
-                  ) : item.kind === "video" ? (
-                    <video src={item.url} controls preload="metadata" className="max-h-full max-w-full" />
-                  ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-brand-900/55">{t("libLimits")}</p>
+            <label className="btn-primary cursor-pointer px-4 py-2 text-sm">
+              <Icon name="upload" className="h-4 w-4" />
+              {uploading ? t("libUploading") : t("libUpload")}
+              <input
+                type="file"
+                accept="audio/*,image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) void upload(f);
+                }}
+              />
+            </label>
+          </div>
+          <p className="text-xs text-brand-900/55">{t("libUploadHint")}</p>
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
+          {data.files.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-brand-300 p-6 text-center text-sm text-brand-900/60">
+              {t("libEmpty")}
+            </p>
+          ) : (
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {data.files.map((f) => {
+                const tierMins = tiersUsing(f.url);
+                const inSets = setsWith(f.id);
+                return (
+                  <li key={f.id} className="flex flex-col gap-2.5 rounded-2xl border border-brand-200 p-3">
+                    <FileThumb file={f} label={label(f)} />
+                    <AutoSaveInput
+                      value={f.name ?? ""}
+                      placeholder={label(f)}
+                      ariaLabel={t("libNameLabel")}
+                      save={(next) => rename(f, next)}
+                    />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {inSets.map((n) => (
+                        <span key={n} className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+                          {n}
+                        </span>
+                      ))}
+                      {tierMins.map((min) => (
+                        <span key={min} className="rounded-full bg-tip-100 px-2 py-0.5 text-xs font-semibold text-tip-700">
+                          {t("libUsedIn", { amount: min.toLocaleString() })}
+                        </span>
+                      ))}
+                      {inSets.length === 0 && tierMins.length === 0 && (
+                        <span className="text-xs text-brand-900/50">{t("libUnused")}</span>
+                      )}
+                    </div>
                     <button
                       type="button"
-                      onClick={() => void new Audio(item.url).play().catch(() => {})}
-                      className="flex flex-col items-center gap-1 text-white/85 hover:text-white"
-                      aria-label={`${t("libPlay")} ${label(item)}`}
+                      onClick={() => setRemoving(f)}
+                      className="mt-auto self-start text-xs font-semibold text-red-600 hover:underline"
                     >
-                      <Icon name="play" className="h-10 w-10" />
-                      <span className="text-xs font-semibold">{t("libPlay")}</span>
+                      {t("libRemove")}
                     </button>
-                  )}
-                </div>
-                <p className="text-sm font-bold text-brand-900">{label(item)}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
-                <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-brand-900/85">{t("libRandom")}</span>
-                    <span className="block text-xs text-brand-900/55">
-                      {t(item.kind === "video" ? "libVideoHint" : "libRandomHint")}
-                    </span>
-                  </span>
-                  <Switch
-                    checked={item.inRandom}
-                    onChange={(next) => void setRandom(item, next)}
-                    label={`${t("libRandom")} ${label(item)}`}
-                  />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {tierMins.length > 0 ? (
-                    tierMins.map((min) => (
-                      <span key={min} className="rounded-full bg-tip-100 px-2 py-0.5 text-xs font-semibold text-tip-700">
-                        {t("libUsedIn", { amount: min.toLocaleString() })}
-                      </span>
-                    ))
-                  ) : !item.inRandom ? (
-                    <span className="text-xs text-brand-900/50">{t("libUnused")}</span>
-                  ) : null}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setRemoving(item)}
-                  className="mt-auto self-start text-xs font-semibold text-red-600 hover:underline"
-                >
-                  {t("libRemove")}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+          <p className="text-xs text-brand-900/55">
+            {t("libTierHint")} ·{" "}
+            <Link href={`/${locale}/dashboard/features/alerts`} className="font-semibold text-brand-700 hover:underline">
+              {t("libTierLink")}
+            </Link>
+          </p>
+        </>
       )}
 
-      <p className="text-xs text-brand-900/55">
-        {t("libTierHint")} ·{" "}
-        <Link href={`/${locale}/dashboard/features/alerts`} className="font-semibold text-brand-700 hover:underline">
-          {t("libTierLink")}
-        </Link>
-      </p>
+      {creating && (
+        <CreateSetDialog
+          files={data.files}
+          sets={data.sets}
+          onClose={() => setCreating(false)}
+          reload={async () => (await load()).files}
+          onCreated={async (id) => {
+            await load();
+            setCreating(false);
+            setTab(id);
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={removing !== null}
-        message={removing && usedIn(removing.url).length > 0 ? t("libRemoveUsed") : t("libRemoveConfirm")}
+        message={removing && tiersUsing(removing.url).length > 0 ? t("libRemoveUsed") : t("libRemoveConfirm")}
         confirmLabel={t("libRemove")}
         busy={busy}
         onConfirm={remove}
