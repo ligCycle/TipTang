@@ -283,7 +283,6 @@
     "obsTimerInitialLabel": "Starting time (minutes)",
     "obsTimerMaxLabel": "Max time (minutes)",
     "obsTimerMaxPlaceholder": "Leave blank = no cap",
-    "obsTimerSave": "Save settings",
     "obsTimerStatusLabel": "Time on the clock",
     "obsTimerStopped": "Stopped",
     "obsTimerStart": "▶︎ Start timer",
@@ -781,7 +780,10 @@
     "secObs": "OBS link",
     "goalDefaultTitle": "My goal",
     "autoSaveHint": "Saves automatically when you stop typing",
-    "timerPreview": "Live preview (same as on OBS)"
+    "timerPreview": "Live preview (same as on OBS)",
+    "timerShowRates": "Show the rates under the clock",
+    "timerShowRatesHint": "Tells viewers on stream how much a tip adds or takes off",
+    "autoSaveHintAll": "Settings save automatically"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

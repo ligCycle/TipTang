@@ -130,6 +130,7 @@ export function OverlaySettings({
   const [tRMin, setTRMin] = useState("1");
   const [tRMinAmt, setTRMinAmt] = useState("20");
   const [tFloor, setTFloor] = useState("5");
+  const [tShowRates, setTShowRates] = useState(true);
   const [timerSaved, setTimerSaved] = useState(false);
   const [savingTimer, setSavingTimer] = useState(false);
   const [timerDisplay, setTimerDisplay] = useState<number | null>(null);
@@ -202,6 +203,7 @@ export function OverlaySettings({
         setTRMin(String(Math.round((d.timerReduceSecondsPerUnit ?? 60) / 60)));
         setTRMinAmt(String(d.timerReduceMinAmount ?? 20));
         setTFloor(String(Math.round((d.timerFloorSeconds ?? 300) / 60)));
+        setTShowRates(d.timerShowRates !== false);
         if (d.timerState === "running") {
           timerBaseRef.current = { rem: d.timerRemainingSeconds ?? 0, at: Date.now() };
         } else {
@@ -278,6 +280,7 @@ export function OverlaySettings({
       fd.set("reduceSecondsPerUnit", String((Number(tRMin) || 1) * 60));
       fd.set("reduceMinAmount", tRMinAmt || "20");
       fd.set("floorSeconds", String((Number(tFloor) || 0) * 60));
+      fd.set("showRates", tShowRates ? "true" : "false");
       // Persist the staged clock color in the same request ("" = use alert color).
       fd.set("color", config?.timerColor ?? "");
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
@@ -295,6 +298,28 @@ export function OverlaySettings({
       setSavingTimer(false);
     }
   }
+
+  // Timer settings save by themselves shortly after the last change (like the
+  // goal). The first snapshot is the loaded config, so loading saves nothing.
+  const timerSnap = JSON.stringify([
+    tBaht, tMin, tInit, tMax, tReduceOn, tRBaht, tRMin, tRMinAmt, tFloor, tShowRates,
+    config?.timerColor ?? null,
+  ]);
+  const timerSnapshot = useRef<string | null>(null);
+  useEffect(() => {
+    if (!config) return;
+    if (timerSnapshot.current === null) {
+      timerSnapshot.current = timerSnap;
+      return;
+    }
+    if (timerSnapshot.current === timerSnap) return;
+    const id = setTimeout(() => {
+      timerSnapshot.current = timerSnap;
+      void saveTimerConfig();
+    }, GOAL_SAVE_DELAY_MS);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerSnap, config !== null]);
 
   async function timerControl(control: "start" | "pause" | "reset") {
     const fd = new FormData();
@@ -1510,17 +1535,23 @@ export function OverlaySettings({
                       onReset={resetTimerColor}
                     />
                   </div>
-                  <button
-                    onClick={saveTimerConfig}
-                    disabled={savingTimer}
-                    className="btn-primary w-full py-2 text-sm"
-                  >
-                    {savingTimer
-                      ? t("obsGoalSaving")
-                      : timerSaved
-                        ? t("obsGoalSaved")
-                        : t("obsTimerSave")}
-                  </button>
+                  {/* Rates line under the on-stream clock */}
+                  <label className="flex cursor-pointer items-start gap-3 border-t border-brand-900/10 pt-3">
+                    <input
+                      type="checkbox"
+                      checked={tShowRates}
+                      onChange={(e) => setTShowRates(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 accent-brand-600"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-brand-900/80">{tHub("timerShowRates")}</span>
+                      <span className="mt-0.5 block text-xs text-brand-900/55">{tHub("timerShowRatesHint")}</span>
+                    </span>
+                  </label>
+                  {/* No save button: changes save by themselves. */}
+                  <p className="h-4 text-xs text-brand-900/55" aria-live="polite">
+                    {savingTimer ? t("obsGoalSaving") : timerSaved ? t("obsGoalSaved") : tHub("autoSaveHintAll")}
+                  </p>
                 </div>
 
                 {/* Control + live countdown (always shows a time) */}

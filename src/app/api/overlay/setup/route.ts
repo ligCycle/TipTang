@@ -42,6 +42,7 @@ export async function POST() {
       timerReduceSecondsPerUnit: true,
       timerReduceMinAmount: true,
       timerFloorSeconds: true,
+      timerShowRates: true,
       alertsEnabled: true,
       featuresOnboardedAt: true,
     },
@@ -125,5 +126,6 @@ export async function POST() {
     timerReduceSecondsPerUnit: user.timerReduceSecondsPerUnit,
     timerReduceMinAmount: user.timerReduceMinAmount,
     timerFloorSeconds: user.timerFloorSeconds,
+    timerShowRates: user.timerShowRates,
   });
 }

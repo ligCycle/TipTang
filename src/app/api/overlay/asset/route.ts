@@ -172,6 +172,7 @@ export async function POST(req: Request) {
     const reduceSecondsPerUnit = clampInt(form?.get("reduceSecondsPerUnit"), 1, 86400, 60);
     const reduceMinAmount = clampInt(form?.get("reduceMinAmount"), 1, 100000, 20);
     const floorSeconds = clampInt(form?.get("floorSeconds"), 0, 604800, 300);
+    const showRates = form?.get("showRates") !== "false";
 
     const data: {
       timerBahtPerUnit: number;
@@ -183,6 +184,7 @@ export async function POST(req: Request) {
       timerReduceSecondsPerUnit: number;
       timerReduceMinAmount: number;
       timerFloorSeconds: number;
+      timerShowRates: boolean;
       timerColor?: string | null;
     } = {
       timerBahtPerUnit: bahtPerUnit,
@@ -194,6 +196,7 @@ export async function POST(req: Request) {
       timerReduceSecondsPerUnit: reduceSecondsPerUnit,
       timerReduceMinAmount: reduceMinAmount,
       timerFloorSeconds: floorSeconds,
+      timerShowRates: showRates,
     };
     // Clock color persisted together: "" clears it (use alert color), a valid
     // hex sets it, anything else leaves it unchanged.

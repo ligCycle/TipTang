@@ -2,6 +2,7 @@
 -- alert tiers by amount, and library videos (used only by tiers).
 ALTER TABLE "User" ADD COLUMN "alertsEnabled" BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE "User" ADD COLUMN "featuresOnboardedAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN "timerShowRates" BOOLEAN NOT NULL DEFAULT true;
 
 -- Creators who already set up an overlay never see the first-visit chooser.
 UPDATE "User" SET "featuresOnboardedAt" = NOW() WHERE "overlayKey" IS NOT NULL;

@@ -283,7 +283,6 @@
     "obsTimerInitialLabel": "เวลาเริ่มต้น (นาที)",
     "obsTimerMaxLabel": "เวลาสูงสุด (นาที)",
     "obsTimerMaxPlaceholder": "เว้นว่าง = ไม่จำกัด",
-    "obsTimerSave": "บันทึกการตั้งค่า",
     "obsTimerStatusLabel": "เวลาบนนาฬิกา",
     "obsTimerStopped": "หยุดอยู่",
     "obsTimerStart": "▶︎ เริ่มจับเวลา",
@@ -781,7 +780,10 @@
     "secObs": "ลิงก์ OBS",
     "goalDefaultTitle": "เป้าหมายของฉัน",
     "autoSaveHint": "บันทึกให้อัตโนมัติเมื่อพิมพ์เสร็จ",
-    "timerPreview": "พรีวิวสด (หน้าตาเดียวกับบนจอ OBS)"
+    "timerPreview": "พรีวิวสด (หน้าตาเดียวกับบนจอ OBS)",
+    "timerShowRates": "โชว์อัตราใต้นาฬิกา",
+    "timerShowRatesHint": "บอกคนดูบนจอว่าทิปเท่าไหร่ได้ +เวลา / −เวลา",
+    "autoSaveHintAll": "การตั้งค่าบันทึกให้อัตโนมัติ"
   },
   "dashNav": {
     "menuLabel": "เมนูแดชบอร์ด",
