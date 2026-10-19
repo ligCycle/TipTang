@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { MAX_TIERS, MIN_DURATION_SEC, MAX_DURATION_SEC, type AlertTier } from "@/lib/alert-tiers";
@@ -9,6 +9,8 @@ import type { OverlayConfig } from "@/components/OverlaySettings";
 const DURATIONS = [3, 5, 7, 10, 15, 20, 30, 45, 60].filter(
   (n) => n >= MIN_DURATION_SEC && n <= MAX_DURATION_SEC,
 );
+
+const SAVE_DELAY_MS = 800;
 
 type Row = { minAmount: string; soundUrl: string; visual: string; durationSec: string };
 
@@ -44,6 +46,7 @@ export function AlertTiersSection({
   const [rows, setRows] = useState<Row[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch("/api/overlay/tiers")
@@ -59,11 +62,23 @@ export function AlertTiersSection({
 
   if (!rows) return null;
 
-  const update = (i: number, patch: Partial<Row>) =>
-    setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  // Every change saves by itself shortly after — once each row has an amount
+  // (a just-added empty row waits instead of showing an error).
+  function change(next: Row[]) {
+    setRows(next);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (next.some((r) => !r.minAmount.trim())) {
+      setMessage({ ok: false, text: t("tierNeedAmount") });
+      return;
+    }
+    setMessage(null);
+    saveTimer.current = setTimeout(() => void save(next), SAVE_DELAY_MS);
+  }
 
-  async function save() {
-    if (!rows) return;
+  const update = (i: number, patch: Partial<Row>) =>
+    change(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+
+  async function save(rows: Row[]) {
     setSaving(true);
     setMessage(null);
     try {
@@ -78,7 +93,8 @@ export function AlertTiersSection({
         setMessage({ ok: false, text: t.has(key) ? t(key) : t("tierErr_invalid") });
         return;
       }
-      setRows((d.tiers as AlertTier[]).map(toRow));
+      // Rows stay as typed (no re-sorting under the cursor); the preview
+      // gets the saved, sorted tiers.
       onSaved(d.tiers);
       setMessage({ ok: true, text: t("tierSaved") });
     } finally {
@@ -142,7 +158,7 @@ export function AlertTiersSection({
           <div className="sm:col-span-2">
             <button
               type="button"
-              onClick={() => setRows(rows.filter((_, j) => j !== i))}
+              onClick={() => change(rows.filter((_, j) => j !== i))}
               className="text-xs font-semibold text-red-600 hover:underline"
             >
               {t("tierRemove")}
@@ -154,7 +170,7 @@ export function AlertTiersSection({
         {rows.length < MAX_TIERS ? (
           <button
             type="button"
-            onClick={() => setRows([...rows, { minAmount: "", soundUrl: "", visual: "", durationSec: "" }])}
+            onClick={() => change([...rows, { minAmount: "", soundUrl: "", visual: "", durationSec: "" }])}
             className="text-sm font-semibold text-brand-700 hover:underline"
           >
             {t("tierAdd")}
@@ -162,14 +178,12 @@ export function AlertTiersSection({
         ) : (
           <span className="text-xs text-brand-900/55">{t("tierMax", { max: MAX_TIERS })}</span>
         )}
-        <button type="button" onClick={save} disabled={saving} className="btn-primary px-4 py-1.5 text-sm">
-          {t("tierSave")}
-        </button>
-        {message && (
-          <span className={`text-sm font-medium ${message.ok ? "text-brand-700" : "text-red-600"}`} aria-live="polite">
-            {message.text}
-          </span>
-        )}
+        <span
+          className={`text-sm font-medium ${message && !message.ok ? "text-red-600" : "text-brand-900/55"}`}
+          aria-live="polite"
+        >
+          {saving ? t("tierSaving") : message ? message.text : null}
+        </span>
       </div>
       <p className="text-xs text-brand-900/55">
         {t("tierLibraryHint")} ·{" "}

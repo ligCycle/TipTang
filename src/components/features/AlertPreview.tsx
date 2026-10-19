@@ -63,7 +63,8 @@ export function AlertPreview({ config, tiers = [] }: { config: OverlayConfig; ti
       <div className="flex min-h-48 items-center justify-center rounded-2xl bg-[#0b1220] p-4">
         <div className="w-full max-w-sm">
           <AlertCard
-            key={`${amount}-${media.imageUrl}-${media.videoUrl}`}
+            // Replays the entrance whenever the amount, media, look or effect changes.
+            key={`${amount}-${media.imageUrl}-${media.videoUrl}-${config.alertStyle}-${config.alertTheme}-${config.color}`}
             name={t("sampleName")}
             amount={amount}
             message={t("sampleMessage")}

@@ -312,7 +312,6 @@
     "obsTtsTest": "Test voice",
     "obsBigTip": "Special alert when a tip reaches",
     "obsBigTipUnit": "baht or more (0 = off)",
-    "obsBigTipSave": "Save",
     "obsBigTipHint": "Tips at/above this amount get a bigger card + confetti + a SUPER TIP badge, to encourage larger donations.",
     "obsAlertTheme": "Alert card theme",
     "obsThemeLight": "Light card",
@@ -744,7 +743,6 @@
     "tierVideoN": "Video {n}",
     "tierAdd": "+ Add tier",
     "tierRemove": "Remove",
-    "tierSave": "Save tiers",
     "tierSaved": "Saved",
     "tierMax": "Up to {max} tiers",
     "tierLibraryHint": "Pick sounds, images and videos from your library",
@@ -783,7 +781,10 @@
     "timerPreview": "Live preview (same as on OBS)",
     "timerShowRates": "Show the rates under the clock",
     "timerShowRatesHint": "Tells viewers on stream how much a tip adds or takes off",
-    "autoSaveHintAll": "Settings save automatically"
+    "autoSaveHintAll": "Settings save automatically",
+    "styleHintPreview": "Pick one and the preview card plays that effect right away",
+    "tierNeedAmount": "Enter the new level amount first; it then saves by itself",
+    "tierSaving": "Saving..."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

@@ -120,6 +120,7 @@ export function OverlaySettings({
   );
   const [bigTip, setBigTip] = useState("0");
   const [bigTipSaved, setBigTipSaved] = useState(false);
+  const bigTipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Subathon timer config inputs (kept in minutes for the UI).
   const [tBaht, setTBaht] = useState("10");
   const [tMin, setTMin] = useState("1");
@@ -563,18 +564,23 @@ export function OverlaySettings({
   }
 
   // Big-tip threshold (baht; 0 = off). Server coerces to a clean Int.
-  async function saveBigTip() {
+  // Saves by itself shortly after typing stops (no save button).
+  async function saveBigTip(raw: string) {
     const fd = new FormData();
     fd.set("kind", "bigTipThreshold");
-    fd.set("value", bigTip || "0");
+    fd.set("value", raw || "0");
     const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
     if (!res.ok) return;
     const d = await res.json().catch(() => ({}));
     const value = d.value ?? 0;
     setConfig((c) => (c ? { ...c, bigTipThreshold: value } : c));
-    setBigTip(String(value));
     setBigTipSaved(true);
     setTimeout(() => setBigTipSaved(false), 1500);
+  }
+
+  function queueBigTipSave(raw: string) {
+    if (bigTipTimer.current) clearTimeout(bigTipTimer.current);
+    bigTipTimer.current = setTimeout(() => void saveBigTip(raw), GOAL_SAVE_DELAY_MS);
   }
 
   // Goal-bar color — same shape, persisted under kind=goalColor; refresh the
@@ -755,6 +761,8 @@ export function OverlaySettings({
                   onSave={saveColor}
                   onReset={resetColor}
                 />
+                {/* Feature pages have the real preview beside the settings. */}
+                {view === "all" && (
                 <div className="mt-4">
                   <p className="mb-1.5 text-xs font-medium text-brand-900/50">
                     {t("obsColorPreview")}
@@ -777,6 +785,7 @@ export function OverlaySettings({
                     </p>
                   </div>
                 </div>
+                )}
               </div>
 
               {/* Alert card theme */}
@@ -856,7 +865,7 @@ export function OverlaySettings({
                   })}
                 </div>
                 <p className="mt-1.5 text-xs text-brand-900/50">
-                  {t("obsAlertStyleHint")}
+                  {view === "all" ? t("obsAlertStyleHint") : tHub("styleHintPreview")}
                 </p>
               </div>
 
@@ -871,19 +880,19 @@ export function OverlaySettings({
                     type="number"
                     min={0}
                     value={bigTip}
-                    onChange={(e) => setBigTip(e.target.value)}
+                    onChange={(e) => {
+                      setBigTip(e.target.value);
+                      queueBigTipSave(e.target.value);
+                    }}
                     placeholder="0"
-                    className="input w-32 text-sm"
+                    className="input w-32! text-sm"
                   />
                   <span className="text-sm text-brand-900/70">
                     {t("obsBigTipUnit")}
                   </span>
-                  <button
-                    onClick={saveBigTip}
-                    className="btn-secondary px-4 py-1.5 text-sm"
-                  >
-                    {bigTipSaved ? t("obsGoalSaved") : t("obsBigTipSave")}
-                  </button>
+                  {bigTipSaved && (
+                    <span className="text-xs text-brand-900/55" aria-live="polite">{t("obsGoalSaved")}</span>
+                  )}
                 </div>
                 <p className="mt-1.5 text-xs text-brand-900/50">
                   {t("obsBigTipHint")}
