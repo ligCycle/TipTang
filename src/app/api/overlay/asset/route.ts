@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { isAlertStyle } from "@/lib/alertStyles";
 import { isAlertTheme } from "@/lib/alertThemes";
 import { isAnchor } from "@/lib/overlay-layout";
+import { isPresetId, presetChanges } from "@/lib/feature-presets";
 import {
   uploadImage,
   deleteFile,
@@ -103,6 +104,25 @@ export async function POST(req: Request) {
       data: { goalStartedAt: startedAt },
     });
     return NextResponse.json({ ok: true, goalStartedAt: startedAt.toISOString() });
+  }
+
+  // First visit to the hub: a preset only switches features ON (never off,
+  // never other settings); either answer marks the chooser as seen.
+  if (kind === "preset" || kind === "onboardSkip") {
+    const data: Record<string, unknown> = { featuresOnboardedAt: new Date() };
+    if (kind === "preset") {
+      const preset = form?.get("preset");
+      if (!isPresetId(preset)) {
+        return NextResponse.json({ error: "invalid" }, { status: 400 });
+      }
+      const cur = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { alertsEnabled: true, goalOverlayEnabled: true, timerEnabled: true },
+      });
+      if (cur) Object.assign(data, presetChanges(cur, preset));
+    }
+    await prisma.user.update({ where: { id: session.user.id }, data });
+    return NextResponse.json({ ok: true });
   }
 
   // Where a feature sits on the single OBS link (src/lib/overlay-layout.ts).

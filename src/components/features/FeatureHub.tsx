@@ -6,6 +6,7 @@ import { FEATURES, type FeatureDef } from "@/lib/feature-registry";
 import type { FeatureFlags } from "@/lib/feature-presets";
 import { FeatureCard } from "@/components/features/FeatureCard";
 import { ObsLinkCard } from "@/components/features/ObsLinkCard";
+import { FirstVisitPopup } from "@/components/features/FirstVisitPopup";
 
 export type HubState = {
   liveUrl: string;
@@ -37,7 +38,7 @@ const MAX_SUGGESTED = 3;
  * The "ลูกเล่น" hub: the single OBS link on top, then the features that are
  * on, up to three worth trying, and the full list folded away.
  */
-export function FeatureHub({ children }: { children?: (hub: HubState, setHub: (h: HubState) => void) => React.ReactNode }) {
+export function FeatureHub() {
   const t = useTranslations("featureHub");
   const tDash = useTranslations("dashboard");
   const [hub, setHub] = useState<HubState | null>(null);
@@ -95,7 +96,8 @@ export function FeatureHub({ children }: { children?: (hub: HubState, setHub: (h
 
   return (
     <div className="space-y-6">
-      {children?.(hub, setHub)}
+      {/* One-time chooser on the first visit (shows the OBS step first if never connected). */}
+      {!hub.featuresOnboardedAt && <FirstVisitPopup hub={hub} onDone={setHub} />}
       <ObsLinkCard liveUrl={hub.liveUrl} lastSeenAt={hub.lastSeenAt} />
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 

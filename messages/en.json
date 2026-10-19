@@ -774,7 +774,21 @@
     "libEmpty": "No videos yet",
     "libTitle": "Sounds & images",
     "libDesc": "Sounds and stickers in your library are picked at random for alerts; videos are used by alerts by amount",
-    "libErr": "Upload failed; check the file size and type"
+    "libErr": "Upload failed; check the file size and type",
+    "fvObsTitle": "First: add the OBS link",
+    "fvObsSteps": "In OBS, click + under Sources, choose Browser, paste this link, set 1920×1080, then OK",
+    "fvNext": "Next",
+    "fvTitle": "What kind of stream do you run?",
+    "fvDesc": "We switch on the features that fit; turn any of them on or off later",
+    "fvSkip": "Skip, I will set it up",
+    "fvUse": "Use this set",
+    "fv_basic": "Basic",
+    "fvd_basic": "Alerts only",
+    "fv_goal": "With a goal",
+    "fvd_goal": "Alerts + goal",
+    "fv_subathon": "Subathon",
+    "fvd_subathon": "Alerts + goal + timer",
+    "fvFailed": "Could not save, please try again"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",
