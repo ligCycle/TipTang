@@ -375,8 +375,7 @@
     "noTipsInFilter": "No tips here",
     "autoBadge": "Auto-confirmed",
     "autoBadgeTitle": "The slip matched the bank record, so the tip was confirmed automatically",
-    "pickedSoundBadge": "Sound: {name}",
-    "pickedSoundUnnamed": "unnamed"
+    "pickedSoundBadge": "Sound: {name}"
   },
   "settings": {
     "title": "Donate page settings",

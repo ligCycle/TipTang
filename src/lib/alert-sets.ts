@@ -73,3 +73,12 @@ export function cleanPrice(raw: unknown): number | null {
   const n = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw;
   return typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= MAX_PRICE ? n : null;
 }
+
+/**
+ * "เสียง N" for an unnamed sound: its place among all the creator's sounds,
+ * oldest first — the same number on the library page, the donate page and the
+ * tip badge. 0 = not in the list.
+ */
+export function libraryNumber(orderedIds: string[], id: string): number {
+  return orderedIds.indexOf(id) + 1;
+}

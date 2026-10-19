@@ -375,8 +375,7 @@
     "noTipsInFilter": "ไม่มีทิปในหมวดนี้",
     "autoBadge": "ยืนยันอัตโนมัติ",
     "autoBadgeTitle": "ระบบตรวจสลิปกับธนาคารแล้วตรง จึงยืนยันทิปให้อัตโนมัติ",
-    "pickedSoundBadge": "เสียง: {name}",
-    "pickedSoundUnnamed": "ไม่มีชื่อ"
+    "pickedSoundBadge": "เสียง: {name}"
   },
   "settings": {
     "title": "ตั้งค่าหน้าโดเนท",

@@ -6,6 +6,7 @@ import {
   applyPick,
   cleanName,
   cleanPrice,
+  libraryNumber,
   MAX_NAME,
   type NormalMedia,
   type PickCandidate,
@@ -94,4 +95,12 @@ test("cleanPrice: whole baht 0..100000", () => {
   assert.equal(cleanPrice(-1), null);
   assert.equal(cleanPrice(100001), null);
   assert.equal(cleanPrice("abc"), null);
+});
+
+test("libraryNumber: unnamed sounds are numbered by whole-library order, everywhere", () => {
+  const sounds = ["s1", "s2", "s3"]; // the creator's sounds, oldest first
+  // A set (or the donate page) showing only s2 and s3 still calls them 2 and 3.
+  assert.equal(libraryNumber(sounds, "s2"), 2);
+  assert.equal(libraryNumber(sounds, "s3"), 3);
+  assert.equal(libraryNumber(sounds, "gone"), 0);
 });

@@ -5,6 +5,7 @@ import { SLIP_KEEP_DAYS, slipDeleteDate } from "@/lib/retention";
 import { TipRow } from "@/components/TipRow";
 import { ClearRejectedButton } from "@/components/ClearRejectedButton";
 import { Icon } from "@/components/Icon";
+import { libraryNumber } from "@/lib/alert-sets";
 
 const FULL_LIST = 100;
 
@@ -57,9 +58,21 @@ export async function TipList({
       timerEffect: true,
       paymentMethod: true,
       createdAt: true,
-      pickedSound: { select: { name: true } },
+      pickedSound: { select: { id: true, name: true } },
     },
   });
+  // Unnamed picked sounds show their library number ("เสียง 2"), as everywhere.
+  const soundIds = tips.some((tip) => tip.pickedSound && !tip.pickedSound.name)
+    ? (
+        await prisma.alertAsset.findMany({
+          where: { userId, kind: "SOUND" },
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
+        })
+      ).map((a) => a.id)
+    : [];
+  const tProfile = await getTranslations("profile");
+
   // The "clear rejected" action counts the creator's rejected tips overall,
   // not just the few shown on the home page.
   const byStatus = await prisma.tip.groupBy({
@@ -109,8 +122,10 @@ export async function TipList({
     timerEffect: tip.timerEffect,
     paymentMethod: tip.paymentMethod,
     createdAt: tip.createdAt.toISOString(),
-    // The fan's picked sound: its name, "" if unnamed, null if none.
-    pickedSound: tip.pickedSound ? (tip.pickedSound.name ?? "") : null,
+    // The fan's picked sound by name (or library number); null if none.
+    pickedSound: tip.pickedSound
+      ? (tip.pickedSound.name ?? tProfile("soundNumber", { n: libraryNumber(soundIds, tip.pickedSound.id) }))
+      : null,
   }));
 
   return (

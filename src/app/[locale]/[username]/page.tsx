@@ -13,6 +13,7 @@ import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
 import { SocialIcon } from "@/components/SocialIcon";
 import { Icon } from "@/components/Icon";
 import { CreatorTheme } from "@/components/CreatorTheme";
+import { libraryNumber } from "@/lib/alert-sets";
 import { jsonLdString } from "@/lib/jsonld";
 
 export async function generateMetadata({
@@ -110,7 +111,8 @@ export default async function ProfilePage({
   if (!creator) notFound();
 
   // "แฟนเลือกเสียง": the fan-pickable sounds of today's set, when the creator
-  // has the card on. Unnamed sounds are numbered by library order.
+  // has the card on. Unnamed sounds keep their library number ("เสียง 2"),
+  // the same as on the library page and the creator's tip list.
   const soundSet =
     creator.soundPickEnabled && creator.alertsEnabled && creator.activeSetId
       ? await prisma.alertSet.findUnique({
@@ -125,12 +127,22 @@ export default async function ProfilePage({
           },
         })
       : null;
+  const allSoundIds =
+    soundSet && soundSet.items.some((i) => !i.asset.name)
+      ? (
+          await prisma.alertAsset.findMany({
+            where: { userId: creator.id, kind: "SOUND" },
+            orderBy: { createdAt: "asc" },
+            select: { id: true },
+          })
+        ).map((a) => a.id)
+      : [];
   const soundChoices =
     soundSet && soundSet.items.length > 0
-      ? soundSet.items.map((i, n) => ({
+      ? soundSet.items.map((i) => ({
           id: i.asset.id,
           url: i.asset.url,
-          name: i.asset.name ?? t("soundNumber", { n: n + 1 }),
+          name: i.asset.name ?? t("soundNumber", { n: libraryNumber(allSoundIds, i.asset.id) }),
           minAmount: i.minAmount,
         }))
       : null;

@@ -26,7 +26,7 @@ type Tip = {
   timerEffect: "ADD" | "REDUCE" | "NONE";
   paymentMethod: "PROMPTPAY" | "PAYPAL";
   createdAt: string;
-  /** Name of the sound the fan picked ("" = unnamed); null = no pick. */
+  /** Name (or "เสียง N") of the sound the fan picked; null = no pick. */
   pickedSound?: string | null;
 };
 
@@ -158,7 +158,7 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
           {tip.pickedSound != null && (
             <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
               <Icon name="volume" className="h-3 w-3" />
-              {t("pickedSoundBadge", { name: tip.pickedSound || t("pickedSoundUnnamed") })}
+              {t("pickedSoundBadge", { name: tip.pickedSound })}
             </span>
           )}
           {tip.autoVerified && tip.verifyDetail !== "ocr" ? (
