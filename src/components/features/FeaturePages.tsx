@@ -14,12 +14,15 @@ export function FeatureSettingsLayout({
   title,
   enabled,
   toggleKind,
+  headerExtra,
   children,
 }: {
   title: string;
   /** With a toggle kind, the header carries the feature's on/off switch. */
   enabled?: boolean;
   toggleKind?: "alertsToggle";
+  /** Header right side for pages that run their own switch (e.g. the wheel's rules check). */
+  headerExtra?: ReactNode;
   children: ReactNode;
 }) {
   const t = useTranslations("featureHub");
@@ -60,6 +63,7 @@ export function FeatureSettingsLayout({
             <Switch checked={on} onChange={toggle} label={title} disabled={busy} />
           </span>
         )}
+        {headerExtra}
       </div>
       {children}
     </div>

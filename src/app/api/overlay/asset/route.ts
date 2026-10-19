@@ -323,6 +323,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, enabled });
   }
 
+  // Feature hub card "วงล้อสุ่ม". Turning it on needs the first-enable
+  // checklist (POST /api/wheels/rules); the client opens it on 409.
+  if (kind === "wheelToggle") {
+    const enabled = form?.get("enabled") === "1";
+    const res = await prisma.user.updateMany({
+      where: { id: session.user.id, ...(enabled ? { wheelRulesAcceptedAt: { not: null } } : {}) },
+      data: { wheelEnabled: enabled },
+    });
+    if (res.count === 0) return NextResponse.json({ error: "rules" }, { status: 409 });
+    return NextResponse.json({ ok: true, enabled });
+  }
+
   // A library file's name (shown to fans when they pick a sound).
   if (kind === "libraryName") {
     const assetId = String(form?.get("assetId") ?? "");

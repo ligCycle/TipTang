@@ -7,6 +7,10 @@ import {
   taskOdds,
   spinFloor,
   TEMPLATES,
+  cleanWheelPrice,
+  cleanTasks,
+  pruneRemoved,
+  landingRotation,
   MIN_TASKS,
   MAX_TASKS,
   MAX_TASK_TEXT,
@@ -71,4 +75,36 @@ test("TEMPLATES: valid sizes and texts; only reward removes when hit", () => {
   assert.equal(TEMPLATES.reward.removeWhenHit, true);
   assert.equal(TEMPLATES.task.removeWhenHit, false);
   assert.equal(TEMPLATES.game.removeWhenHit, false);
+});
+
+test("cleanWheelPrice: whole baht 1–100000", () => {
+  assert.equal(cleanWheelPrice(50), 50);
+  assert.equal(cleanWheelPrice("80"), 80);
+  assert.equal(cleanWheelPrice(0), null);
+  assert.equal(cleanWheelPrice(1.5), null);
+  assert.equal(cleanWheelPrice(100001), null);
+  assert.equal(cleanWheelPrice("abc"), null);
+});
+
+test("cleanTasks: trims, keeps ids, enforces 2–24 and text length", () => {
+  assert.deepEqual(cleanTasks([{ id: "a", text: "  ร้อง  ", noAction: false }, { text: "เต้น", noAction: true }]), [
+    { id: "a", text: "ร้อง", noAction: false },
+    { id: null, text: "เต้น", noAction: true },
+  ]);
+  assert.equal(cleanTasks([{ text: "one" }]), null);
+  assert.equal(cleanTasks([{ text: "a" }, { text: "   " }]), null);
+  assert.equal(cleanTasks([{ text: "a" }, { text: "x".repeat(41) }]), null);
+  assert.equal(cleanTasks(Array.from({ length: 25 }, (_, i) => ({ text: "t" + i }))), null);
+  assert.equal(cleanTasks("nope"), null);
+});
+
+test("pruneRemoved: drops keys of deleted tasks and copies beyond slots", () => {
+  assert.deepEqual(pruneRemoved(["A#0", "A#2", "Z#0", "B#1"], ["A", "B"], 2), ["A#0", "B#1"]);
+  assert.deepEqual(pruneRemoved(["A#0", "A#0"], ["A"], 1), ["A#0"]);
+});
+
+test("landingRotation: whole turns then the segment centre under the top pointer", () => {
+  assert.equal(landingRotation(4, 0, 5), 1755);
+  assert.equal(landingRotation(4, 3, 5), 1485);
+  assert.equal(landingRotation(1, 0, 2), 540);
 });

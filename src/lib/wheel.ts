@@ -47,6 +47,14 @@ export function clampSlots(taskCount: number, slots: number): number {
   return Math.max(1, Math.min(want, room));
 }
 
+/**
+ * Clockwise rotation (degrees) that spins `turns` full turns and stops with
+ * segment `index` of `count` centred under the pointer at the top.
+ */
+export function landingRotation(count: number, index: number, turns: number): number {
+  return turns * 360 - ((index + 0.5) * 360) / count;
+}
+
 export function taskOdds(tasks: WheelTask[], slots: number, removed: string[]) {
   const segs = layoutSegments(tasks, slots, removed);
   return tasks.map((t) => ({
@@ -59,6 +67,41 @@ export function taskOdds(tasks: WheelTask[], slots: number, removed: string[]) {
 /** Spin and picked sound prices add up; the creator minimum is the floor. */
 export function spinFloor(creatorMin: number, wheelPrice: number, soundPrice: number | null): number {
   return Math.max(creatorMin, wheelPrice + (soundPrice ?? 0));
+}
+
+export const MAX_WHEEL_PRICE = 100_000;
+
+/** Price per spin: whole baht 1–100,000, or null. */
+export function cleanWheelPrice(v: unknown): number | null {
+  const n = typeof v === "string" && v.trim() !== "" ? Number(v) : v;
+  return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= MAX_WHEEL_PRICE ? n : null;
+}
+
+export type TaskInput = { id: string | null; text: string; noAction: boolean };
+
+/** A wheel's task list from a request: 2–24 tasks, text 1–40 characters after trimming. */
+export function cleanTasks(v: unknown): TaskInput[] | null {
+  if (!Array.isArray(v) || v.length < MIN_TASKS || v.length > MAX_TASKS) return null;
+  const out: TaskInput[] = [];
+  for (const raw of v) {
+    const o = raw as Record<string, unknown> | null;
+    const text = typeof o?.text === "string" ? o.text.trim() : "";
+    if (!text || text.length > MAX_TASK_TEXT) return null;
+    out.push({ id: typeof o?.id === "string" ? o.id : null, text, noAction: o?.noAction === true });
+  }
+  return out;
+}
+
+/** Removed segment keys still meaningful after tasks or slots change. */
+export function pruneRemoved(removed: string[], taskIds: string[], slots: number): string[] {
+  const ids = new Set(taskIds);
+  const out = new Set<string>();
+  for (const k of removed) {
+    const i = k.lastIndexOf("#");
+    const copy = Number(k.slice(i + 1));
+    if (ids.has(k.slice(0, i)) && Number.isInteger(copy) && copy >= 0 && copy < slots) out.add(k);
+  }
+  return [...out];
 }
 
 export type TemplateKey = "task" | "reward" | "game";

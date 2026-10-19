@@ -23,6 +23,34 @@ const WHEEL_SELECT = {
 
 export type WheelRow = Prisma.WheelGetPayload<{ select: typeof WHEEL_SELECT }>;
 
+/** What the settings page gets for each wheel. */
+export type WheelDto = {
+  id: string;
+  name: string;
+  price: number;
+  slots: number;
+  removeWhenHit: boolean;
+  removed: string[];
+  tasks: WheelTask[];
+};
+
+export function toDto(w: WheelRow): WheelDto {
+  return {
+    id: w.id,
+    name: w.name,
+    price: w.price,
+    slots: clampSlots(w.tasks.length, w.slots),
+    removeWhenHit: w.removeWhenHit,
+    removed: w.removed,
+    tasks: w.tasks,
+  };
+}
+
+export async function listWheels(userId: string): Promise<WheelDto[]> {
+  const rows = await prisma.wheel.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: WHEEL_SELECT });
+  return rows.map(toDto);
+}
+
 /** The segments still on a wheel (slots re-clamped in case tasks were added since). */
 export function wheelSegments(w: Pick<WheelRow, "tasks" | "slots" | "removed">) {
   return layoutSegments(w.tasks as WheelTask[], clampSlots(w.tasks.length, w.slots), w.removed);
@@ -39,6 +67,10 @@ export async function wheelForFans(userId: string): Promise<WheelRow | null> {
 }
 
 /** Serialise everything touching one wheel (segment removal must not race). */
+export async function lockWheelForEdit(tx: Tx, wheelId: string) {
+  return lockWheel(tx, wheelId);
+}
+
 async function lockWheel(tx: Tx, wheelId: string): Promise<WheelRow | null> {
   await tx.$queryRaw`SELECT "id" FROM "Wheel" WHERE "id" = ${wheelId} FOR UPDATE`;
   return tx.wheel.findUnique({ where: { id: wheelId }, select: WHEEL_SELECT });
@@ -122,4 +154,38 @@ export async function spinBlocker(tipId: string): Promise<"empty" | null> {
   if (!tip?.spinWheelId || tip.spin) return null;
   const w = await prisma.wheel.findUnique({ where: { id: tip.spinWheelId }, select: WHEEL_SELECT });
   return !w || w.userId !== tip.creatorId || wheelSegments(w).length === 0 ? "empty" : null;
+}
+
+/** Done to-do items stay visible (and undoable) this long. */
+export const DONE_KEEP_MS = 30 * 24 * 3_600_000;
+
+export type TodoItem = { id: string; taskText: string; fan: string; amount: number; confirmedAt: string; doneAt: string | null };
+
+/** Open items oldest first (newest last); done items newest first, last 30 days. */
+export async function todoItems(userId: string, status: "open" | "done", take = 200): Promise<TodoItem[]> {
+  const rows = await prisma.spin.findMany({
+    where: {
+      userId,
+      status: "ACTIVE",
+      noAction: false,
+      doneAt: status === "open" ? null : { gte: new Date(Date.now() - DONE_KEEP_MS) },
+    },
+    orderBy: status === "open" ? { confirmedAt: "asc" } : { doneAt: "desc" },
+    take,
+    select: {
+      id: true,
+      taskText: true,
+      confirmedAt: true,
+      doneAt: true,
+      tip: { select: { supporterName: true, amount: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    taskText: r.taskText,
+    fan: r.tip.supporterName,
+    amount: Number(r.tip.amount),
+    confirmedAt: r.confirmedAt.toISOString(),
+    doneAt: r.doneAt?.toISOString() ?? null,
+  }));
 }
