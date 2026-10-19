@@ -12,6 +12,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OverlayConnectionStatus } from "@/components/OverlayConnectionStatus";
 import { tipSeconds } from "@/lib/subathon-math";
 import { SettingsSection } from "@/components/features/SettingsSection";
+import { Switch } from "@/components/features/FeatureCard";
 
 type Kind = "sound" | "image" | "video";
 type LibItem = { id: string; url: string };
@@ -1535,19 +1536,6 @@ export function OverlaySettings({
                       onReset={resetTimerColor}
                     />
                   </div>
-                  {/* Rates line under the on-stream clock */}
-                  <label className="flex cursor-pointer items-start gap-3 border-t border-brand-900/10 pt-3">
-                    <input
-                      type="checkbox"
-                      checked={tShowRates}
-                      onChange={(e) => setTShowRates(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 accent-brand-600"
-                    />
-                    <span>
-                      <span className="block text-sm font-medium text-brand-900/80">{tHub("timerShowRates")}</span>
-                      <span className="mt-0.5 block text-xs text-brand-900/55">{tHub("timerShowRatesHint")}</span>
-                    </span>
-                  </label>
                   {/* No save button: changes save by themselves. */}
                   <p className="h-4 text-xs text-brand-900/55" aria-live="polite">
                     {savingTimer ? t("obsGoalSaving") : timerSaved ? t("obsGoalSaved") : tHub("autoSaveHintAll")}
@@ -1639,8 +1627,19 @@ export function OverlaySettings({
                   </p>
                 </div>
 
-                {/* Live clock preview — the real overlay, as OBS shows it */}
-                <div>
+                {/* Live clock preview — the real overlay, as OBS shows it —
+                    with the rates-line switch right above what it changes. */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3 rounded-xl border-2 border-brand-300 bg-brand-50 p-3">
+                    <span className="flex min-w-0 items-start gap-2">
+                      <Icon name="clock" className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" />
+                      <span>
+                        <span className="block text-sm font-bold text-brand-900">{tHub("timerShowRates")}</span>
+                        <span className="block text-xs text-brand-900/60">{tHub("timerShowRatesHint")}</span>
+                      </span>
+                    </span>
+                    <Switch checked={tShowRates} onChange={setTShowRates} label={tHub("timerShowRates")} />
+                  </div>
                   <p className="mb-1.5 text-xs font-medium text-brand-900/50">
                     {tHub("timerPreview")}
                   </p>
