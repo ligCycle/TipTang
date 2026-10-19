@@ -317,8 +317,9 @@ export async function POST(req: Request) {
   }
 
   // Random-alert library (many sounds / stickers per creator).
-  if (kind === "librarySound" || kind === "librarySticker") {
-    const assetKind = kind === "librarySound" ? "SOUND" : "STICKER";
+  if (kind === "librarySound" || kind === "librarySticker" || kind === "libraryVideo") {
+    // Library videos are only used by alert tiers (never random-picked).
+    const assetKind = kind === "librarySound" ? "SOUND" : kind === "libraryVideo" ? "VIDEO" : "STICKER";
 
     if (remove) {
       const assetId = String(form?.get("assetId") ?? "");
@@ -327,7 +328,13 @@ export async function POST(req: Request) {
       });
       if (asset) {
         await deleteFile(asset.url); // free the storage before dropping the row
-        await prisma.alertAsset.delete({ where: { id: asset.id } });
+        // Tiers pointing at this file fall back to the normal alert.
+        await prisma.$transaction([
+          prisma.alertAsset.delete({ where: { id: asset.id } }),
+          prisma.alertTier.updateMany({ where: { userId: session.user.id, soundUrl: asset.url }, data: { soundUrl: null } }),
+          prisma.alertTier.updateMany({ where: { userId: session.user.id, imageUrl: asset.url }, data: { imageUrl: null } }),
+          prisma.alertTier.updateMany({ where: { userId: session.user.id, videoUrl: asset.url }, data: { videoUrl: null } }),
+        ]);
         revalidateOverlay();
       }
       return NextResponse.json({ ok: true, id: assetId });
@@ -337,8 +344,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "no_file" }, { status: 400 });
     }
     const isSound = assetKind === "SOUND";
-    const types = isSound ? ALLOWED_AUDIO_TYPES : ALLOWED_ALERT_IMAGE_TYPES;
-    const max = isSound ? MAX_LIBRARY_AUDIO_BYTES : MAX_LIBRARY_IMAGE_BYTES;
+    const isVideo = assetKind === "VIDEO";
+    const types = isSound ? ALLOWED_AUDIO_TYPES : isVideo ? ALLOWED_VIDEO_TYPES : ALLOWED_ALERT_IMAGE_TYPES;
+    const max = isSound ? MAX_LIBRARY_AUDIO_BYTES : isVideo ? MAX_VIDEO_BYTES : MAX_LIBRARY_IMAGE_BYTES;
     if (file.size > max) {
       return NextResponse.json({ error: "too_large" }, { status: 413 });
     }
@@ -353,7 +361,7 @@ export async function POST(req: Request) {
     }
     const url = await uploadImage(
       file,
-      isSound ? "alert-lib-sounds" : "alert-lib-stickers",
+      isSound ? "alert-lib-sounds" : isVideo ? "alert-lib-videos" : "alert-lib-stickers",
     );
     const created = await prisma.alertAsset.create({
       data: { userId: session.user.id, kind: assetKind, url },

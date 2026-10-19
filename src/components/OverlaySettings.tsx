@@ -71,6 +71,7 @@ export function OverlaySettings({
   aside,
   positionSlot,
   tiersSlot,
+  videosSlot,
 }: {
   view?: OverlayView;
   /** Left column on feature pages (e.g. the alert preview); gets the loaded config. */
@@ -78,7 +79,9 @@ export function OverlaySettings({
   /** Position picker for the feature (single OBS link). */
   positionSlot?: ReactNode;
   /** Alert tiers editor (section ④ on the alerts page). */
-  tiersSlot?: ReactNode;
+  tiersSlot?: (config: Config) => ReactNode;
+  /** Library page: the video list (gets a reload for after uploads). */
+  videosSlot?: (config: Config, reload: () => Promise<void>) => ReactNode;
 } = {}) {
   const t = useTranslations("dashboard");
   const tHub = useTranslations("featureHub");
@@ -1640,7 +1643,7 @@ export function OverlaySettings({
         </SettingsSection>
         <SettingsSection index={3} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
         {tiersSlot && (
-          <SettingsSection index={4} title={tHub("secTiers")}>{tiersSlot}</SettingsSection>
+          <SettingsSection index={4} title={tHub("secTiers")}>{tiersSlot(config)}</SettingsSection>
         )}
         <SettingsSection index={tiersSlot ? 5 : 4} title={tHub("secMore")}>
           {obsBlock}
@@ -1663,6 +1666,7 @@ export function OverlaySettings({
       <div className="space-y-4">
         {libSoundsBlock}
         {libStickersBlock}
+        {videosSlot?.(config, load)}
         {errorBlock}
       </div>
     );

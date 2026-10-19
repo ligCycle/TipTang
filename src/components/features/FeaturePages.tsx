@@ -7,6 +7,8 @@ import { OverlaySettings } from "@/components/OverlaySettings";
 import { AlertPreview } from "@/components/features/AlertPreview";
 import { PositionPicker } from "@/components/features/PositionPicker";
 import { Switch } from "@/components/features/FeatureCard";
+import { AlertTiersSection } from "@/components/features/AlertTiersSection";
+import type { AlertTier } from "@/lib/alert-tiers";
 import type { OnScreenFeature } from "@/lib/overlay-layout";
 
 type Layout = {
@@ -73,12 +75,15 @@ export function FeatureSettingsLayout({
 
 export function AlertsFeature({ alertsEnabled, layout }: { alertsEnabled: boolean; layout: Layout }) {
   const t = useTranslations("featureHub");
+  // Saved tiers, shared between the tiers editor and the preview.
+  const [tiers, setTiers] = useState<AlertTier[]>([]);
   return (
     <FeatureSettingsLayout title={t("f_alerts")} enabled={alertsEnabled} toggleKind="alertsToggle">
       <OverlaySettings
         view="alerts"
-        aside={(config) => <AlertPreview config={config} />}
+        aside={(config) => <AlertPreview config={config} tiers={tiers} />}
         positionSlot={<PositionPicker feature="alert" {...layout} />}
+        tiersSlot={(config) => <AlertTiersSection config={config} onSaved={setTiers} />}
       />
     </FeatureSettingsLayout>
   );
