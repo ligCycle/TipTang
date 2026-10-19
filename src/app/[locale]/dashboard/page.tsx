@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -128,6 +129,8 @@ export default async function DashboardPage({
   });
 
   const profilePath = `/${locale}/${user.username}`;
+  // Shown in full (e.g. tiptang.com/th/name) so creators see what fans get.
+  const host = (await headers()).get("host") ?? "tiptang.com";
 
 
   return (
@@ -168,6 +171,28 @@ export default async function DashboardPage({
         overlayDone={overlaySetUp(user.overlayLastSeenAt, confirmedEver)}
         firstTipDone={confirmedEver > 0}
       />
+
+      {/* Donate-page link — a row, not a card; right under the checklist since
+          sharing it is what creators do most. */}
+      <section>
+        <h2 className={sectionTitleClass}>
+          <Icon name="link" />
+          {t("yourLink")}
+        </h2>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <code className="break-all rounded-lg bg-brand-50 px-3 py-1.5 text-sm text-brand-800">
+            {host}
+            {profilePath}
+          </code>
+          <CopyLink path={profilePath} label={t("copyLink")} copiedLabel={t("copied")} />
+          <Link
+            href={profilePath}
+            className="text-sm font-semibold text-brand-700 hover:underline"
+          >
+            {t("viewProfile")} →
+          </Link>
+        </div>
+      </section>
 
       {/* Overview — one range at a time, chosen via ?range= so the page
           stays a server component and the choice survives a reload. */}
@@ -261,26 +286,6 @@ export default async function DashboardPage({
           {t("pendingLine", { count: pendingCount })} →
         </Link>
       )}
-
-      {/* Profile link — a row, not a card */}
-      <section>
-        <h2 className={sectionTitleClass}>
-          <Icon name="link" />
-          {t("yourLink")}
-        </h2>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <code className="rounded-lg bg-brand-50 px-3 py-1.5 text-sm text-brand-800">
-            {profilePath}
-          </code>
-          <CopyLink path={profilePath} label={t("copyLink")} copiedLabel={t("copied")} />
-          <Link
-            href={profilePath}
-            className="text-sm font-semibold text-brand-700 hover:underline"
-          >
-            {t("viewProfile")} →
-          </Link>
-        </div>
-      </section>
 
       {/* Reviews come from creators who have actually been tipped; the
           landing page only shows the section once there is one to show.
