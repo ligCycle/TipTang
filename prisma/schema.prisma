@@ -42,7 +42,8 @@ enum ReportStatus {
 enum AlertAssetKind {
   SOUND
   STICKER
-  // Library videos are used only by alert tiers (never random-picked).
+  // Library video: plays instead of image and sound (normal alerts when
+  // switched on, or where a tier picks it).
   VIDEO
 }
 

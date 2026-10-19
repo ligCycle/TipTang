@@ -1,5 +1,5 @@
 -- Feature hub: alert switch, onboarding flag,
--- alert tiers by amount, and library videos (used only by tiers).
+-- alert tiers by amount, library videos, and library on/off for normal alerts.
 ALTER TABLE "User" ADD COLUMN "alertsEnabled" BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE "User" ADD COLUMN "featuresOnboardedAt" TIMESTAMP(3);
 ALTER TABLE "User" ADD COLUMN "timerShowRates" BOOLEAN NOT NULL DEFAULT true;
