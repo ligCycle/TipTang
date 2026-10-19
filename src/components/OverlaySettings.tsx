@@ -10,6 +10,7 @@ import { Icon } from "@/components/Icon";
 import { formatDate } from "@/lib/format";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OverlayConnectionStatus } from "@/components/OverlayConnectionStatus";
+import { tipSeconds } from "@/lib/subathon-math";
 import { SettingsSection } from "@/components/features/SettingsSection";
 
 type Kind = "sound" | "image" | "video";
@@ -59,6 +60,13 @@ function fmtDuration(total: number): string {
 // Sample goal a creator starts from on the goal page (baht).
 const DEFAULT_GOAL_AMOUNT = "1000";
 const GOAL_SAVE_DELAY_MS = 800;
+
+// Timer rate rows show what a tip of this size does with the current numbers.
+const RATE_EXAMPLE_BAHT = 100;
+function exampleMinutes(bahtPerUnit: string, minutesPerUnit: string): string {
+  const sec = tipSeconds(RATE_EXAMPLE_BAHT, Number(bahtPerUnit), Number(minutesPerUnit) * 60);
+  return String(Math.round(sec / 6) / 10); // minutes, one decimal at most
+}
 
 const FIELD: Record<Kind, keyof Config> = {
   sound: "soundUrl",
@@ -1357,6 +1365,7 @@ export function OverlaySettings({
                     <span className="mb-1 block text-xs font-medium text-brand-900/70">
                       {t("obsTimerRateLabel")}
                     </span>
+                    {/* One sentence: "tip every [10] baht, add [1] min" (w-*! beats .input's width). */}
                     <div className="flex flex-wrap items-center gap-2 text-sm text-brand-900/80">
                       <span>{t("obsTimerRateEvery")}</span>
                       <input
@@ -1364,7 +1373,8 @@ export function OverlaySettings({
                         min={1}
                         value={tBaht}
                         onChange={(e) => setTBaht(e.target.value)}
-                        className="input w-20 text-sm"
+                        className="input w-20! text-sm"
+                        aria-label={t("obsTimerRateLabel")}
                       />
                       <span>{t("obsTimerRateBahtEq")}</span>
                       <input
@@ -1372,10 +1382,14 @@ export function OverlaySettings({
                         min={1}
                         value={tMin}
                         onChange={(e) => setTMin(e.target.value)}
-                        className="input w-20 text-sm"
+                        className="input w-20! text-sm"
+                        aria-label={t("obsTimerRateMin")}
                       />
                       <span>{t("obsTimerRateMin")}</span>
                     </div>
+                    <p className="mt-1 text-xs text-brand-900/55">
+                      {t("obsTimerRateExample", { baht: RATE_EXAMPLE_BAHT, min: exampleMinutes(tBaht, tMin) })}
+                    </p>
                   </div>
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-brand-900/70">
@@ -1433,18 +1447,23 @@ export function OverlaySettings({
                               min={1}
                               value={tRBaht}
                               onChange={(e) => setTRBaht(e.target.value)}
-                              className="input w-24 text-sm"
+                              className="input w-20! text-sm"
+                              aria-label={t("obsReduceRateLabel")}
                             />
-                            <span>{t("obsTimerRateBahtEq")}</span>
+                            <span>{t("obsReduceBahtEq")}</span>
                             <input
                               type="number"
                               min={1}
                               value={tRMin}
                               onChange={(e) => setTRMin(e.target.value)}
-                              className="input w-20 text-sm"
+                              className="input w-20! text-sm"
+                              aria-label={t("obsTimerRateMin")}
                             />
                             <span>{t("obsTimerRateMin")}</span>
                           </div>
+                          <p className="mt-1 text-xs text-brand-900/55">
+                            {t("obsReduceExample", { baht: RATE_EXAMPLE_BAHT, min: exampleMinutes(tRBaht, tRMin) })}
+                          </p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                           <label className="block">

@@ -276,9 +276,9 @@
     "obsGoalEmpty": "ตั้งเป้าหมายในหน้าตั้งค่าก่อน แล้วแถบจะโชว์ตรงนี้",
     "obsTimerTitle": "ตัวจับเวลา Subathon",
     "obsTimerToggleHint": "โดเนทที่ยืนยันแล้วจะบวกเวลาให้ไลฟ์ + มีนาฬิกานับถอยหลังขึ้นจอ (Source แยกใน OBS)",
-    "obsTimerRateLabel": "อัตราบวกเวลา",
-    "obsTimerRateEvery": "ทุกๆ",
-    "obsTimerRateBahtEq": "บาท =",
+    "obsTimerRateLabel": "ทิปแล้วบวกเวลาเท่าไหร่",
+    "obsTimerRateEvery": "ทิปทุก",
+    "obsTimerRateBahtEq": "บาท บวกเวลา",
     "obsTimerRateMin": "นาที",
     "obsTimerInitialLabel": "เวลาเริ่มต้น (นาที)",
     "obsTimerMaxLabel": "เวลาสูงสุด (นาที)",
@@ -299,7 +299,7 @@
     "obsTimerColorReset": "ใช้สีเดียวกับ Alert",
     "obsReduceToggle": "ให้คนดูโดเนทเพื่อ \"ลดเวลา\" ได้ (sabotage)",
     "obsReduceHint": "คนดูจะเลือกได้ว่าทิปนี้ เพิ่มเวลา / ลดเวลา / แค่โดเนท — ตั้งอัตราลดให้แพงกว่าเพิ่ม ฝั่งเชียร์จะได้เปรียบ ส่วนพื้นต่ำสุดกันไม่ให้ไลฟ์ถูกลดจนดับ",
-    "obsReduceRateLabel": "อัตราลดเวลา",
+    "obsReduceRateLabel": "ทิปลดเวลาแล้วลดเท่าไหร่",
     "obsReduceMinLabel": "ยอดขั้นต่ำที่ลดได้ (บาท)",
     "obsFloorLabel": "ลดได้ต่ำสุดเหลือ (นาที)",
     "reduceBadge": "ลดเวลา",
@@ -360,7 +360,10 @@
     "obsRotateFailed": "สร้างลิงก์ใหม่ไม่สำเร็จ ลองอีกครั้ง",
     "slipPurged": "สลิปถูกลบแล้ว (เก็บไว้ 90 วัน)",
     "slipRetentionHint": "รูปสลิปเก็บไว้ {days} วันหลังยืนยันหรือปฏิเสธ แล้วระบบจะลบให้อัตโนมัติ (รายการทิปยังอยู่ครบ) ถ้าต้องใช้เป็นหลักฐาน กด \"ดูสลิป\" แล้วบันทึกรูปเก็บไว้ได้",
-    "slipDeletesOn": "สลิปจะถูกลบ {date}"
+    "slipDeletesOn": "สลิปจะถูกลบ {date}",
+    "obsReduceBahtEq": "บาท ลดเวลา",
+    "obsTimerRateExample": "ตัวอย่าง: ทิป {baht} บาท → เวลาเพิ่ม {min} นาที",
+    "obsReduceExample": "ตัวอย่าง: ทิปลดเวลา {baht} บาท → เวลาลด {min} นาที"
   },
   "settings": {
     "title": "ตั้งค่า",

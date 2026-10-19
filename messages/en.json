@@ -276,9 +276,9 @@
     "obsGoalEmpty": "Set a goal in Settings to see the bar here.",
     "obsTimerTitle": "Subathon Timer",
     "obsTimerToggleHint": "Confirmed donations add time to your stream + a live countdown clock on screen (separate OBS source).",
-    "obsTimerRateLabel": "Time added per donation",
+    "obsTimerRateLabel": "How much time a tip adds",
     "obsTimerRateEvery": "Every",
-    "obsTimerRateBahtEq": "THB =",
+    "obsTimerRateBahtEq": "baht tipped adds",
     "obsTimerRateMin": "min",
     "obsTimerInitialLabel": "Starting time (minutes)",
     "obsTimerMaxLabel": "Max time (minutes)",
@@ -299,7 +299,7 @@
     "obsTimerColorReset": "Use the alert color",
     "obsReduceToggle": "Let viewers pay to REDUCE the timer (sabotage)",
     "obsReduceHint": "Viewers pick whether a tip adds time, reduces it, or just donates. Price reducing higher than adding so the cheering side has the edge; the floor keeps the stream from being cut short.",
-    "obsReduceRateLabel": "Reduce rate",
+    "obsReduceRateLabel": "How much time a reduce tip takes off",
     "obsReduceMinLabel": "Minimum tip to reduce (THB)",
     "obsFloorLabel": "Cannot reduce below (minutes)",
     "reduceBadge": "reduced time",
@@ -360,7 +360,10 @@
     "obsRotateFailed": "Couldn't make a new link. Please try again.",
     "slipPurged": "Slip deleted (kept for 90 days)",
     "slipRetentionHint": "Slip images are kept for {days} days after you confirm or reject a tip, then deleted automatically (the tip itself stays). Need one as proof? Open \"View slip\" and save the image.",
-    "slipDeletesOn": "Slip deleted on {date}"
+    "slipDeletesOn": "Slip deleted on {date}",
+    "obsReduceBahtEq": "baht tipped takes off",
+    "obsTimerRateExample": "Example: a {baht} baht tip → {min} more minutes",
+    "obsReduceExample": "Example: a {baht} baht reduce tip → {min} fewer minutes"
   },
   "settings": {
     "title": "Settings",
