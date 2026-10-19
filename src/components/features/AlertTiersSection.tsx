@@ -39,9 +39,12 @@ const toTier = (r: Row): AlertTier => ({
 export function AlertTiersSection({
   config,
   onSaved,
+  reload,
 }: {
   config: OverlayConfig;
   onSaved: (tiers: AlertTier[]) => void;
+  /** Reloads the config after a file is uploaded into the library here. */
+  reload: () => Promise<void>;
 }) {
   const t = useTranslations("featureHub");
   const locale = useLocale();
@@ -49,13 +52,18 @@ export function AlertTiersSection({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
+  // Latest rows, for code that resumes after an await (upload → select).
+  // Kept in step by the load and by change().
+  const rowsRef = useRef<Row[]>([]);
 
   useEffect(() => {
     fetch("/api/overlay/tiers")
       .then((r) => r.json())
       .then((d) => {
         const tiers: AlertTier[] = d.tiers ?? [];
-        setRows(tiers.map(toRow));
+        rowsRef.current = tiers.map(toRow);
+        setRows(rowsRef.current);
         onSaved(tiers);
       })
       .catch(() => setRows([]));
@@ -67,6 +75,7 @@ export function AlertTiersSection({
   // Every change saves by itself shortly after — once each row has an amount
   // (a just-added empty row waits instead of showing an error).
   function change(next: Row[]) {
+    rowsRef.current = next;
     setRows(next);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     if (next.some((r) => !r.minAmount.trim())) {
@@ -104,7 +113,49 @@ export function AlertTiersSection({
     }
   }
 
+  // Upload a file into the library right from a tier row, then pick it there.
+  async function upload(i: number, slot: "sound" | "visual", file: File) {
+    const kind =
+      slot === "sound" ? "librarySound" : file.type.startsWith("video/") ? "libraryVideo" : "librarySticker";
+    setUploading(`${i}-${slot}`);
+    setMessage(null);
+    try {
+      const fd = new FormData();
+      fd.append("kind", kind);
+      fd.append("file", file);
+      const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || typeof d.url !== "string") {
+        const key = `tierUpErr_${d.error}`;
+        setMessage({ ok: false, text: t.has(key) ? t(key) : t("tierUpErr") });
+        return;
+      }
+      await reload();
+      const patch: Partial<Row> =
+        slot === "sound" ? { soundUrl: d.url } : { visual: `${kind === "libraryVideo" ? "v" : "i"}:${d.url}` };
+      change(rowsRef.current.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+    } finally {
+      setUploading(null);
+    }
+  }
+
   const selectClass = "input py-1.5 text-sm";
+  const uploadButton = (i: number, slot: "sound" | "visual", accept: string) => (
+    <label className="btn-secondary shrink-0 cursor-pointer px-3 py-1.5 text-xs">
+      {uploading === `${i}-${slot}` ? t("tierUploading") : t("tierUpload")}
+      <input
+        type="file"
+        accept={accept}
+        className="hidden"
+        disabled={uploading !== null}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void upload(i, slot, file);
+        }}
+      />
+    </label>
+  );
 
   return (
     <div className="space-y-3">
@@ -123,18 +174,22 @@ export function AlertTiersSection({
               className="input mt-1 py-1.5 text-sm"
             />
           </label>
-          <label className="text-xs font-semibold text-brand-900/70">
+          <div className="text-xs font-semibold text-brand-900/70">
             {t("tierSound")}
-            <select value={r.soundUrl} onChange={(e) => update(i, { soundUrl: e.target.value })} className={`${selectClass} mt-1`}>
+            <div className="mt-1 flex items-center gap-2">
+            <select aria-label={t("tierSound")} value={r.soundUrl} onChange={(e) => update(i, { soundUrl: e.target.value })} className={selectClass}>
               <option value="">{t("tierNormal")}</option>
               {config.librarySounds.map((s, n) => (
                 <option key={s.id} value={s.url}>{t("tierSoundN", { n: n + 1 })}</option>
               ))}
             </select>
-          </label>
-          <label className="text-xs font-semibold text-brand-900/70">
+            {uploadButton(i, "sound", "audio/*")}
+            </div>
+          </div>
+          <div className="text-xs font-semibold text-brand-900/70">
             {t("tierVisual")}
-            <select value={r.visual} onChange={(e) => update(i, { visual: e.target.value })} className={`${selectClass} mt-1`}>
+            <div className="mt-1 flex items-center gap-2">
+            <select aria-label={t("tierVisual")} value={r.visual} onChange={(e) => update(i, { visual: e.target.value })} className={selectClass}>
               <option value="">{t("tierNormal")}</option>
               {config.libraryStickers.map((s, n) => (
                 <option key={s.id} value={`i:${s.url}`}>{t("tierImageN", { n: n + 1 })}</option>
@@ -143,7 +198,9 @@ export function AlertTiersSection({
                 <option key={s.id} value={`v:${s.url}`}>{t("tierVideoN", { n: n + 1 })}</option>
               ))}
             </select>
-          </label>
+            {uploadButton(i, "visual", "image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm")}
+            </div>
+          </div>
           <label className="text-xs font-semibold text-brand-900/70">
             {t("tierDuration")}
             <select value={r.durationSec} onChange={(e) => update(i, { durationSec: e.target.value })} className={`${selectClass} mt-1`}>

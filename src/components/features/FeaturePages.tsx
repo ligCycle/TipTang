@@ -75,7 +75,7 @@ export function AlertsFeature({ alertsEnabled }: { alertsEnabled: boolean }) {
       <OverlaySettings
         view="alerts"
         aside={(config) => <AlertPreview config={config} tiers={tiers} />}
-        tiersSlot={(config) => <AlertTiersSection config={config} onSaved={setTiers} />}
+        tiersSlot={(config, reload) => <AlertTiersSection config={config} onSaved={setTiers} reload={reload} />}
       />
     </FeatureSettingsLayout>
   );

@@ -87,7 +87,7 @@ export function OverlaySettings({
   /** Left column on feature pages (e.g. the alert preview); gets the loaded config. */
   aside?: (config: Config) => ReactNode;
   /** Alert tiers editor (section ⑤ on the alerts page). */
-  tiersSlot?: (config: Config) => ReactNode;
+  tiersSlot?: (config: Config, reload: () => Promise<void>) => ReactNode;
   /** Library page: the video list (gets a reload for after uploads). */
   videosSlot?: (config: Config, reload: () => Promise<void>) => ReactNode;
 } = {}) {
@@ -1682,7 +1682,7 @@ export function OverlaySettings({
         </SettingsSection>
         <SettingsSection index={4} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
         {tiersSlot && (
-          <SettingsSection index={5} title={tHub("secTiers")}>{tiersSlot(config)}</SettingsSection>
+          <SettingsSection index={5} title={tHub("secTiers")}>{tiersSlot(config, load)}</SettingsSection>
         )}
         {errorBlock}
       </div>
