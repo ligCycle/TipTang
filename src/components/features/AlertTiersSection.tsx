@@ -161,7 +161,7 @@ export function AlertTiersSection({
     <div className="space-y-3">
       <p className="text-sm text-brand-900/65">{t("tiersIntro")}</p>
       {rows.map((r, i) => (
-        <div key={i} className="grid gap-2 rounded-xl border border-brand-200 p-3 sm:grid-cols-2">
+        <div key={i} className="grid gap-3 rounded-xl border border-brand-200 p-3">
           <label className="text-xs font-semibold text-brand-900/70">
             {t("tierFrom")}
             <input
@@ -171,13 +171,13 @@ export function AlertTiersSection({
               inputMode="numeric"
               value={r.minAmount}
               onChange={(e) => update(i, { minAmount: e.target.value })}
-              className="input mt-1 py-1.5 text-sm"
+              className="input mt-1 w-40! py-1.5 text-sm"
             />
           </label>
           <div className="text-xs font-semibold text-brand-900/70">
             {t("tierSound")}
             <div className="mt-1 flex items-center gap-2">
-            <select aria-label={t("tierSound")} value={r.soundUrl} onChange={(e) => update(i, { soundUrl: e.target.value })} className={selectClass}>
+            <select aria-label={t("tierSound")} value={r.soundUrl} onChange={(e) => update(i, { soundUrl: e.target.value })} className={`${selectClass} min-w-0 flex-1`}>
               <option value="">{t("tierNormal")}</option>
               {config.librarySounds.map((s, n) => (
                 <option key={s.id} value={s.url}>{t("tierSoundN", { n: n + 1 })}</option>
@@ -189,7 +189,7 @@ export function AlertTiersSection({
           <div className="text-xs font-semibold text-brand-900/70">
             {t("tierVisual")}
             <div className="mt-1 flex items-center gap-2">
-            <select aria-label={t("tierVisual")} value={r.visual} onChange={(e) => update(i, { visual: e.target.value })} className={selectClass}>
+            <select aria-label={t("tierVisual")} value={r.visual} onChange={(e) => update(i, { visual: e.target.value })} className={`${selectClass} min-w-0 flex-1`}>
               <option value="">{t("tierNormal")}</option>
               {config.libraryStickers.map((s, n) => (
                 <option key={s.id} value={`i:${s.url}`}>{t("tierImageN", { n: n + 1 })}</option>
@@ -214,7 +214,7 @@ export function AlertTiersSection({
               ))}
             </select>
           </label>
-          <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-tip-100/60 px-3 py-2 sm:col-span-2">
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-tip-100/60 px-3 py-2">
             <input
               type="checkbox"
               checked={r.celebrate}
@@ -226,7 +226,7 @@ export function AlertTiersSection({
               <span className="block text-xs text-brand-900/60">{t("tierCelebrateHint")}</span>
             </span>
           </label>
-          <div className="sm:col-span-2">
+          <div>
             <button
               type="button"
               onClick={() => change(rows.filter((_, j) => j !== i))}

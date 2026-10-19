@@ -33,7 +33,10 @@ export default async function DashboardLayout({
   return (
     <>
       <CreatorTheme color={me?.profileColor} />
-      <div className="md:flex md:items-start md:gap-8">
+      {/* On large screens the dashboard grows past the site's max-w-5xl (up to
+          80rem, keeping 1.5rem each side) via negative margins — no transform,
+          so fixed dialogs inside still cover the whole viewport. */}
+      <div className="md:flex md:items-start md:gap-8 xl:mx-[calc(50%_-_min(40rem,_50vw_-_1.5rem))]">
         <DashboardNav admin={isAdminEmail(session.user.email)} />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
