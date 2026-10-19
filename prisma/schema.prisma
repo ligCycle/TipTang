@@ -43,7 +43,7 @@ enum AlertAssetKind {
   SOUND
   STICKER
   // Library video: plays instead of image and sound (normal alerts when
-  // switched on, or where a tier picks it).
+  // in the active set, or where a tier picks it).
   VIDEO
 }
 
@@ -122,13 +122,43 @@ model AlertAsset {
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind      AlertAssetKind
   url       String
-  // On = used by normal alerts (several on = one at random per tip; a video
-  // replaces image and sound). Off = only where a tier picks it. Tier-row
-  // uploads and videos start off.
-  inRandom  Boolean        @default(true)
+  // Shown to fans when they pick a sound (src/lib/alert-sets.ts). Null =
+  // "เสียง N" by library order.
+  name      String?
   createdAt DateTime       @default(now())
+  setItems  AlertSetItem[]
+  pickedBy  Tip[]
 
   @@index([userId, kind])
+}
+
+// Sound set ("ชุด", src/lib/alert-sets.ts): a named group of library files.
+// The creator's active set drives normal alerts and the sounds fans may pick.
+model AlertSet {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime       @default(now())
+  // Bumped on any item change so running overlays pick up the new media.
+  updatedAt DateTime       @updatedAt
+  items     AlertSetItem[]
+  activeFor User[]         @relation("ActiveSet")
+
+  @@index([userId])
+}
+
+model AlertSetItem {
+  setId       String
+  assetId     String
+  // Sounds: whether fans may pick it on the donate page.
+  fanPickable Boolean    @default(true)
+  // Sounds: minimum tip (baht) for it to play at all, picked or random. 0 = free.
+  minAmount   Int        @default(0)
+  set         AlertSet   @relation(fields: [setId], references: [id], onDelete: Cascade)
+  asset       AlertAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@id([setId, assetId])
 }
 
 // Alert tier by amount (src/lib/alert-tiers.ts): tips >= minAmount use these
@@ -291,6 +321,12 @@ model User {
   reports       Report[]
   alertAssets   AlertAsset[]
   alertTiers    AlertTier[]
+  alertSets     AlertSet[]
+  // The set in use now (always one; see src/lib/alert-sets-server.ts).
+  activeSetId   String?   @unique
+  activeSet     AlertSet? @relation("ActiveSet", fields: [activeSetId], references: [id], onDelete: SetNull)
+  // Feature hub card "แฟนเลือกเสียง": show the sound picker on the donate page.
+  soundPickEnabled Boolean @default(false)
   shopItems     ShopItem[]
   shopOrders    ShopOrder[]
 }
@@ -339,6 +375,10 @@ model Tip {
   // (every confirmed tip added time); NONE = supporter chose "just donate".
   timerEffect     TimerEffect @default(ADD)
   paymentMethod   PaymentMethod @default(PROMPTPAY)
+  // The sound the fan picked (and paid at least its minimum for). Null = none,
+  // or the file was deleted since — the alert then falls back to tier/set.
+  pickedSoundId   String?
+  pickedSound     AlertAsset? @relation(fields: [pickedSoundId], references: [id], onDelete: SetNull)
   status          TipStatus @default(PENDING)
   isMessagePublic Boolean   @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
