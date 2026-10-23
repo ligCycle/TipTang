@@ -109,8 +109,12 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
   const volume = feed?.volume ?? 70;
   const maxSec = feed?.maxSec ?? 180;
 
+  // Player methods exist only once it is ready; onReady reads the newest volume.
+  const ready = useRef(false);
+  const volumeRef = useRef(volume);
   useEffect(() => {
-    player.current?.setVolume(volume);
+    volumeRef.current = volume;
+    if (ready.current) player.current?.setVolume(volume);
   }, [volume]);
 
   useEffect(() => {
@@ -120,6 +124,7 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       timers.current = [];
     };
     clearTimers();
+    ready.current = false;
     player.current?.destroy();
     player.current = null;
     loadedId.current = current?.id ?? null;
@@ -132,6 +137,22 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
     let started = false;
     let retried = false;
     let sourceBroken = false;
+    // Never started (premiere, blocked in this region, endless ad): move on —
+    // unless the problem is this source (broken player, blocked autoplay).
+    let watchdog: ReturnType<typeof setTimeout> | null = null;
+    const armWatchdog = () => {
+      if (watchdog) clearTimeout(watchdog);
+      watchdog = setTimeout(() => {
+        if (!started && !sourceBroken && (window.obsstudio || !needsClickRef.current)) void report("error");
+      }, WATCHDOG_MS);
+      timers.current.push(watchdog);
+    };
+    // Refreshed after the clip's time was already up (the server allows a
+    // grace minute): it's done.
+    if (clip.elapsedSec >= maxSec) {
+      void report("ended");
+      return;
+    }
 
     const create = async () => {
       // The IFrame API sends this page's address to YouTube (forigin): take
@@ -140,7 +161,11 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
       const YT = await loadYouTube();
       if (loadedId.current !== clip.id || !box.current) return;
+      ready.current = false;
+      player.current?.destroy();
+      player.current = null;
       box.current.replaceChildren();
+      armWatchdog();
       const el = document.createElement("div");
       box.current.appendChild(el);
       const startAt = clip.startSec + clip.elapsedSec;
@@ -160,7 +185,8 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
         },
         events: {
           onReady: () => {
-            player.current?.setVolume(volume);
+            ready.current = true;
+            player.current?.setVolume(volumeRef.current);
             player.current?.playVideo();
             timers.current.push(
               setTimeout(() => {
@@ -190,15 +216,8 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       });
     };
     void create();
-    // Never started (premiere, blocked in this region, endless ad): move on —
-    // unless the problem is this source (broken player, blocked autoplay).
-    timers.current.push(
-      setTimeout(() => {
-        if (!started && !sourceBroken && (window.obsstudio || !needsClickRef.current)) void report("error");
-      }, WATCHDOG_MS),
-    );
     return undefined;
-  }, [current, url, maxSec, volume]);
+  }, [current, url, maxSec]);
 
   useEffect(
     () => () => {
