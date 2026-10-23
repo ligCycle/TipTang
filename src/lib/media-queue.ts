@@ -193,7 +193,10 @@ async function voiceUrl(r: Row, now: Date): Promise<string | null> {
   const hit = signed.get(r.id);
   if (hit && hit.until > now.getTime()) return hit.url;
   const url = await signedSlipUrl(r.audioKey, SIGN_TTL_SEC).catch(() => null);
-  if (url) signed.set(r.id, { url, until: now.getTime() + SIGN_REUSE_MS });
+  if (url) {
+    for (const [id, v] of signed) if (v.until <= now.getTime()) signed.delete(id);
+    signed.set(r.id, { url, until: now.getTime() + SIGN_REUSE_MS });
+  }
   return url;
 }
 
@@ -519,6 +522,7 @@ export async function purgeOldVoices(now: Date, batch = 200): Promise<number> {
   const rows = await prisma.mediaRequest.findMany({
     where: {
       kind: "voice",
+      audioPurgedAt: null,
       audioKey: { not: null },
       OR: [
         { status: { in: ["PLAYED", "SKIPPED", "REMOVED", "CANCELLED"] }, endedAt: { lt: done } },
@@ -534,9 +538,12 @@ export async function purgeOldVoices(now: Date, batch = 200): Promise<number> {
     return 0;
   }
   for (const r of rows) signed.delete(r.id);
+  const ids = rows.map((r) => r.id);
+  await prisma.mediaRequest.updateMany({ where: { id: { in: ids } }, data: { audioKey: null, audioPurgedAt: now } });
+  // Still waiting after 30 days: it has no sound left, so it leaves the queue.
   await prisma.mediaRequest.updateMany({
-    where: { id: { in: rows.map((r) => r.id) } },
-    data: { audioKey: null, audioPurgedAt: now },
+    where: { id: { in: ids }, status: { in: ["HELD", "PENDING", "APPROVED", "PLAYING"] } },
+    data: { status: "REMOVED", endedAt: now },
   });
   return rows.length;
 }

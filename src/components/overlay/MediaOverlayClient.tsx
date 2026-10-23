@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_COLOR } from "@/lib/colors";
+import { Icon } from "@/components/Icon";
 import type { MediaFeed } from "@/lib/media-queue";
 
 const POLL_MS = 3000;
@@ -66,17 +67,22 @@ function loadYouTube(): Promise<YTNamespace> {
 }
 
 /**
- * The "ขอคลิป/เพลง" OBS link. The server owns the queue: this plays whatever
- * it hands out (seeking past what already played after a refresh) and reports
- * started / ended / error. Problems that belong to this source only (player
- * errors 2/5/153, a browser tab blocking autoplay) are never reported, so a
- * broken preview can't skip the clip for the real OBS source.
+ * The fan media OBS link ("ขอคลิป/เพลง" clips and "ฝากเสียง" voice messages).
+ * The server owns the queue: this plays whatever it hands out and reports
+ * started / ended / error. Clips seek past what already played after a
+ * refresh; voice messages (no reliable duration in recorder files) start over.
+ * Problems that belong to this source only (player errors 2/5/153, a browser
+ * tab blocking autoplay) are never reported, so a broken preview can't skip
+ * the request for the real OBS source.
  */
 export function MediaOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
   const [feed, setFeed] = useState<MediaFeed | null>(null);
   const [needsClick, setNeedsClick] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const player = useRef<YTPlayer | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  // Voice: when playback began (drives the progress bar).
+  const [voiceStart, setVoiceStart] = useState<number | null>(null);
   const loadedId = useRef<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   // The watchdog reads the latest "needs a click" without re-running the effect.
@@ -107,7 +113,6 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
 
   const current = feed?.current ?? null;
   const volume = feed?.volume ?? 70;
-  const maxSec = feed?.maxSec ?? 180;
 
   // Player methods exist only once it is ready; onReady reads the newest volume.
   const ready = useRef(false);
@@ -115,6 +120,7 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
   useEffect(() => {
     volumeRef.current = volume;
     if (ready.current) player.current?.setVolume(volume);
+    if (audio.current) audio.current.volume = volume / 100;
   }, [volume]);
 
   useEffect(() => {
@@ -127,11 +133,14 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
     ready.current = false;
     player.current?.destroy();
     player.current = null;
+    stopAudio(audio);
+    setVoiceStart(null);
     loadedId.current = current?.id ?? null;
     setNeedsClick(false);
     if (!current || !box.current) return;
 
     const clip = current;
+    const maxSec = clip.maxSec;
     const report = (event: "started" | "ended" | "error") =>
       fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: clip.id, event }) }).catch(() => {});
     let started = false;
@@ -152,6 +161,44 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
     if (clip.elapsedSec >= maxSec) {
       void report("ended");
       return;
+    }
+
+    if (clip.kind === "voice") {
+      box.current.replaceChildren();
+      if (!clip.audioUrl) {
+        void report("error");
+        return;
+      }
+      const el = new Audio(clip.audioUrl);
+      el.preload = "auto";
+      el.volume = volumeRef.current / 100;
+      audio.current = el;
+      armWatchdog();
+      const begin = () => {
+        if (started) return;
+        started = true;
+        setNeedsClick(false);
+        setVoiceStart(Date.now());
+        void report("started");
+        // The player enforces the 30 s limit itself (recorder files carry no
+        // reliable duration).
+        timers.current.push(
+          setTimeout(() => {
+            stopAudio(audio);
+            void report("ended");
+          }, maxSec * 1000),
+        );
+      };
+      el.addEventListener("playing", begin);
+      el.addEventListener("ended", () => {
+        if (started) void report("ended");
+      });
+      el.addEventListener("error", () => void report("error"));
+      el.play().catch(() => {
+        // A normal browser tab blocks sound until a click; OBS doesn't.
+        if (!window.obsstudio) setNeedsClick(true);
+      });
+      return undefined;
     }
 
     const create = async () => {
@@ -217,12 +264,13 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
     };
     void create();
     return undefined;
-  }, [current, url, maxSec]);
+  }, [current, url]);
 
   useEffect(
     () => () => {
       for (const t of timers.current) clearTimeout(t);
       player.current?.destroy();
+      stopAudio(audio);
     },
     [],
   );
@@ -231,13 +279,34 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
 
   return (
     <div className={`mx-auto w-[640px] ${current ? "" : "invisible"}`}>
-      <div className="relative h-[360px] w-[640px] overflow-hidden rounded-2xl bg-black">
-        <div ref={box} className="h-full w-full" />
+      <div
+        className={`relative w-[640px] overflow-hidden rounded-2xl ${current?.kind === "voice" ? "h-[120px] bg-[#120c16]/90" : "h-[360px] bg-black"}`}
+      >
+        <div ref={box} className={current?.kind === "voice" ? "hidden" : "h-full w-full"} />
+        {current?.kind === "voice" && (
+          <div className="flex h-full items-center gap-4 px-6">
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full text-white" style={{ background: color }}>
+              <Icon name="mic" className="h-8 w-8" />
+            </span>
+            <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/15">
+              <div
+                key={voiceStart ?? 0}
+                className="h-full rounded-full"
+                style={{
+                  background: color,
+                  width: voiceStart ? "100%" : "0%",
+                  transition: voiceStart ? `width ${Math.min(current.durationSec ?? current.maxSec, current.maxSec)}s linear` : "none",
+                }}
+              />
+            </div>
+          </div>
+        )}
         {needsClick && (
           <button
             type="button"
             onClick={() => {
-              player.current?.playVideo();
+              if (audio.current) void audio.current.play().catch(() => {});
+              else player.current?.playVideo();
               setNeedsClick(false);
             }}
             className="absolute inset-0 grid place-items-center bg-black/60 text-lg font-bold text-white"
@@ -252,11 +321,30 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
           style={{ borderColor: color }}
         >
           <p className="text-base font-semibold" style={{ color }}>
-            {current.test ? "ทดสอบ" : `ขอโดย ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`}
+            {current.test
+              ? "ทดสอบ"
+              : current.kind === "voice"
+                ? `ฝากเสียงจาก ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`
+                : `ขอโดย ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`}
           </p>
-          <p className="truncate text-xl font-extrabold leading-tight">{current.title || (current.test ? "คลิปทดสอบ" : "คลิป YouTube")}</p>
+          <p className="truncate text-xl font-extrabold leading-tight">
+            {current.kind === "voice"
+              ? current.test
+                ? "ทดสอบเสียง"
+                : "ฝากเสียง"
+              : current.title || (current.test ? "คลิปทดสอบ" : "คลิป YouTube")}
+          </p>
         </div>
       )}
     </div>
   );
+}
+
+function stopAudio(ref: { current: HTMLAudioElement | null }) {
+  const el = ref.current;
+  if (!el) return;
+  el.pause();
+  el.removeAttribute("src");
+  el.load();
+  ref.current = null;
 }

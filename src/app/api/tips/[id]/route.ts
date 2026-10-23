@@ -2,9 +2,10 @@ import { NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applySubathonTip } from "@/lib/subathon";
-import { deleteSlip, deleteFile } from "@/lib/storage";
+import { deleteSlip, deleteFile, deleteVoices } from "@/lib/storage";
 import { startSpinTx } from "@/lib/wheel-server";
 import { onTipConfirmedTx, onTipRejectedTx, TIP_TX } from "@/lib/tip-hooks";
+import { mediaQueueRejectTx } from "@/lib/media-queue";
 
 export async function PATCH(
   req: Request,
@@ -50,6 +51,10 @@ export async function PATCH(
       }
     } else if (before === "CONFIRMED") {
       await onTipRejectedTx(tx, id, now);
+    } else {
+      // Rejected before it was ever confirmed: a held clip/voice is finished
+      // too (a voice file's 7 days count from now).
+      await mediaQueueRejectTx(tx, id, now);
     }
     await tx.tip.update({
       where: { id },
@@ -112,7 +117,7 @@ export async function DELETE(
     await deleteSlip(tip.slipKey);
     await deleteFile(tip.slipUrl);
     // A fan's voice message goes with its tip too.
-    await deleteSlip(tip.mediaRequest?.audioKey);
+    if (!(await deleteVoices([tip.mediaRequest?.audioKey]))) console.error("[voice] delete with tip failed");
   });
   return NextResponse.json({ ok: true });
 }

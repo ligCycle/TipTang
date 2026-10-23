@@ -3,14 +3,20 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-// Baseline hardening headers. HSTS is already added by Vercel.
-const SECURITY_HEADERS = [
+// Baseline hardening headers. HSTS is already added by Vercel. The site may
+// ask for the microphone itself ("ฝากเสียง" on the donate page); OBS overlay
+// pages never may.
+const BASE_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  {
-    key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=()",
-  },
+];
+const SECURITY_HEADERS_SITE = [
+  ...BASE_HEADERS,
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(), payment=()" },
+];
+const SECURITY_HEADERS_OVERLAY = [
+  ...BASE_HEADERS,
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
 ];
 
 // Content-Security-Policy, currently in REPORT-ONLY mode: browsers log what the
@@ -88,8 +94,8 @@ const nextConfig: NextConfig = {
     return [
       // Two disjoint rules (overlay / everything else) so no header key is set
       // twice for the same path.
-      { source: "/overlay/:path*", headers: [...SECURITY_HEADERS, ...OVERLAY_HEADERS] },
-      { source: "/((?!overlay/).*)", headers: [...SECURITY_HEADERS, ...FRAME_HEADERS] },
+      { source: "/overlay/:path*", headers: [...SECURITY_HEADERS_OVERLAY, ...OVERLAY_HEADERS] },
+      { source: "/((?!overlay/).*)", headers: [...SECURITY_HEADERS_SITE, ...FRAME_HEADERS] },
     ];
   },
 };

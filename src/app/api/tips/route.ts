@@ -422,7 +422,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     await deleteSlip(slipKey);
-    if (voiceKey) await deleteVoices([voiceKey]);
+    if (voiceKey && !(await deleteVoices([voiceKey]))) console.error("[voice] cleanup after failed tip failed");
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
     }
@@ -465,6 +465,12 @@ export async function POST(req: Request) {
               await prisma.mediaRequest
                 .updateMany({ where: { tipId, status: "HELD" }, data: { status: "REMOVED", endedAt: new Date() } })
                 .catch((err3) => console.error("[media] drop failed:", err3));
+              // The fan was told the voice won't play: its file goes now.
+              if (voiceKey && (await deleteVoices([voiceKey]))) {
+                await prisma.mediaRequest
+                  .updateMany({ where: { tipId }, data: { audioKey: null, audioPurgedAt: new Date() } })
+                  .catch(() => {});
+              }
             });
         }
         // A failure elsewhere (combo, wishlist…) must not cost the fan a paid
@@ -534,7 +540,9 @@ export async function DELETE() {
       await deleteSlip(t.slipKey);
       await deleteFile(t.slipUrl);
     }
-    await deleteVoices(doomed.map((t) => t.mediaRequest?.audioKey));
+    if (!(await deleteVoices(doomed.map((t) => t.mediaRequest?.audioKey)))) {
+      console.error("[voice] delete with rejected tips failed");
+    }
   });
   return NextResponse.json({ ok: true, count: result.count });
 }

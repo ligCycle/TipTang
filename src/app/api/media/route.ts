@@ -119,12 +119,12 @@ export async function PATCH(req: Request) {
   return NextResponse.json(await state(user.id));
 }
 
-/** `{ action: "test" }`: a test clip at the top of the queue ("ทดสอบบนจอ"). */
+/** `{ action: "test", kind? }`: a test clip or voice at the top of the queue ("ทดสอบบนจอ"). */
 export async function POST(req: Request) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = (await req.json().catch(() => null)) as { action?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { action?: unknown; kind?: unknown } | null;
   if (body?.action !== "test") return NextResponse.json({ error: "invalid" }, { status: 400 });
-  await mediaQueueTest(user.id, new Date());
+  await mediaQueueTest(user.id, new Date(), body.kind === "voice" ? "voice" : "clip");
   return NextResponse.json(await state(user.id));
 }

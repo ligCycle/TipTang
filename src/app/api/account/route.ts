@@ -92,7 +92,7 @@ export async function DELETE(req: Request) {
     ...user.shopOrders.map((o) => o.slipKey),
     ...user.tips.map((t) => t.slipKey),
     ...user.mediaRequests.map((m) => m.audioKey),
-  ];
+  ].filter((k): k is string => Boolean(k));
   after(async () => {
     for (const url of publicUrls) await deleteFile(url);
     for (const key of slipKeys) await deleteSlip(key);
