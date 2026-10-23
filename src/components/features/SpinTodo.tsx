@@ -49,10 +49,10 @@ export function SpinTodo({ compact = false }: { compact?: boolean }) {
       const res = await fetch("/api/wheels/spins", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: item.id, done }),
+        body: JSON.stringify({ id: item.id, done, kind: item.kind }),
       });
       if (res.ok) {
-        setItems((cur) => cur?.filter((i) => i.id !== item.id) ?? cur);
+        setItems((cur) => cur?.filter((i) => !(i.id === item.id && i.kind === item.kind)) ?? cur);
         setOpenCount((c) => c + (done ? -1 : 1));
       }
     } finally {
@@ -109,12 +109,12 @@ export function SpinTodo({ compact = false }: { compact?: boolean }) {
         <ul className="space-y-2">
           {rows.map((i) => (
             <li
-              key={i.id}
+              key={`${i.kind}_${i.id}`}
               className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-brand-200 bg-brand-50/40 px-3 py-2"
             >
               <span className="min-w-0 flex-1 font-semibold text-brand-900">{i.taskText}</span>
               <span className="text-xs text-brand-900/60">
-                {i.fan} · ฿{i.amount.toLocaleString()} · {time(tab === "open" ? i.confirmedAt : (i.doneAt ?? i.confirmedAt))}
+                {i.kind === "combo" ? t("todoComboLevel", { level: i.level ?? 0 }) : `${i.fan} · ฿${(i.amount ?? 0).toLocaleString()}`} · {time(tab === "open" ? i.confirmedAt : (i.doneAt ?? i.confirmedAt))}
               </span>
               {tab === "open" ? (
                 <button

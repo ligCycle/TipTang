@@ -23,6 +23,7 @@ import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
 import { validatePick } from "@/lib/alert-sets";
 import { spinFloor } from "@/lib/wheel";
 import { startSpin, wheelForFans } from "@/lib/wheel-server";
+import { applyCombo } from "@/lib/combo-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 export async function POST(req: Request) {
@@ -312,6 +313,8 @@ export async function POST(req: Request) {
       });
       if (spun !== "started") spinDropped = true;
     }
+    // Combo tip: may join or start a combo (never fails the tip).
+    await applyCombo(tip.id).catch((err) => console.error("[combo] failed:", err));
   }
 
   // Notify the creator by email after the response is sent (best-effort — never

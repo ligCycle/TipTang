@@ -997,6 +997,7 @@
     "rulesTerms": "Details in the",
     "rulesTermsLink": "Terms of use (random features)",
     "rulesAccept": "Confirm and turn on",
-    "emptyNote": "No slots left — fans won’t see the spin option until you press “Reset wheel”."
+    "emptyNote": "No slots left — fans won’t see the spin option until you press “Reset wheel”.",
+    "todoComboLevel": "Combo level {level}"
   }
 }

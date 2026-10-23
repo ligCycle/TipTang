@@ -18,7 +18,12 @@ export async function GET(
   const open = await todoItems(user.id, "open");
   const shown = open.slice(-VISIBLE);
   return NextResponse.json({
-    items: shown.map((i) => ({ id: i.id, taskText: i.taskText, fan: i.fan })),
+    // Combo rewards show their level where wheel results show the fan.
+    items: shown.map((i) => ({
+      id: `${i.kind}_${i.id}`,
+      taskText: i.taskText,
+      fan: i.kind === "combo" ? `คอมโบเลเวล ${i.level}` : i.fan,
+    })),
     more: open.length - shown.length,
   });
 }

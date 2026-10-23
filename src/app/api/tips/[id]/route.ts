@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { applySubathonTip } from "@/lib/subathon";
 import { deleteSlip, deleteFile } from "@/lib/storage";
 import { cancelSpinTx, startSpinTx } from "@/lib/wheel-server";
+import { comboConfirmTx, comboRejectTx } from "@/lib/combo-server";
 
 export async function PATCH(
   req: Request,
@@ -49,6 +50,7 @@ export async function PATCH(
       }
     } else if (before === "CONFIRMED") {
       await cancelSpinTx(tx, id);
+      await comboRejectTx(tx, id, now);
     }
     await tx.tip.update({
       where: { id },
@@ -57,6 +59,8 @@ export async function PATCH(
         confirmedAt: action === "confirm" ? (before === "CONFIRMED" ? undefined : now) : null,
       },
     });
+    // Combo tip (src/lib/combo-server.ts) needs the tip already CONFIRMED.
+    if (action === "confirm" && before !== "CONFIRMED") await comboConfirmTx(tx, id, now);
     return { blocked: false as const, before };
   });
   if (result.blocked) {

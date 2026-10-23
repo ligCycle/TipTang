@@ -160,10 +160,30 @@ export async function spinBlocker(tipId: string): Promise<"empty" | null> {
 /** Done to-do items stay visible (and undoable) this long. */
 export const DONE_KEEP_MS = 30 * 24 * 3_600_000;
 
-export type TodoItem = { id: string; taskText: string; fan: string; amount: number; confirmedAt: string; doneAt: string | null };
+/**
+ * One to-do item: a wheel result (fan + tip amount) or a combo reward (the
+ * level it was reached at). `confirmedAt` = when it was added.
+ */
+export type TodoItem = {
+  id: string;
+  kind: "wheel" | "combo";
+  taskText: string;
+  fan: string;
+  amount: number | null;
+  level: number | null;
+  confirmedAt: string;
+  doneAt: string | null;
+};
 
-/** Open items oldest first (newest last); done items newest first, last 30 days. */
+/** Open items oldest first (newest last); done items newest first, last 30 days. Wheel results and combo rewards together. */
 export async function todoItems(userId: string, status: "open" | "done", take = 200): Promise<TodoItem[]> {
+  const doneAt = status === "open" ? null : { gte: new Date(Date.now() - DONE_KEEP_MS) };
+  const rewards = await prisma.comboReward.findMany({
+    where: { userId, doneAt },
+    orderBy: status === "open" ? { reachedAt: "asc" } : { doneAt: "desc" },
+    take,
+    select: { id: true, text: true, level: true, reachedAt: true, doneAt: true },
+  });
   const rows = await prisma.spin.findMany({
     where: {
       userId,
@@ -181,14 +201,31 @@ export async function todoItems(userId: string, status: "open" | "done", take = 
       tip: { select: { supporterName: true, amount: true } },
     },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    taskText: r.taskText,
-    fan: r.tip.supporterName,
-    amount: Number(r.tip.amount),
-    confirmedAt: r.confirmedAt.toISOString(),
-    doneAt: r.doneAt?.toISOString() ?? null,
-  }));
+  const items: TodoItem[] = [
+    ...rows.map((r) => ({
+      id: r.id,
+      kind: "wheel" as const,
+      taskText: r.taskText,
+      fan: r.tip.supporterName,
+      amount: Number(r.tip.amount),
+      level: null,
+      confirmedAt: r.confirmedAt.toISOString(),
+      doneAt: r.doneAt?.toISOString() ?? null,
+    })),
+    ...rewards.map((r) => ({
+      id: r.id,
+      kind: "combo" as const,
+      taskText: r.text,
+      fan: "",
+      amount: null,
+      level: r.level,
+      confirmedAt: r.reachedAt.toISOString(),
+      doneAt: r.doneAt?.toISOString() ?? null,
+    })),
+  ];
+  const key = (i: TodoItem) => (status === "open" ? i.confirmedAt : (i.doneAt ?? ""));
+  items.sort((a, b) => (status === "open" ? key(a).localeCompare(key(b)) : key(b).localeCompare(key(a))));
+  return items.slice(0, take);
 }
 
 /** One spin for the wheel OBS link to play. `wheel` is null when the wheel was deleted since. */
