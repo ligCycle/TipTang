@@ -175,6 +175,39 @@ model AlertSetItem {
   @@index([assetId])
 }
 
+// Goal "หลายชิ้น" (src/lib/wishlist.ts): items fans can choose to help. A
+// deleted item is soft-deleted so a full item's baht stays out of the others.
+model WishItem {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  price     Int
+  imageUrl  String?
+  position  Int
+  deletedAt DateTime?
+  createdAt DateTime    @default(now())
+  allocs    WishAlloc[]
+
+  @@index([userId, deletedAt])
+}
+
+// Where a tip's baht landed (stored at confirmation; money stays put). Rows
+// move only on: deleting an unfilled item, lowering a price, a reject (rows of
+// that tip are removed). createdAt decides the goal round it counts in.
+model WishAlloc {
+  id        String   @id @default(cuid())
+  tipId     String
+  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      WishItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  amount    Int
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+  @@index([tipId])
+}
+
 // Combo tip ("คอมโบทิป", src/lib/combo.ts): a run of confirmed tips. Bar sizes
 // and rewards are copied at start (index 0 = level 1); progress = baht in the
 // current level. Levels never go down.
@@ -363,6 +396,10 @@ model User {
   goalStartedAt             DateTime?
   // Goal-bar color (hex); null = follow alertColor, then default brand pink.
   goalColor                 String?
+  // Goal type, bar style and (multi) on-stream display — src/lib/wishlist.ts.
+  goalType                  String    @default("single")
+  goalStyle                 String    @default("classic")
+  goalDisplay               String    @default("all")
   // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
   socialLinks               Json?
   // Accent color (hex) for the public profile page; null = default brand pink.
@@ -472,6 +509,7 @@ model User {
   comboCooldownUntil DateTime?
   combos             Combo[]
   comboRewards       ComboReward[]
+  wishItems          WishItem[]
   shopItems            ShopItem[]
   shopOrders           ShopOrder[]
 }
@@ -531,6 +569,9 @@ model Tip {
   // Confirmed while the combo link was open and the card on (counts for combos).
   comboEligible   Boolean   @default(false)
   comboTip        ComboTip?
+  // Goal item the fan chose (no FK: the item may be deleted later).
+  wishItemId      String?
+  wishAllocs      WishAlloc[]
   status          TipStatus     @default(PENDING)
   isMessagePublic Boolean       @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
@@ -551,4 +592,5 @@ model Tip {
   @@index([pickedSoundId])
   @@index([spinWheelId])
   @@index([creatorId, comboEligible, confirmedAt])
+  @@index([wishItemId])
 }

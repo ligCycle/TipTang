@@ -196,3 +196,41 @@ CREATE INDEX "Tip_creatorId_comboEligible_confirmedAt_idx" ON "Tip"("creatorId",
 ALTER TABLE "Combo" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ComboTip" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ComboReward" ENABLE ROW LEVEL SECURITY;
+
+-- Goal "หลายชิ้น" (src/lib/wishlist.ts): items, where each tip's baht landed, and the goal's type/style/display.
+CREATE TABLE "WishItem" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "imageUrl" TEXT,
+    "position" INTEGER NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WishItem_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "WishItem_userId_deletedAt_idx" ON "WishItem"("userId", "deletedAt");
+ALTER TABLE "WishItem" ADD CONSTRAINT "WishItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "WishAlloc" (
+    "id" TEXT NOT NULL,
+    "tipId" TEXT NOT NULL,
+    "itemId" TEXT NOT NULL,
+    "amount" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WishAlloc_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "WishAlloc_itemId_idx" ON "WishAlloc"("itemId");
+CREATE INDEX "WishAlloc_tipId_idx" ON "WishAlloc"("tipId");
+ALTER TABLE "WishAlloc" ADD CONSTRAINT "WishAlloc_tipId_fkey" FOREIGN KEY ("tipId") REFERENCES "Tip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "WishAlloc" ADD CONSTRAINT "WishAlloc_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "WishItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "User" ADD COLUMN "goalType" TEXT NOT NULL DEFAULT 'single';
+ALTER TABLE "User" ADD COLUMN "goalStyle" TEXT NOT NULL DEFAULT 'classic';
+ALTER TABLE "User" ADD COLUMN "goalDisplay" TEXT NOT NULL DEFAULT 'all';
+
+ALTER TABLE "Tip" ADD COLUMN "wishItemId" TEXT;
+CREATE INDEX "Tip_wishItemId_idx" ON "Tip"("wishItemId");
+
+ALTER TABLE "WishItem" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "WishAlloc" ENABLE ROW LEVEL SECURITY;
