@@ -24,6 +24,7 @@ import { validatePick } from "@/lib/alert-sets";
 import { spinFloor } from "@/lib/wheel";
 import { startSpinTx, wheelForFans } from "@/lib/wheel-server";
 import { onTipConfirmedTx, TIP_TX } from "@/lib/tip-hooks";
+import { validChoice } from "@/lib/goal-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 export async function POST(req: Request) {
@@ -144,6 +145,12 @@ export async function POST(req: Request) {
       spinWheelId = wheel.id;
     } else spinDropped = true;
   }
+
+  // Goal "หลายชิ้น": the item the fan chose to help. Kept only if it still
+  // stands (card on, item live and not full); otherwise the tip simply counts
+  // as "no choice" (never an error).
+  const wishRaw = form.get("wishItemId");
+  const wishItemId = await validChoice(creator.id, typeof wishRaw === "string" && wishRaw.length > 0 ? wishRaw : null);
 
   // PAYPAL only when the creator has a PayPal.me; anything else is PromptPay.
   const paymentMethod: "PROMPTPAY" | "PAYPAL" =
@@ -283,6 +290,7 @@ export async function POST(req: Request) {
         paymentMethod,
         pickedSoundId,
         spinWheelId,
+        wishItemId,
         status,
         transRef,
         autoVerified,
