@@ -43,6 +43,7 @@ export async function typicalFor(db: Tx | typeof prisma, userId: string, minTip:
   const tips = await db.tip.findMany({
     where: { creatorId: userId, status: "CONFIRMED", confirmedAt: { gte: new Date(now.getTime() - TYPICAL_DAYS_MS) } },
     select: { amount: true },
+    orderBy: { confirmedAt: "desc" },
     take: 2000,
   });
   return typicalTip(tips.map((t) => baht(t.amount)).filter((a) => a > 0), minTip);
@@ -127,9 +128,11 @@ export async function comboConfirmTx(tx: Tx, tipId: string, now: Date): Promise<
       minTipAmount: true,
     },
   });
-  const live = user?.comboOverlaySeenAt && user.comboOverlaySeenAt.getTime() >= now.getTime() - LIVE_MS;
-  if (!user?.comboEnabled || !live) return;
-  await tx.tip.update({ where: { id: tipId }, data: { comboEligible: true } });
+  const live = Boolean(user?.comboOverlaySeenAt && user.comboOverlaySeenAt.getTime() >= now.getTime() - LIVE_MS);
+  const eligible = Boolean(user?.comboEnabled) && live;
+  // Written every time: a tip re-confirmed while the link is closed must stop counting.
+  await tx.tip.update({ where: { id: tipId }, data: { comboEligible: eligible } });
+  if (!user || !eligible) return;
 
   const active = await tx.combo.findFirst({
     where: { userId: tip.creatorId, status: "ACTIVE" },
@@ -141,17 +144,16 @@ export async function comboConfirmTx(tx: Tx, tipId: string, now: Date): Promise<
   }
   if (user.comboCooldownUntil && now < user.comboCooldownUntil) return;
 
-  const window = await tx.tip.findMany({
-    where: {
-      creatorId: tip.creatorId,
-      status: "CONFIRMED",
-      comboEligible: true,
-      confirmedAt: { gte: new Date(now.getTime() - WINDOW_MS) },
-      comboTip: null,
-    },
-    orderBy: { confirmedAt: "asc" },
-    select: { id: true, amount: true, supporterName: true },
-  });
+  // Lock the window's tips (skipping any another request holds, e.g. one being
+  // rejected right now) so none can change status while it joins the combo.
+  const since = new Date(now.getTime() - WINDOW_MS);
+  const window = await tx.$queryRaw<{ id: string; amount: unknown; supporterName: string }[]>`
+    SELECT t."id", t."amount", t."supporterName" FROM "Tip" t
+    WHERE t."creatorId" = ${tip.creatorId} AND t."status" = 'CONFIRMED' AND t."comboEligible" = true
+      AND t."confirmedAt" >= ${since}
+      AND NOT EXISTS (SELECT 1 FROM "ComboTip" c WHERE c."tipId" = t."id")
+    ORDER BY t."confirmedAt" ASC
+    FOR UPDATE OF t SKIP LOCKED`;
   if (countFans(window.map((t) => t.supporterName)) < START_FANS) return;
 
   const difficulty = difficultyOf(user.comboDifficulty);
@@ -172,7 +174,12 @@ export async function comboConfirmTx(tx: Tx, tipId: string, now: Date): Promise<
 
 /** For tips confirmed on arrival (auto-verify / auto-confirm). */
 export async function applyCombo(tipId: string): Promise<void> {
-  await prisma.$transaction((tx) => comboConfirmTx(tx, tipId, new Date()));
+  await prisma.$transaction(async (tx) => {
+    // Same order as the confirm/reject PATCH (Tip, then User): a reject arriving
+    // now waits, or has already made the tip non-CONFIRMED.
+    await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
+    await comboConfirmTx(tx, tipId, new Date());
+  });
 }
 
 /** A counted tip was rejected: its baht leaves the combo; levels and rewards stay. */
