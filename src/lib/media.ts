@@ -124,23 +124,25 @@ export function elapsedSec(since: Date | null, now: Date): number {
   return since ? Math.max(0, Math.floor((now.getTime() - since.getTime()) / 1000)) : 0;
 }
 
-export type ExtraKind = "media" | "wheel" | "sound";
-const DROP_ORDER: ExtraKind[] = ["media", "wheel", "sound"];
+export type ExtraKind = "media" | "gacha" | "wheel" | "sound";
+/** Newest extras go first: clip/voice, then the gacha pull, the spin, the picked sound. */
+const DROP_ORDER: ExtraKind[] = ["media", "gacha", "wheel", "sound"];
 
 /**
  * Paid extras the amount no longer covers, in the order they are dropped: the
- * clip first, then the spin, then the picked sound — until what is left fits
- * `extrasFloor`. Null = not chosen. The amount itself is never raised.
+ * clip or voice first, then the gacha pull, the spin, the picked sound — until
+ * what is left fits `extrasFloor`. Null or missing = not chosen. The amount
+ * itself is never raised.
  */
 export function mediaExtrasDrop(
   amount: number,
   creatorMin: number,
-  prices: Record<ExtraKind, number | null>,
+  prices: Partial<Record<ExtraKind, number | null>>,
 ): ExtraKind[] {
-  const kept = new Set(DROP_ORDER.filter((k) => prices[k] !== null));
+  const kept = new Set(DROP_ORDER.filter((k) => prices[k] != null));
   const dropped: ExtraKind[] = [];
   for (const k of DROP_ORDER) {
-    if (kept.size === 0 || amount >= extrasFloor(creatorMin, [...kept].map((x) => prices[x]))) break;
+    if (kept.size === 0 || amount >= extrasFloor(creatorMin, [...kept].map((x) => prices[x] ?? null))) break;
     if (!kept.has(k)) continue;
     kept.delete(k);
     dropped.push(k);

@@ -173,3 +173,12 @@ test("voiceBaseType ignores Object.prototype names", () => {
   assert.equal(voiceBaseType("__proto__"), null);
   assert.equal(voiceBaseType("toString"), null);
 });
+
+test("mediaExtrasDrop: gacha drops after media and before the wheel", () => {
+  const prices = { sound: 10, wheel: 20, gacha: 30, media: 40 };
+  assert.deepEqual(mediaExtrasDrop(100, 1, prices), []);
+  assert.deepEqual(mediaExtrasDrop(99, 1, prices), ["media"]);
+  assert.deepEqual(mediaExtrasDrop(59, 1, prices), ["media", "gacha"]);
+  assert.deepEqual(mediaExtrasDrop(29, 1, prices), ["media", "gacha", "wheel"]);
+  assert.deepEqual(mediaExtrasDrop(25, 1, { sound: null, wheel: 20, gacha: 30, media: null }), ["gacha"]);
+});
