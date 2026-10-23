@@ -7,6 +7,7 @@ import { OverlaySettings } from "@/components/OverlaySettings";
 import { AlertPreview } from "@/components/features/AlertPreview";
 import { Switch } from "@/components/features/FeatureCard";
 import { AlertTiersSection } from "@/components/features/AlertTiersSection";
+import { GoalPage } from "@/components/features/GoalPage";
 import type { AlertTier } from "@/lib/alert-tiers";
 
 /** Header shared by every feature settings page: back to the hub, title, switch. */
@@ -85,13 +86,9 @@ export function AlertsFeature({ alertsEnabled }: { alertsEnabled: boolean }) {
   );
 }
 
+/** Goal settings: one goal or several items, bar styles and display (src/components/features/GoalPage.tsx). */
 export function GoalFeature() {
-  const t = useTranslations("featureHub");
-  return (
-    <FeatureSettingsLayout title={t("f_goal")}>
-      <OverlaySettings view="goal" />
-    </FeatureSettingsLayout>
-  );
+  return <GoalPage />;
 }
 
 export function SubathonFeature() {
