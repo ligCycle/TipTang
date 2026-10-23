@@ -12,7 +12,7 @@ import { WishPicker, type WishChoiceItem } from "@/components/WishPicker";
 import { MediaPicker, type ClipPick, type MediaChoice } from "@/components/MediaPicker";
 import { VoicePicker, type VoiceChoice, type VoicePick } from "@/components/VoiceRecorder";
 import { extrasFloor } from "@/lib/wishlist";
-import { mediaExtrasDrop } from "@/lib/media";
+import { mediaExtrasDrop, voiceBaseType, VOICE_EXT } from "@/lib/media";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
 
@@ -26,6 +26,8 @@ function quickAmountsFor(min: number): number[] {
   return kept.length >= 3 ? kept : [min, min * 2, min * 5, min * 10];
 }
 const MAX_BYTES = 5 * 1024 * 1024;
+/** The host refuses request bodies over ~4.5 MB: slip + voice together stay under this. */
+const COMBINED_MAX = 4.2 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
 type Step = "form" | "pay" | "done";
@@ -168,7 +170,7 @@ export function TipForm({
   // Returns whether anything was cleared.
   function checkPick(n: number): boolean {
     const drop = mediaExtrasDrop(n, minAmount, {
-      media: clip && mediaChoice ? mediaChoice.minAmount : voiceOn && voiceChoice ? voiceChoice.minAmount : null,
+      media: voiceOn && voiceChoice ? voiceChoice.minAmount : clip && mediaChoice ? mediaChoice.minAmount : null,
       wheel: spin && wheelChoice ? wheelChoice.price : null,
       sound: pickedSound ? pickedSound.minAmount : null,
     });
@@ -263,6 +265,10 @@ export function TipForm({
       setError(tErr("badType"));
       return;
     }
+    if (voice && voiceOn && file.size + voice.blob.size > COMBINED_MAX) {
+      setError(t("voiceSlipTooBig"));
+      return;
+    }
     if (file.size > MAX_BYTES) {
       setError(tErr("tooLarge"));
       return;
@@ -297,11 +303,12 @@ export function TipForm({
       }
       if (voice && voiceOn && voiceChoice) {
         // The host refuses bodies over ~4.5 MB: say so before sending.
-        if (slip.size + voice.blob.size > 4.2 * 1024 * 1024) {
-          setError(tErr("tooLarge"));
+        if (slip.size + voice.blob.size > COMBINED_MAX) {
+          setError(t("voiceSlipTooBig"));
           return;
         }
-        const ext = voice.type.includes("mp4") ? "m4a" : voice.type.includes("ogg") ? "ogg" : "weba";
+        const base = voiceBaseType(voice.type);
+        const ext = base ? VOICE_EXT[base] : "weba";
         fd.set("voice", new File([voice.blob], `voice.${ext}`, { type: voice.type }));
         fd.set("voiceSec", String(voice.sec));
       }
@@ -324,6 +331,7 @@ export function TipForm({
           reduce_not_allowed: tErr("reduceNotAllowed"),
           below_minimum: t("minAmountHint", { min: minAmount }),
           paypal_not_enabled: t("paypalNotEnabled"),
+          media_both: t("mediaOneOf"),
         };
         setError(map[data.error] ?? tErr("notFound"));
         return;

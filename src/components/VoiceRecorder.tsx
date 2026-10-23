@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
+import { VOICE_MAX_BYTES } from "@/lib/media";
 
 export type VoicePick = { blob: Blob; url: string; type: string; sec: number };
 
@@ -12,7 +13,8 @@ const MIN_MS = 1000;
 /** Apps whose built-in browser often can't use the microphone. */
 const IN_APP = /Line\/|FBAN|FBAV|Instagram|musical_ly|BytedanceWebview/i;
 
-type Problem = "denied" | "nodevice" | "unsupported" | "short" | null;
+type Problem = "denied" | "nodevice" | "unsupported" | "short" | "big" | null;
+const BITRATE = 64000;
 
 function canRecord(): boolean {
   return typeof window !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== "undefined";
@@ -46,6 +48,10 @@ export function VoiceRecorder({
   const rec = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guards across the permission prompt: one start at a time, and nothing
+  // after the recorder is gone (unticked, amount lowered, page left).
+  const starting = useRef(false);
+  const mounted = useRef(true);
   const supported = canRecord();
   const inApp = typeof navigator !== "undefined" && IN_APP.test(navigator.userAgent);
 
@@ -70,26 +76,38 @@ export function VoiceRecorder({
     if (stopSignal > 0) stop();
   }, [stopSignal]);
 
-  useEffect(() => () => {
-    stop();
-    release();
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      stop();
+      release();
+    };
   }, []);
 
   async function start() {
+    if (starting.current || recording) return;
     setProblem(null);
     if (!supported) return setProblem("unsupported");
+    starting.current = true;
     let media: MediaStream;
     try {
       media = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (e) {
+      starting.current = false;
       const name = e instanceof DOMException ? e.name : "";
       return setProblem(name === "NotFoundError" || name === "OverconstrainedError" ? "nodevice" : name === "NotAllowedError" || name === "SecurityError" ? "denied" : "unsupported");
+    }
+    starting.current = false;
+    if (!mounted.current) {
+      media.getTracks().forEach((tr) => tr.stop());
+      return;
     }
     stream.current = media;
     const type = TYPES.find((ty) => MediaRecorder.isTypeSupported?.(ty));
     let r: MediaRecorder;
     try {
-      r = type ? new MediaRecorder(media, { mimeType: type, audioBitsPerSecond: 64000 }) : new MediaRecorder(media);
+      r = new MediaRecorder(media, type ? { mimeType: type, audioBitsPerSecond: BITRATE } : { audioBitsPerSecond: BITRATE });
     } catch {
       release();
       return setProblem("unsupported");
@@ -101,11 +119,15 @@ export function VoiceRecorder({
     };
     r.onstop = () => {
       release();
+      if (!mounted.current) return;
       setRecording(false);
       const ms = Date.now() - began;
       if (ms < MIN_MS || chunks.length === 0) return setProblem("short");
-      const mime = r.mimeType || type || "audio/webm";
+      // No type reported (old Safari records MP4): name it by the browser.
+      const safari = /Safari/i.test(navigator.userAgent) && !/Chrome|Chromium|Android/i.test(navigator.userAgent);
+      const mime = r.mimeType || type || (safari ? "audio/mp4" : "audio/webm");
       const blob = new Blob(chunks, { type: mime });
+      if (blob.size > VOICE_MAX_BYTES) return setProblem("big");
       onChange({ blob, url: URL.createObjectURL(blob), type: mime, sec: Math.min(maxSec, Math.max(1, Math.round(ms / 1000))) });
     };
     rec.current = r;
@@ -178,8 +200,8 @@ export function VoiceRecorder({
       )}
       {problem && (
         <div className="space-y-1.5 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
-          <p>{t(problem === "short" ? "voiceTooShort" : inApp ? "voiceInApp" : `voice_${problem}`)}</p>
-          {problem !== "short" && inApp && (
+          <p>{t(problem === "short" ? "voiceTooShort" : problem === "big" ? "voiceTooBig" : inApp ? "voiceInApp" : `voice_${problem}`)}</p>
+          {problem !== "short" && problem !== "big" && inApp && (
             <p className="flex flex-wrap gap-2">
               <button type="button" onClick={copyLink} className="rounded-full border border-amber-400 px-2.5 py-1">
                 {copied ? t("voiceCopied") : t("voiceCopyLink")}

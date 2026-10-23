@@ -229,10 +229,12 @@
     "voiceCopyLink": "Copy link",
     "voiceCopied": "Copied",
     "voiceOpenBrowser": "Open in browser",
-    "voiceFinePrint": "Up to {sec} seconds · this will be played on stream · the creator listens first (or plays it automatically) · the file is deleted within 7 days after it plays",
+    "voiceFinePrint": "Up to {sec} seconds · this will be played on stream · the creator listens first (or plays it automatically) · the file is deleted within 7 days after it plays, is skipped or rejected (30 days at most)",
     "voiceWait": "Finish recording first (stop, then you can listen), or untick to tip without a voice message.",
     "voiceCleared": "This amount doesn't cover the voice message, so it was removed",
-    "voiceDropped": "Your voice message didn't join the queue (the file didn't work, the amount was short, or the creator turned this off), but your tip went through."
+    "voiceDropped": "Your voice message didn't join the queue (the file didn't work, the amount was short, or the creator turned this off), but your tip went through.",
+    "voiceTooBig": "The voice file is too big — try a shorter recording",
+    "voiceSlipTooBig": "Your slip and voice message are too big together. Use a smaller slip image (e.g. a screenshot) or untick the voice message."
   },
   "tipSuccess": {
     "title": "Tip sent!",
