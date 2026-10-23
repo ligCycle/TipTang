@@ -9,6 +9,7 @@ import {
   isFull,
   cleanItemName,
   cleanItemPrice,
+  peelRows,
   MAX_ITEM_NAME,
   MAX_ITEM_PRICE,
   type ItemState,
@@ -109,4 +110,29 @@ test("goal enums", async () => {
   assert.equal(m.isGoalStyle("thin"), false);
   assert.equal(m.isGoalDisplay("rotate"), true);
   assert.equal(m.isGoalType("multi"), true);
+});
+
+test("peelRows takes from the newest rows first and splits the last one", () => {
+  const t1 = new Date("2026-10-23T10:00:00Z");
+  const t2 = new Date("2026-10-23T11:00:00Z");
+  const rows = [
+    { id: "r2", tipId: "b", amount: 30, createdAt: t2 },
+    { id: "r1", tipId: "a", amount: 100, createdAt: t1 },
+  ];
+  const out = peelRows(rows, [{ itemId: "x", amount: 20 }, { itemId: "y", amount: 50 }]);
+  assert.deepEqual(out.creates, [
+    { tipId: "b", itemId: "x", amount: 20, createdAt: t2 },
+    { tipId: "b", itemId: "y", amount: 10, createdAt: t2 },
+    { tipId: "a", itemId: "y", amount: 40, createdAt: t1 },
+  ]);
+  assert.deepEqual(out.deletes, ["r2"]);
+  assert.deepEqual(out.updates, [{ id: "r1", amount: 60 }]);
+});
+
+test("peelRows moves no more than the rows hold, and nothing for no targets", () => {
+  const rows = [{ id: "r1", tipId: "a", amount: 10, createdAt: new Date(0) }];
+  const out = peelRows(rows, [{ itemId: "x", amount: 50 }]);
+  assert.equal(out.creates.reduce((s, c) => s + c.amount, 0), 10);
+  assert.deepEqual(out.deletes, ["r1"]);
+  assert.deepEqual(peelRows(rows, []), { creates: [], deletes: [], updates: [] });
 });

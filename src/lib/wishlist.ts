@@ -89,6 +89,40 @@ export function spillOnPrice(items: ItemState[], itemId: string, newPrice: numbe
 }
 
 /** Paid extras on one tip add up; the creator minimum is the floor. */
+export type AllocRow = { id: string; tipId: string; amount: number; createdAt: Date };
+
+/**
+ * Move baht off an item's rows (given newest first) onto `targets` in order.
+ * Each moved piece keeps its tip and time, so a later reject of that tip still
+ * removes it and the round it counts in stays. Returns the row writes to make.
+ */
+export function peelRows(
+  rows: AllocRow[],
+  targets: Allocation[],
+): {
+  creates: { tipId: string; itemId: string; amount: number; createdAt: Date }[];
+  deletes: string[];
+  updates: { id: string; amount: number }[];
+} {
+  const out = { creates: [] as { tipId: string; itemId: string; amount: number; createdAt: Date }[], deletes: [] as string[], updates: [] as { id: string; amount: number }[] };
+  const queue = targets.filter((t) => t.amount > 0).map((t) => ({ ...t }));
+  for (const row of rows) {
+    if (queue.length === 0) break;
+    let left = row.amount;
+    while (left > 0 && queue.length > 0) {
+      const t = queue[0];
+      const take = Math.min(left, t.amount);
+      out.creates.push({ tipId: row.tipId, itemId: t.itemId, amount: take, createdAt: row.createdAt });
+      left -= take;
+      t.amount -= take;
+      if (t.amount === 0) queue.shift();
+    }
+    if (left === 0) out.deletes.push(row.id);
+    else if (left < row.amount) out.updates.push({ id: row.id, amount: left });
+  }
+  return out;
+}
+
 export function extrasFloor(creatorMin: number, prices: (number | null)[]): number {
   return Math.max(creatorMin, prices.reduce<number>((sum, p) => sum + (p ?? 0), 0));
 }

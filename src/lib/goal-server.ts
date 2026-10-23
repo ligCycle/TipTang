@@ -10,6 +10,7 @@ import {
   isGoalType,
   moveOnDelete,
   spillOnPrice,
+  peelRows,
   cleanItemName,
   type Allocation,
   type GoalDisplay,
@@ -77,10 +78,17 @@ export async function backfillTx(tx: Tx, userId: string): Promise<void> {
     take: 5000,
   });
   if (tips.length === 0) return;
+  // Skip tips another transaction holds (e.g. a parallel auto-confirm that
+  // will place its own tip, or a reject): inserting their rows would wait on
+  // that lock while it waits on our creator lock — a deadlock. They are placed
+  // by their own pipeline, or by the next backfill.
+  const free = await freeTips(tx, tips.map((t) => t.id));
+  const todo = tips.filter((t) => free.has(t.id));
+  if (todo.length === 0) return;
   const items: ItemState[] = await goalItems(tx, userId, u.goalStartedAt);
   if (items.length === 0) return;
   const data: { tipId: string; itemId: string; amount: number; createdAt: Date }[] = [];
-  for (const t of tips) {
+  for (const t of todo) {
     // Card off: the fan's choice is ignored (counts as no choice).
     const rows = allocate(items, baht(t.amount), u.goalOverlayEnabled ? t.wishItemId : null);
     for (const r of rows) {
@@ -112,27 +120,29 @@ export async function wishRejectTx(tx: Tx, tipId: string): Promise<void> {
  * a later reject of that tip still removes it and the round it counts in stays.
  */
 async function moveRows(tx: Tx, fromId: string, since: Date | null, targets: Allocation[]): Promise<void> {
-  const rows = await tx.wishAlloc.findMany({
+  const all = await tx.wishAlloc.findMany({
     where: { itemId: fromId, ...(since ? { createdAt: { gte: since } } : {}) },
     orderBy: { createdAt: "desc" },
     select: { id: true, tipId: true, amount: true, createdAt: true },
   });
-  const queue = targets.map((t) => ({ ...t }));
-  for (const row of rows) {
-    let left = row.amount;
-    while (left > 0 && queue.length > 0) {
-      const t = queue[0];
-      const take = Math.min(left, t.amount);
-      await tx.wishAlloc.create({ data: { tipId: row.tipId, itemId: t.itemId, amount: take, createdAt: row.createdAt } });
-      left -= take;
-      t.amount -= take;
-      if (t.amount === 0) queue.shift();
-    }
-    if (left === row.amount) continue;
-    if (left === 0) await tx.wishAlloc.delete({ where: { id: row.id } });
-    else await tx.wishAlloc.update({ where: { id: row.id }, data: { amount: left } });
-    if (queue.length === 0) break;
-  }
+  // A tip being rejected right now is about to take its rows away anyway;
+  // leave them (waiting on its lock would deadlock with our creator lock).
+  const free = await freeTips(tx, [...new Set(all.map((r) => r.tipId))]);
+  const { creates, deletes, updates } = peelRows(all.filter((r) => free.has(r.tipId)), targets);
+  if (creates.length > 0) await tx.wishAlloc.createMany({ data: creates });
+  if (deletes.length > 0) await tx.wishAlloc.deleteMany({ where: { id: { in: deletes } } });
+  for (const u of updates) await tx.wishAlloc.update({ where: { id: u.id }, data: { amount: u.amount } });
+}
+
+/**
+ * The tips no other transaction holds, now share-locked so they can't change
+ * under us (our own tip, locked FOR UPDATE by this transaction, is included).
+ */
+async function freeTips(tx: Tx, ids: string[]): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const rows = await tx.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "Tip" WHERE "id" = ANY(${ids}) FOR KEY SHARE SKIP LOCKED`;
+  return new Set(rows.map((r) => r.id));
 }
 
 async function roundStart(tx: Tx, userId: string): Promise<Date | null> {
