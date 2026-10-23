@@ -8,6 +8,8 @@ import { formatBaht } from "@/lib/format";
 import { tipSchema, usernameSchema } from "@/lib/validators";
 import {
   uploadSlip,
+  uploadVoice,
+  deleteVoices,
   deleteSlip,
   deleteFile,
   ALLOWED_IMAGE_TYPES,
@@ -26,7 +28,16 @@ import { startSpinTx, wheelForFans } from "@/lib/wheel-server";
 import { onTipConfirmedTx, TIP_TX } from "@/lib/tip-hooks";
 import { validChoice } from "@/lib/goal-server";
 import { extrasFloor } from "@/lib/wishlist";
-import { isVideoId, parseStart } from "@/lib/media";
+import {
+  clampVoiceSec,
+  isVideoId,
+  parseStart,
+  voiceBaseType,
+  VOICE_MAX_BYTES,
+  VOICE_MIN_BYTES,
+  type VoiceType,
+} from "@/lib/media";
+import { bytesMatchType } from "@/lib/filetype";
 import { fetchOEmbed, type OEmbedResult } from "@/lib/youtube";
 import { mediaQueueConfirmTx } from "@/lib/media-queue";
 import { lockCreator } from "@/lib/combo-server";
@@ -76,6 +87,8 @@ export async function POST(req: Request) {
       alertsEnabled: true,
       mediaEnabled: true,
       mediaMinAmount: true,
+      voiceEnabled: true,
+      voiceMinAmount: true,
     },
   });
   if (!creator?.promptpayId) {
@@ -191,6 +204,27 @@ export async function POST(req: Request) {
       mediaStart = parseStart(typeof startRaw === "string" ? startRaw : null);
       mediaCheck = fetchOEmbed(mediaVideoId);
     } else mediaDropped = true;
+  }
+
+  // "ฝากเสียง" (src/lib/media.ts): a voice message recorded in the browser.
+  // It stands if the card is on, the file is a real webm/mp4/ogg recording of
+  // a sane size, and the amount covers it on top of the sound and spin.
+  // Otherwise the tip goes through without it and the fan is told.
+  let voiceDropped = false;
+  let voiceFile: { file: File; type: VoiceType; sec: number } | null = null;
+  if (voiceRaw instanceof File && voiceRaw.size > 0) {
+    const type = voiceBaseType(voiceRaw.type);
+    const head = new Uint8Array(await voiceRaw.slice(0, 16).arrayBuffer());
+    if (
+      type &&
+      voiceRaw.size >= VOICE_MIN_BYTES &&
+      voiceRaw.size <= VOICE_MAX_BYTES &&
+      bytesMatchType(type, head) &&
+      creator.voiceEnabled &&
+      parsed.data.amount >= extrasFloor(creator.minTipAmount, [pickedSoundPrice, spinPrice, creator.voiceMinAmount])
+    ) {
+      voiceFile = { file: voiceRaw, type, sec: clampVoiceSec(form.get("voiceSec")) };
+    } else voiceDropped = true;
   }
 
   // Goal "หลายชิ้น": the item the fan chose to help. Kept only if it still
@@ -325,6 +359,15 @@ export async function POST(req: Request) {
 
   // Private bucket — the dashboard reaches it via /api/tips/[id]/slip only.
   const slipKey = await uploadSlip(slip);
+  // Same private bucket; removed again below if the tip can't be written.
+  let voiceKey: string | null = null;
+  if (voiceFile) {
+    voiceKey = await uploadVoice(voiceFile.file, voiceFile.type).catch((err) => {
+      console.error("[voice] upload failed:", err);
+      return null;
+    });
+    if (!voiceKey) voiceDropped = true;
+  }
 
   // The slip is already in storage; if the row cannot be written (a concurrent
   // duplicate hitting the unique transRef, a DB error, a creator deleted
@@ -355,7 +398,19 @@ export async function POST(req: Request) {
                 },
               },
             }
-          : {}),
+          : voiceKey && voiceFile
+            ? {
+                mediaRequest: {
+                  create: {
+                    userId: creator.id,
+                    kind: "voice",
+                    title: "",
+                    audioKey: voiceKey,
+                    durationSec: voiceFile.sec,
+                  },
+                },
+              }
+            : {}),
         status,
         transRef,
         autoVerified,
@@ -367,6 +422,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     await deleteSlip(slipKey);
+    if (voiceKey) await deleteVoices([voiceKey]);
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
     }
@@ -393,7 +449,7 @@ export async function POST(req: Request) {
       .catch(async (err) => {
         console.error("[tip-hooks] auto-confirm features failed:", err);
         // The fan's clip must still reach the queue: retry it on its own.
-        if (mediaVideoId) {
+        if (mediaVideoId || voiceKey) {
           await prisma
             .$transaction(async (tx) => {
               if (!(await stillConfirmed(tx, tipId))) return;
@@ -402,7 +458,8 @@ export async function POST(req: Request) {
             }, TIP_TX)
             .catch(async (err2) => {
               console.error("[media] queue retry failed:", err2);
-              mediaDropped = true;
+              if (voiceKey) voiceDropped = true;
+              else mediaDropped = true;
               // The fan was told it won't play: make sure no later reject +
               // re-confirm brings it back.
               await prisma.mediaRequest
@@ -454,6 +511,7 @@ export async function POST(req: Request) {
     pickDropped,
     spinDropped,
     mediaDropped,
+    voiceDropped,
   });
 }
 
@@ -468,7 +526,7 @@ export async function DELETE() {
   // Collect the slip files first so they can be removed after the rows are.
   const doomed = await prisma.tip.findMany({
     where,
-    select: { slipKey: true, slipUrl: true },
+    select: { slipKey: true, slipUrl: true, mediaRequest: { select: { audioKey: true } } },
   });
   const result = await prisma.tip.deleteMany({ where });
   after(async () => {
@@ -476,6 +534,7 @@ export async function DELETE() {
       await deleteSlip(t.slipKey);
       await deleteFile(t.slipUrl);
     }
+    await deleteVoices(doomed.map((t) => t.mediaRequest?.audioKey));
   });
   return NextResponse.json({ ok: true, count: result.count });
 }

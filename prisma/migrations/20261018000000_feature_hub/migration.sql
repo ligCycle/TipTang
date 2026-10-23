@@ -271,3 +271,15 @@ ALTER TABLE "MediaRequest" ADD CONSTRAINT "MediaRequest_userId_fkey" FOREIGN KEY
 ALTER TABLE "MediaRequest" ADD CONSTRAINT "MediaRequest_tipId_fkey" FOREIGN KEY ("tipId") REFERENCES "Tip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE "MediaRequest" ENABLE ROW LEVEL SECURITY;
+
+-- Project 7: ฝากเสียง (voice message)
+ALTER TABLE "User" ADD COLUMN "voiceEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "voiceMinAmount" INTEGER NOT NULL DEFAULT 30;
+ALTER TABLE "User" ADD COLUMN "voiceAutoApprove" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "voiceAutoAckAt" TIMESTAMP(3);
+
+ALTER TABLE "MediaRequest" ALTER COLUMN "videoId" DROP NOT NULL;
+ALTER TABLE "MediaRequest" ADD COLUMN "audioKey" TEXT;
+ALTER TABLE "MediaRequest" ADD COLUMN "durationSec" INTEGER;
+ALTER TABLE "MediaRequest" ADD COLUMN "audioPurgedAt" TIMESTAMP(3);
+CREATE INDEX "MediaRequest_kind_audioPurgedAt_idx" ON "MediaRequest"("kind", "audioPurgedAt");

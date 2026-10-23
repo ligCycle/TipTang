@@ -232,8 +232,13 @@ model MediaRequest {
   tipId      String?     @unique
   tip        Tip?        @relation(fields: [tipId], references: [id], onDelete: Cascade)
   kind       String      @default("clip")
-  videoId    String
+  // A clip's YouTube ID; null for a voice message.
+  videoId    String?
   title      String
+  // Voice message: private object key (cleared when the file is purged).
+  audioKey      String?
+  durationSec   Int?
+  audioPurgedAt DateTime?
   startSec   Int         @default(0)
   status     MediaStatus @default(HELD)
   // Queue order (lower plays first).
@@ -246,6 +251,7 @@ model MediaRequest {
   createdAt  DateTime    @default(now())
 
   @@index([userId, status, position])
+  @@index([kind, audioPurgedAt])
 }
 
 // Combo tip ("คอมโบทิป", src/lib/combo.ts): a run of confirmed tips. Bar sizes
@@ -565,6 +571,12 @@ model User {
   // Media card colour; null = alertColor, then brand pink.
   mediaColor       String?
   mediaRequests    MediaRequest[]
+  // Feature hub card "ฝากเสียง" (same queue and OBS link as clips).
+  voiceEnabled     Boolean        @default(false)
+  voiceMinAmount   Int            @default(30)
+  voiceAutoApprove Boolean        @default(false)
+  // When the creator confirmed the voice auto-approve warning.
+  voiceAutoAckAt   DateTime?
   shopItems            ShopItem[]
   shopOrders           ShopOrder[]
 }

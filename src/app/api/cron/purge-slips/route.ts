@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { deleteFile, deleteSlipsBatch } from "@/lib/storage";
 import { slipCutoffs } from "@/lib/retention";
+import { purgeOldVoices } from "@/lib/media-queue";
 
 export const dynamic = "force-dynamic";
 
@@ -97,9 +98,13 @@ export async function GET(req: Request) {
     });
   }
 
+  // Fans' voice messages ("ฝากเสียง"): 7 days after they finished, 30 at most.
+  const voices = await purgeOldVoices(new Date(), BATCH);
+
   return NextResponse.json({
     tips: tipIds.length,
     orders: orderIds.length,
-    more: tips.length === BATCH || orders.length === BATCH,
+    voices,
+    more: tips.length === BATCH || orders.length === BATCH || voices === BATCH,
   });
 }

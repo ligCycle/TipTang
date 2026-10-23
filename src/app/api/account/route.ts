@@ -48,6 +48,8 @@ export async function DELETE(req: Request) {
       shopItems: { select: { imageUrl: true } },
       shopOrders: { select: { slipUrl: true, slipKey: true } },
       tips: { select: { slipUrl: true, slipKey: true } },
+      // Fans' voice messages ("ฝากเสียง") sit in the same private bucket.
+      mediaRequests: { select: { audioKey: true } },
     },
   });
   if (!user) {
@@ -89,6 +91,7 @@ export async function DELETE(req: Request) {
   const slipKeys = [
     ...user.shopOrders.map((o) => o.slipKey),
     ...user.tips.map((t) => t.slipKey),
+    ...user.mediaRequests.map((m) => m.audioKey),
   ];
   after(async () => {
     for (const url of publicUrls) await deleteFile(url);

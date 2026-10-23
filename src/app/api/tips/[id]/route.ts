@@ -88,7 +88,7 @@ export async function DELETE(
   const { id } = await params;
   const tip = await prisma.tip.findUnique({
     where: { id },
-    select: { creatorId: true, status: true, slipKey: true, slipUrl: true },
+    select: { creatorId: true, status: true, slipKey: true, slipUrl: true, mediaRequest: { select: { audioKey: true } } },
   });
   if (!tip) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -111,6 +111,8 @@ export async function DELETE(
   after(async () => {
     await deleteSlip(tip.slipKey);
     await deleteFile(tip.slipUrl);
+    // A fan's voice message goes with its tip too.
+    await deleteSlip(tip.mediaRequest?.audioKey);
   });
   return NextResponse.json({ ok: true });
 }

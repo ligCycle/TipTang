@@ -171,7 +171,7 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       const startAt = clip.startSec + clip.elapsedSec;
       player.current = new YT.Player(el, {
         host: "https://www.youtube-nocookie.com",
-        videoId: clip.videoId,
+        videoId: clip.videoId ?? "",
         width: "640",
         height: "360",
         playerVars: {

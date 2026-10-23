@@ -38,5 +38,5 @@ export async function onTipRejectedTx(tx: Tx, tipId: string, now: Date): Promise
   await lockCreator(tx, tip.creatorId);
   await comboRejectTx(tx, tipId, now, { locked: true });
   await wishRejectTx(tx, tipId);
-  await mediaQueueRejectTx(tx, tipId);
+  await mediaQueueRejectTx(tx, tipId, now);
 }
