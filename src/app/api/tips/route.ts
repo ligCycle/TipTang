@@ -32,6 +32,17 @@ import { mediaQueueConfirmTx } from "@/lib/media-queue";
 import { lockCreator } from "@/lib/combo-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
+/**
+ * Lock the tip and say whether it is still CONFIRMED. The auto-confirm retries
+ * run after the tip is already visible, so the creator may have rejected it in
+ * between — a retry must then do nothing.
+ */
+async function stillConfirmed(tx: Prisma.TransactionClient, tipId: string): Promise<boolean> {
+  const [row] = await tx.$queryRaw<{ status: string }[]>`
+    SELECT "status"::text AS "status" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
+  return row?.status === "CONFIRMED";
+}
+
 export async function POST(req: Request) {
   const limit = await rateLimit(`tip:${clientIp(req)}`, 5, 60_000);
   if (!limit.ok) {
@@ -339,7 +350,7 @@ export async function POST(req: Request) {
                 create: {
                   userId: creator.id,
                   videoId: mediaVideoId,
-                  title: (media?.ok && media.title) || "คลิป YouTube",
+                  title: media?.ok && media.title ? censorText(media.title) : "",
                   startSec: mediaStart,
                 },
               },
@@ -385,7 +396,7 @@ export async function POST(req: Request) {
         if (mediaVideoId) {
           await prisma
             .$transaction(async (tx) => {
-              await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
+              if (!(await stillConfirmed(tx, tipId))) return;
               await lockCreator(tx, creator.id);
               await mediaQueueConfirmTx(tx, tipId, new Date());
             }, TIP_TX)
@@ -404,7 +415,7 @@ export async function POST(req: Request) {
         if (!spinWheelId) return null;
         return prisma
           .$transaction(async (tx) => {
-            await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
+            if (!(await stillConfirmed(tx, tipId))) return "empty" as const;
             return startSpinTx(tx, tipId, new Date());
           }, TIP_TX)
           .catch((err2) => {

@@ -169,7 +169,7 @@ export function MediaPage() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`https://i.ytimg.com/vi/${r.videoId}/mqdefault.jpg`} alt="" className="h-12 w-20 shrink-0 rounded-lg bg-brand-100 object-cover" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-brand-900">{r.title}</p>
+        <p className="truncate text-sm font-semibold text-brand-900">{r.title || (r.test ? t("testRow") : t("untitled"))}</p>
         <p className="truncate text-xs text-brand-900/60">
           {r.test ? t("testRow") : t("by", { fan: r.fan || t("anonymous"), amount: r.amount.toLocaleString() })}
           {r.startSec > 0 && ` · ${t("startsAt", { time: clock(r.startSec) })}`}

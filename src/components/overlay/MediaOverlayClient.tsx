@@ -254,7 +254,7 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
           <p className="text-base font-semibold" style={{ color }}>
             {current.test ? "ทดสอบ" : `ขอโดย ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`}
           </p>
-          <p className="truncate text-xl font-extrabold leading-tight">{current.title}</p>
+          <p className="truncate text-xl font-extrabold leading-tight">{current.title || (current.test ? "คลิปทดสอบ" : "คลิป YouTube")}</p>
         </div>
       )}
     </div>

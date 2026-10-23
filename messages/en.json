@@ -1168,6 +1168,7 @@
     "warn4": "You can skip any clip at any time and turn auto-approve off whenever you like.",
     "warnAccept": "I understand and accept the copyright risk",
     "warnConfirm": "Turn on auto-approve",
-    "volumeLabel": "Clip volume"
+    "volumeLabel": "Clip volume",
+    "untitled": "YouTube clip"
   }
 }

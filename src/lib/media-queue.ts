@@ -366,7 +366,7 @@ export async function mediaQueueTest(userId: string, now: Date): Promise<void> {
       data: {
         userId,
         videoId: TEST_VIDEO_ID,
-        title: "ทดสอบ",
+        title: "",
         status: "APPROVED",
         queuedAt: now,
         position: await firstPosition(tx, userId),

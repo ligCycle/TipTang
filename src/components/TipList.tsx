@@ -144,7 +144,7 @@ export async function TipList({
     // "ขอคลิป/เพลง": the clip that came with the tip.
     clipTitle:
       tip.mediaRequest && tip.mediaRequest.status !== "REMOVED" && tip.mediaRequest.status !== "CANCELLED"
-        ? tip.mediaRequest.title
+        ? tip.mediaRequest.title || "YouTube"
         : null,
   }));
 

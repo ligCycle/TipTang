@@ -67,7 +67,11 @@ const CSP_OVERLAY = CSP_BASE.replace("script-src 'self'", "script-src 'self' htt
   "frame-src 'self'",
   "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
 );
-if (!CSP_OVERLAY.includes("https://www.youtube.com") || !CSP_OVERLAY.includes("https://www.youtube-nocookie.com")) {
+const directive = (name: string) => CSP_OVERLAY.split("; ").find((d) => d.startsWith(name + " ")) ?? "";
+if (
+  !directive("script-src").includes("https://www.youtube.com") ||
+  !directive("frame-src").includes("https://www.youtube-nocookie.com")
+) {
   throw new Error("next.config: overlay CSP lost the YouTube hosts (CSP_BASE changed shape?)");
 }
 const OVERLAY_HEADERS = [{ key: CSP_KEY, value: CSP_OVERLAY }];
