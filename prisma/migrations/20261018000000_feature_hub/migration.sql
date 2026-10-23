@@ -135,3 +135,64 @@ CREATE INDEX "Tip_spinWheelId_idx" ON "Tip"("spinWheelId");
 ALTER TABLE "Wheel" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "WheelTaskRow" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Spin" ENABLE ROW LEVEL SECURITY;
+
+-- Combo tip (src/lib/combo.ts): runs of confirmed tips, the tips in them, and rewards reached.
+CREATE TYPE "ComboStatus" AS ENUM ('ACTIVE', 'ENDED', 'STOPPED');
+
+CREATE TABLE "Combo" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "status" "ComboStatus" NOT NULL DEFAULT 'ACTIVE',
+    "startedAt" TIMESTAMP(3) NOT NULL,
+    "lastTipAt" TIMESTAMP(3) NOT NULL,
+    "endedAt" TIMESTAMP(3),
+    "level" INTEGER NOT NULL DEFAULT 1,
+    "progress" INTEGER NOT NULL DEFAULT 0,
+    "total" INTEGER NOT NULL DEFAULT 0,
+    "sizes" INTEGER[],
+    "rewards" TEXT[],
+    CONSTRAINT "Combo_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "Combo_userId_status_idx" ON "Combo"("userId", "status");
+ALTER TABLE "Combo" ADD CONSTRAINT "Combo_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "ComboTip" (
+    "tipId" TEXT NOT NULL,
+    "comboId" TEXT NOT NULL,
+    "amount" INTEGER NOT NULL,
+    "levelAfter" INTEGER NOT NULL,
+    "counted" BOOLEAN NOT NULL DEFAULT true,
+    CONSTRAINT "ComboTip_pkey" PRIMARY KEY ("tipId")
+);
+CREATE INDEX "ComboTip_comboId_idx" ON "ComboTip"("comboId");
+ALTER TABLE "ComboTip" ADD CONSTRAINT "ComboTip_tipId_fkey" FOREIGN KEY ("tipId") REFERENCES "Tip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ComboTip" ADD CONSTRAINT "ComboTip_comboId_fkey" FOREIGN KEY ("comboId") REFERENCES "Combo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "ComboReward" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "comboId" TEXT NOT NULL,
+    "level" INTEGER NOT NULL,
+    "text" TEXT NOT NULL,
+    "reachedAt" TIMESTAMP(3) NOT NULL,
+    "doneAt" TIMESTAMP(3),
+    CONSTRAINT "ComboReward_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "ComboReward_comboId_level_key" ON "ComboReward"("comboId", "level");
+CREATE INDEX "ComboReward_userId_doneAt_idx" ON "ComboReward"("userId", "doneAt");
+ALTER TABLE "ComboReward" ADD CONSTRAINT "ComboReward_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ComboReward" ADD CONSTRAINT "ComboReward_comboId_fkey" FOREIGN KEY ("comboId") REFERENCES "Combo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "User" ADD COLUMN "comboEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "comboDifficulty" TEXT NOT NULL DEFAULT 'medium';
+ALTER TABLE "User" ADD COLUMN "comboRows" JSONB;
+ALTER TABLE "User" ADD COLUMN "comboColor" TEXT;
+ALTER TABLE "User" ADD COLUMN "comboOverlaySeenAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN "comboCooldownUntil" TIMESTAMP(3);
+
+ALTER TABLE "Tip" ADD COLUMN "comboEligible" BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX "Tip_creatorId_comboEligible_confirmedAt_idx" ON "Tip"("creatorId", "comboEligible", "confirmedAt");
+
+ALTER TABLE "Combo" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ComboTip" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ComboReward" ENABLE ROW LEVEL SECURITY;

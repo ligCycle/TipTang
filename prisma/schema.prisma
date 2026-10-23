@@ -47,6 +47,13 @@ enum AlertAssetKind {
   VIDEO
 }
 
+enum ComboStatus {
+  ACTIVE
+  ENDED
+  // Card turned off mid-combo: ends at once, no summary.
+  STOPPED
+}
+
 enum SpinStatus {
   ACTIVE
   CANCELLED
@@ -166,6 +173,58 @@ model AlertSetItem {
   @@id([setId, assetId])
   // Library deletes look items up by file (cascade + bumping the sets).
   @@index([assetId])
+}
+
+// Combo tip ("คอมโบทิป", src/lib/combo.ts): a run of confirmed tips. Bar sizes
+// and rewards are copied at start (index 0 = level 1); progress = baht in the
+// current level. Levels never go down.
+model Combo {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status         ComboStatus   @default(ACTIVE)
+  startedAt      DateTime
+  lastTipAt      DateTime
+  endedAt        DateTime?
+  level          Int           @default(1)
+  progress       Int           @default(0)
+  total          Int           @default(0)
+  sizes          Int[]
+  rewards        String[]
+  tips           ComboTip[]
+  rewardsReached ComboReward[]
+
+  @@index([userId, status])
+}
+
+// A tip counted in a combo; levelAfter drives the alert ribbon. counted=false
+// once the tip is rejected.
+model ComboTip {
+  tipId      String  @id
+  tip        Tip     @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  comboId    String
+  combo      Combo   @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  amount     Int
+  levelAfter Int
+  counted    Boolean @default(true)
+
+  @@index([comboId])
+}
+
+// A reward reached (text copied then), shown in the to-do list.
+model ComboReward {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comboId   String
+  combo     Combo     @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  level     Int
+  text      String
+  reachedAt DateTime
+  doneAt    DateTime?
+
+  @@unique([comboId, level])
+  @@index([userId, doneAt])
 }
 
 // Spin wheel ("วงล้อสุ่ม", src/lib/wheel.ts). Every task gets `slots` segments;
@@ -400,6 +459,19 @@ model User {
   wheelEnabled         Boolean                  @default(false)
   // When the creator ticked the first-enable rules checklist.
   wheelRulesAcceptedAt DateTime?
+  // Feature hub card "คอมโบทิป" (src/lib/combo.ts).
+  comboEnabled       Boolean   @default(false)
+  // "easy" | "medium" | "hard" | "custom"
+  comboDifficulty    String    @default("medium")
+  // LevelRow[]; null = DEFAULT_ROWS.
+  comboRows          Json?
+  // Combo overlay colour; null = alertColor, then brand pink.
+  comboColor         String?
+  // Last poll of the combo OBS link: tips only count while it's open.
+  comboOverlaySeenAt DateTime?
+  comboCooldownUntil DateTime?
+  combos             Combo[]
+  comboRewards       ComboReward[]
   shopItems            ShopItem[]
   shopOrders           ShopOrder[]
 }
@@ -456,6 +528,9 @@ model Tip {
   // id so the confirm button can warn.
   spinWheelId     String?
   spin            Spin?
+  // Confirmed while the combo link was open and the card on (counts for combos).
+  comboEligible   Boolean   @default(false)
+  comboTip        ComboTip?
   status          TipStatus     @default(PENDING)
   isMessagePublic Boolean       @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
@@ -475,4 +550,5 @@ model Tip {
   // Library deletes null this out (ON DELETE SET NULL); avoid a full scan.
   @@index([pickedSoundId])
   @@index([spinWheelId])
+  @@index([creatorId, comboEligible, confirmedAt])
 }
