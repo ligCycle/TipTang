@@ -196,7 +196,21 @@
     "wishLabel": "This tip helps buy (optional)",
     "wishNone": "No pick",
     "wishNoneHint": "Goes to the main item: {name}",
-    "wishFull": "Fully funded"
+    "wishFull": "Fully funded",
+    "mediaLabel": "Fan media (optional)",
+    "mediaClip": "Request a clip/song",
+    "mediaClipHint": "Attach a YouTube link to play on stream",
+    "mediaLinkLabel": "YouTube link",
+    "mediaLinkPlaceholder": "Paste a YouTube link, e.g. https://youtu.be/...",
+    "mediaChecking": "Checking the link...",
+    "mediaBadLink": "YouTube links only",
+    "mediaGone": "This clip can't play on stream — try another one",
+    "mediaCheckFailed": "Couldn't check the link — try again",
+    "mediaUntitled": "YouTube clip",
+    "mediaStartsAt": "starts at {time}",
+    "mediaFinePrint": "Plays up to {minutes} min · some clips may not play on stream · the creator may skip or not play clips that aren't suitable",
+    "mediaCleared": "This amount doesn't cover the clip, so it was removed",
+    "mediaDropped": "Your clip didn't join the queue (the link didn't work, the amount was short, or the creator turned this off), but your tip went through."
   },
   "tipSuccess": {
     "title": "Tip sent!",
@@ -397,7 +411,8 @@
     "spinEmptyForce": "Confirm without spin",
     "spinEmptyReset": "Reset wheel and confirm",
     "spinResetFailed": "Couldn’t reset — the wheel may have been deleted. You can confirm without a spin.",
-    "wishBadge": "Helps: {name}"
+    "wishBadge": "Helps: {name}",
+    "clipBadge": "Clip: {title}"
   },
   "settings": {
     "title": "Donate page settings",
@@ -735,8 +750,8 @@
     "s6Body": "You may stop using the service at any time, and request account deletion by emailing support@tiptang.com — we delete it within 7 days. We may improve or discontinue the service and may update these terms from time to time. Continued use means you accept the updated terms.",
     "s7Title": "Governing law & contact",
     "s7Body": "These terms are governed by the laws of Thailand. For questions, contact support@tiptang.com",
-    "randomTitle": "Random features and feature rewards (such as the spin wheel and combo tip)",
-    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task.\n• Combo tip rewards (unlocked when viewers tip together to reach a level) follow the same rules: no money, cash equivalents or items of monetary value, and the creator is responsible for delivering the rewards they set."
+    "randomTitle": "Fan features: random features, feature rewards and fan clip requests (e.g. the spin wheel, combo tip, clip requests)",
+    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task.\n• Combo tip rewards (unlocked when viewers tip together to reach a level) follow the same rules: no money, cash equivalents or items of monetary value, and the creator is responsible for delivering the rewards they set.\n• Clips or songs supporters request through \"clip requests\": the copyright and content of a clip are the responsibility of the requester and of the creator who chooses to play it on their stream. The creator may skip or not play any clip, and TipTang doesn't guarantee a clip will play on every platform."
   },
   "featureHub": {
     "secLook": "Look",
@@ -1102,7 +1117,7 @@
     "sampleTitle": "New mic"
   },
   "mediaPage": {
-    "howItWorks": "Fans attach a YouTube link to their tip. Once the tip is confirmed the clip joins the queue; you approve it and it plays on stream in order through this feature's OBS link.",
+    "howItWorks": "Fans attach a YouTube link to their tip. Once the tip is confirmed the clip joins the queue (waiting for your approval, or straight in with auto-approve) and plays on stream in order through this feature's OBS link.",
     "linkLive": "OBS link connected",
     "linkOff": "OBS link not open",
     "pausedNote": "Queue on hold: the clip playing finishes, the next one doesn't start.",
@@ -1119,7 +1134,7 @@
     "upNext": "Up next ({count})",
     "noneNext": "Nothing in the queue yet",
     "toTop": "Play next",
-    "history": "Played today ({count})",
+    "history": "Recent ({count})",
     "status_PLAYED": "Played",
     "status_SKIPPED": "Skipped",
     "status_REMOVED": "Removed",
@@ -1151,6 +1166,7 @@
     "warn3": "Streaming platforms (e.g. YouTube, Twitch, TikTok, Facebook) may mute, remove videos or penalise your channel for copyrighted music or clips.",
     "warn4": "You can skip any clip at any time and turn auto-approve off whenever you like.",
     "warnAccept": "I understand and accept the copyright risk",
-    "warnConfirm": "Turn on auto-approve"
+    "warnConfirm": "Turn on auto-approve",
+    "volumeLabel": "Clip volume"
   }
 }

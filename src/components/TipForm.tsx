@@ -6,10 +6,12 @@ import { formatBaht } from "@/lib/format";
 import { SlipDropzone } from "@/components/SlipDropzone";
 import { Icon } from "@/components/Icon";
 import { PaypalPayPanel } from "@/components/PaypalPayPanel";
-import { SoundPicker, soundFloor, type SoundChoice } from "@/components/SoundPicker";
+import { SoundPicker, type SoundChoice } from "@/components/SoundPicker";
 import { WheelPicker, type WheelChoice } from "@/components/WheelPicker";
 import { WishPicker, type WishChoiceItem } from "@/components/WishPicker";
-import { spinFloor } from "@/lib/wheel";
+import { MediaPicker, type ClipPick, type MediaChoice } from "@/components/MediaPicker";
+import { extrasFloor } from "@/lib/wishlist";
+import { mediaExtrasDrop } from "@/lib/media";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
 
@@ -42,6 +44,7 @@ export function TipForm({
   soundSetName = null,
   wheelChoice = null,
   wishChoice = null,
+  mediaChoice = null,
 }: {
   username: string;
   creatorName: string;
@@ -60,6 +63,8 @@ export function TipForm({
   wheelChoice?: WheelChoice | null;
   /** Goal items fans may choose to help (2+ open, card on); null = hidden. */
   wishChoice?: WishChoiceItem[] | null;
+  /** "ขอคลิป/เพลง" when the creator has it on; null = hidden. */
+  mediaChoice?: MediaChoice | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -110,33 +115,45 @@ export function TipForm({
   const [spinDropped, setSpinDropped] = useState(false);
   // Goal item this tip helps (no price; null = main item).
   const [wishItemId, setWishItemId] = useState<string | null>(null);
+  // "ขอคลิป/เพลง": the checked clip (its price adds to the other extras).
+  const [clip, setClip] = useState<ClipPick | null>(null);
+  const [clipNote, setClipNote] = useState(false);
+  // Bumped when the clip is taken away, so the picker closes and forgets the link.
+  const [clipKey, setClipKey] = useState(0);
+  const [mediaDropped, setMediaDropped] = useState(false);
   const pickedSound = soundChoices?.find((c) => c.id === pickedSoundId) ?? null;
   const spinPrice = spin && wheelChoice ? wheelChoice.price : 0;
+  const clipPrice = clip && mediaChoice ? mediaChoice.minAmount : 0;
 
   // A pick the amount no longer covers is cleared (never the other way round
-  // — the amount isn't raised): the spin first, then the sound if it still
-  // doesn't fit alone. Chips check at once; typing checks when the field is
+  // — the amount isn't raised): the clip first, then the spin, then the sound
+  // (src/lib/media.ts mediaExtrasDrop, same order as the server). Chips check at once; typing checks when the field is
   // left, so "100" typed over "50" doesn't drop the pick at "1".
   // Set when a check clears a pick, so the next "continue" stays on the form
   // once and the fan sees why (a click on the button blurs the amount first).
   const justCleared = useRef(false);
   // Returns whether anything was cleared.
   function checkPick(n: number): boolean {
-    let cleared = false;
-    let spinning = spin;
-    if (spinning && wheelChoice && n < spinFloor(minAmount, wheelChoice.price, pickedSound?.minAmount ?? null)) {
-      spinning = false;
-      cleared = true;
+    const drop = mediaExtrasDrop(n, minAmount, {
+      media: clip && mediaChoice ? mediaChoice.minAmount : null,
+      wheel: spin && wheelChoice ? wheelChoice.price : null,
+      sound: pickedSound ? pickedSound.minAmount : null,
+    });
+    if (drop.includes("media")) {
+      setClip(null);
+      setClipKey((k) => k + 1);
+      setClipNote(true);
+    }
+    if (drop.includes("wheel")) {
       setSpin(false);
       setSpinNote(true);
     }
-    if (pickedSound && n < soundFloor(pickedSound, minAmount, spinning && wheelChoice ? wheelChoice.price : 0)) {
+    if (drop.includes("sound")) {
       setPickedSoundId(null);
       setPickNote(true);
-      cleared = true;
     }
-    if (cleared) justCleared.current = true;
-    return cleared;
+    if (drop.length > 0) justCleared.current = true;
+    return drop.length > 0;
   }
   function changeAmount(next: string, typing = false) {
     setAmountStr(next);
@@ -226,6 +243,10 @@ export function TipForm({
       if (pickedSoundId) fd.set("pickedSoundId", pickedSoundId);
       if (spin && wheelChoice) fd.set("spinWheel", wheelChoice.id);
       if (wishItemId && wishChoice) fd.set("wishItemId", wishItemId);
+      if (clip && mediaChoice) {
+        fd.set("mediaVideoId", clip.videoId);
+        fd.set("mediaStart", String(clip.startSec));
+      }
       fd.set("slip", slip);
 
       const res = await fetch("/api/tips", { method: "POST", body: fd });
@@ -248,6 +269,7 @@ export function TipForm({
       setAutoVerified(Boolean(data.autoVerified) || Boolean(data.confirmed));
       setPickDropped(Boolean(data.pickDropped));
       setSpinDropped(Boolean(data.spinDropped));
+      setMediaDropped(Boolean(data.mediaDropped));
       setStep("done");
     } catch {
       setError(tErr("notFound"));
@@ -272,6 +294,10 @@ export function TipForm({
     setSpinNote(false);
     setSpinDropped(false);
     setWishItemId(null);
+    setClip(null);
+    setClipKey((k) => k + 1);
+    setClipNote(false);
+    setMediaDropped(false);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -334,6 +360,11 @@ export function TipForm({
         {spinDropped && (
           <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
             {t("wheelSpinDropped")}
+          </p>
+        )}
+        {mediaDropped && (
+          <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
+            {t("mediaDropped")}
           </p>
         )}
         <button onClick={reset} className="btn-secondary mt-6">
@@ -427,13 +458,36 @@ export function TipForm({
             <WishPicker items={wishChoice} value={wishItemId} onChange={setWishItemId} />
           )}
 
+          {mediaChoice && (
+            <div>
+              <p className="mb-2 text-sm font-medium text-brand-900/80">{t("mediaLabel")}</p>
+              <MediaPicker
+                key={clipKey}
+                username={username}
+                choice={mediaChoice}
+                amount={amount}
+                floor={extrasFloor(minAmount, [mediaChoice.minAmount, pickedSound?.minAmount ?? null, spinPrice])}
+                value={clip}
+                onChange={(next) => {
+                  setClip(next);
+                  setClipNote(false);
+                }}
+              />
+              {clipNote && (
+                <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
+                  {t("mediaCleared")}
+                </p>
+              )}
+            </div>
+          )}
+
           {wheelChoice && (
             <div>
               <p className="mb-2 text-sm font-medium text-brand-900/80">{t("extrasLabel")}</p>
               <WheelPicker
                 wheel={wheelChoice}
                 amount={amount}
-                floor={spinFloor(minAmount, wheelChoice.price, pickedSound?.minAmount ?? null)}
+                floor={extrasFloor(minAmount, [wheelChoice.price, pickedSound?.minAmount ?? null, clipPrice])}
                 checked={spin}
                 onChange={(next) => {
                   setSpin(next);
@@ -455,7 +509,7 @@ export function TipForm({
                 setName={soundSetName ?? ""}
                 amount={amount}
                 creatorMin={minAmount}
-                addOn={spinPrice}
+                addOn={spinPrice + clipPrice}
                 value={pickedSoundId}
                 onChange={(id) => {
                   setPickedSoundId(id);

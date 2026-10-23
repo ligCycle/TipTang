@@ -61,6 +61,11 @@ export function MediaPage() {
   const [understood, setUnderstood] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
+  const [acking, setAcking] = useState(false);
+  const [ackFailed, setAckFailed] = useState(false);
+  // The slider moves freely; the value saves shortly after it stops.
+  const [volume, setVolume] = useState<number | null>(null);
+  const volumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
@@ -117,9 +122,19 @@ export function MediaPage() {
     if (d) setData((cur) => (cur ? { ...cur, queue: d.queue } : d));
   }
 
+  function changeVolume(n: number) {
+    setVolume(n);
+    if (volumeTimer.current) clearTimeout(volumeTimer.current);
+    volumeTimer.current = setTimeout(async () => {
+      // Failed: the slider goes back to what OBS is really using.
+      if (!(await save({ volume: n }))) setVolume(null);
+    }, 400);
+  }
+
   function setAuto(next: boolean) {
     if (next && !data?.autoAcked) {
       setUnderstood(false);
+      setAckFailed(false);
       setWarnOpen(true);
       return;
     }
@@ -174,7 +189,7 @@ export function MediaPage() {
           <span className={`h-2 w-2 rounded-full ${data.live ? "bg-emerald-500" : "bg-brand-900/30"}`} />
           {data.live ? t("linkLive") : t("linkOff")}
         </span>
-        {data.paused && <span className="text-xs font-semibold text-amber-700">{t("pausedNote")}</span>}
+        {data.paused && <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t("pausedNote")}</span>}
       </p>
       {error && <p className="text-sm font-medium text-red-600">{t("saveFailed")}</p>}
 
@@ -196,7 +211,7 @@ export function MediaPage() {
               {q.playing.map((r) =>
                 row(
                   r,
-                  <button type="button" disabled={busyId === r.id} onClick={() => act(r.id, "skip")} className={`${btn} border-red-300 text-red-700 hover:bg-red-50`}>
+                  <button type="button" disabled={busyId === r.id} onClick={() => act(r.id, "skip")} className={`${btn} border-red-300 text-red-700 hover:bg-red-50 dark:border-red-400/50 dark:text-red-300 dark:hover:bg-red-500/10`}>
                     {t("skip")}
                   </button>,
                 ),
@@ -216,7 +231,7 @@ export function MediaPage() {
                   row(
                     r,
                     <>
-                      <button type="button" disabled={busyId === r.id} onClick={() => act(r.id, "approve")} className={`${btn} border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100`}>
+                      <button type="button" disabled={busyId === r.id} onClick={() => act(r.id, "approve")} className={`${btn} border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-400/50 dark:bg-emerald-500/10 dark:text-emerald-300`}>
                         {t("approve")}
                       </button>
                       <button type="button" disabled={busyId === r.id} onClick={() => act(r.id, "remove")} className={`${btn} border-brand-300 text-brand-700 hover:bg-brand-100`}>
@@ -315,18 +330,17 @@ export function MediaPage() {
         <label className="block">
           <span className="mb-1 flex items-center gap-2 text-sm font-medium text-brand-900/80">
             <Icon name="volume" className="h-4 w-4" />
-            {t("volume", { n: data.volume })}
+            {t("volume", { n: volume ?? data.volume })}
           </span>
           <input
             type="range"
             min={0}
             max={100}
             step={5}
-            defaultValue={data.volume}
-            onPointerUp={(e) => void save({ volume: Number((e.target as HTMLInputElement).value) })}
-            onKeyUp={(e) => void save({ volume: Number((e.target as HTMLInputElement).value) })}
+            value={volume ?? data.volume}
+            onChange={(e) => changeVolume(Number(e.target.value))}
             className="w-full max-w-xs accent-brand-600"
-            aria-label={t("volume", { n: data.volume })}
+            aria-label={t("volumeLabel")}
           />
         </label>
       </section>
@@ -389,15 +403,21 @@ export function MediaPage() {
             />
             {t("warnAccept")}
           </label>
+          {ackFailed && <p className="mt-2 text-sm font-medium text-red-600">{t("saveFailed")}</p>}
           <div className="mt-5 flex justify-end gap-2">
             <button type="button" onClick={() => setWarnOpen(false)} className="btn-secondary px-4 py-2 text-sm">
               {tc("cancel")}
             </button>
             <button
               type="button"
-              disabled={!understood}
+              disabled={!understood || acking}
               onClick={async () => {
-                if (await save({ autoApprove: true, ack: true })) setWarnOpen(false);
+                setAcking(true);
+                setAckFailed(false);
+                const ok = await save({ autoApprove: true, ack: true });
+                setAcking(false);
+                if (ok) setWarnOpen(false);
+                else setAckFailed(true);
               }}
               className="btn-primary px-4 py-2 text-sm"
             >

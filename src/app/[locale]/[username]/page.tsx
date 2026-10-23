@@ -99,6 +99,9 @@ export default async function ProfilePage({
       goalStartedAt: true,
       goalType: true,
       goalOverlayEnabled: true,
+      mediaEnabled: true,
+      mediaMinAmount: true,
+      mediaMaxSec: true,
       socialLinks: true,
       profileColor: true,
       timerEnabled: true,
@@ -387,6 +390,7 @@ export default async function ProfilePage({
             soundSetName={soundSet?.name ?? null}
             wheelChoice={wheelChoice}
             wishChoice={wishChoice}
+            mediaChoice={canTip && creator.mediaEnabled ? { minAmount: creator.mediaMinAmount, maxSec: creator.mediaMaxSec } : null}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">
