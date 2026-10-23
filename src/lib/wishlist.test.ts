@@ -86,3 +86,27 @@ test("clean name and price", () => {
   assert.equal(cleanItemPrice(1.5), null);
   assert.equal(cleanItemPrice(MAX_ITEM_PRICE + 1), null);
 });
+
+test("spillOnPrice: raising or keeping a price never moves baht, even on an item past 100%", () => {
+  const over = items(["a", 100, 100], ["b", 100, 150], ["c", 100, 0]);
+  assert.deepEqual(spillOnPrice(over, "b", 120), { from: "b", to: [] });
+  assert.deepEqual(spillOnPrice(over, "b", 100), { from: "b", to: [] });
+  // Lowering 100 → 90 frees only the 10 newly over the price, not the old overflow.
+  assert.deepEqual(spillOnPrice(over, "b", 90), { from: "b", to: [{ itemId: "c", amount: 10 }] });
+});
+
+test("allocate: one row per item even when the fill wraps back to the chosen item", () => {
+  assert.deepEqual(allocate(items(["a", 100, 0], ["b", 100, 0], ["c", 100, 80]), 300, "c"), [
+    { itemId: "c", amount: 100 },
+    { itemId: "a", amount: 100 },
+    { itemId: "b", amount: 100 },
+  ]);
+});
+
+test("goal enums", async () => {
+  const m = await import("./wishlist.ts");
+  assert.equal(m.isGoalStyle("ring"), true);
+  assert.equal(m.isGoalStyle("thin"), false);
+  assert.equal(m.isGoalDisplay("rotate"), true);
+  assert.equal(m.isGoalType("multi"), true);
+});

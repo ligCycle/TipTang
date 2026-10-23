@@ -32,15 +32,15 @@ export function topUnfilled(items: ItemState[]): ItemState | null {
   return items.find((i) => !isFull(i)) ?? null;
 }
 
-/** Merge consecutive rows for the same item. */
+/** One row per item (amounts summed), in first-seen order. */
 function merge(rows: Allocation[]): Allocation[] {
-  const out: Allocation[] = [];
+  const byItem = new Map<string, Allocation>();
   for (const r of rows) {
-    const last = out[out.length - 1];
-    if (last && last.itemId === r.itemId) last.amount += r.amount;
-    else out.push({ ...r });
+    const cur = byItem.get(r.itemId);
+    if (cur) cur.amount += r.amount;
+    else byItem.set(r.itemId, { ...r });
   }
-  return out;
+  return [...byItem.values()];
 }
 
 /**
@@ -77,13 +77,15 @@ export function moveOnDelete(items: ItemState[], deletedId: string): Allocation[
 /** Lowering a price below what's raised: the excess flows to the next unfilled items. */
 export function spillOnPrice(items: ItemState[], itemId: string, newPrice: number): { from: string; to: Allocation[] } {
   const item = items.find((i) => i.id === itemId);
-  const excess = item ? item.raised - newPrice : 0;
+  // Only what the lower price frees moves: baht already past the old price
+  // (an item over 100%) stays, and raising or keeping a price moves nothing.
+  const excess = item ? Math.min(item.raised, item.price) - newPrice : 0;
   if (!item || excess <= 0) return { from: itemId, to: [] };
-  const idx = items.findIndex((i) => i.id === itemId);
-  // Treat the item as already full at its new price; start looking after it.
+  // The item counts as full at its new price; allocation starts at it and
+  // moves on to the unfilled items after it.
   const others = items.map((i) => (i.id === itemId ? { ...i, price: newPrice, raised: newPrice } : i));
-  const nextId = others[(idx + 1) % others.length]?.id ?? itemId;
-  return { from: itemId, to: allocate(others, excess, nextId === itemId ? null : nextId) };
+  const to = allocate(others, excess, itemId).filter((r) => r.itemId !== itemId);
+  return { from: itemId, to };
 }
 
 /** Paid extras on one tip add up; the creator minimum is the floor. */
