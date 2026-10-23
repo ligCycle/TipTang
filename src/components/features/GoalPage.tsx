@@ -85,6 +85,8 @@ export function GoalPage() {
   const [images, setImages] = useState<LibFile[] | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
+  // Single goal: both fields save together, so keep the newest of each here.
+  const draft = useRef<{ title: string; amount: string } | null>(null);
 
   useEffect(() => {
     json("/api/goal").then((d) => d && setS(d));
@@ -114,10 +116,16 @@ export function GoalPage() {
     setToggling(false);
   }
 
-  async function saveSingle(title: string, amount: string) {
-    const ok = await assetForm({ kind: "goalSet", title, amount });
-    if (ok) await run(() => json("/api/goal"));
-    return ok;
+  function saveSingle(change: { title?: string; amount?: string }): Promise<boolean> {
+    if (!s) return Promise.resolve(false);
+    draft.current = {
+      title: change.title ?? draft.current?.title ?? s.single.title,
+      amount: change.amount ?? draft.current?.amount ?? (s.single.amount ? String(s.single.amount) : ""),
+    };
+    return run(async () => {
+      const d = draft.current!;
+      return (await assetForm({ kind: "goalSet", title: d.title, amount: d.amount })) ? json("/api/goal") : null;
+    });
   }
 
   async function openPicker(itemId: string) {
@@ -253,12 +261,12 @@ export function GoalPage() {
                 <label className="block text-sm">
                   <span className="mb-1 block font-semibold text-brand-900/75">{t("goalName")}</span>
                   <AutoSaveInput value={s.single.title} ariaLabel={t("goalName")} maxLength={80} placeholder={t("goalNamePlaceholder")}
-                    save={(v) => saveSingle(v, String(s.single.amount || ""))} />
+                    save={(v) => saveSingle({ title: v })} />
                 </label>
                 <label className="block text-sm">
                   <span className="mb-1 block font-semibold text-brand-900/75">{t("goalAmount")}</span>
                   <AutoSaveInput value={s.single.amount ? String(s.single.amount) : ""} ariaLabel={t("goalAmount")} inputMode="numeric"
-                    save={(v) => (Number(v) > 0 ? saveSingle(s.single.title, v) : Promise.resolve(false))} />
+                    save={(v) => (Number(v) > 0 ? saveSingle({ amount: v }) : Promise.resolve(false))} />
                 </label>
               </div>
             ) : (
@@ -364,7 +372,7 @@ export function GoalPage() {
                   <Icon name="link" className="h-3.5 w-3.5" />
                   {copied ? tHub("copied") : tHub("copyObs")}
                 </button>
-                <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "700×220" })}</span>
+                <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "700×300" })}</span>
               </p>
             )}
             <div className="rounded-xl bg-brand-50 p-3">

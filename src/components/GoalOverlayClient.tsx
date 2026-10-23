@@ -63,7 +63,9 @@ export function GoalOverlayClient({
           }
           if (!showing.current && moments.current.length > 0) nextMoment();
         }
-        prev.current = new Map(data.items.map((i) => [i.id, { raised: i.raised, full: i.full }]));
+        // Only track items while the goal is "หลายชิ้น": a switch from single
+        // starts clean instead of announcing old money as new.
+        prev.current = data.type === "multi" ? new Map(data.items.map((i) => [i.id, { raised: i.raised, full: i.full }])) : null;
         latest.current = data;
         setGoal(data);
       } catch {

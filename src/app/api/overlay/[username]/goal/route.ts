@@ -13,5 +13,8 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  return NextResponse.json(await goalFeed(user.id));
+  const feed = await goalFeed(user.id);
+  // Bars already open in OBS keep the old script until they reload: give them
+  // the old top-level fields too (the new client ignores them).
+  return NextResponse.json(feed ? { ...feed, ...feed.single } : feed);
 }
