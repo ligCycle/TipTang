@@ -45,7 +45,7 @@ const HOSTS = new Set([
 export function parseStart(v: string | null | undefined): number {
   if (!v) return 0;
   let sec: number;
-  if (/^\d+$/.test(v)) sec = Number(v);
+  if (/^\d+$/.test(v)) sec = v.length > 6 ? MAX_START : Number(v);
   else {
     const m = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(v);
     if (!m || !(m[1] || m[2] || m[3])) return 0;
@@ -85,6 +85,8 @@ export function parseYouTube(raw: unknown): { videoId: string; startSec: number 
   }
   if (!id || !VIDEO_ID.test(id)) return null;
 
+  // A live stream has no fixed timeline: always join it where it is.
+  if (parts[0] === "live") return { videoId: id, startSec: 0 };
   const hashT = /(?:^|&)t=([^&]+)/.exec(url.hash.replace(/^#/, ""))?.[1];
   const startSec = parseStart(url.searchParams.get("t") ?? url.searchParams.get("start") ?? hashT ?? null);
   return { videoId: id, startSec };
@@ -92,7 +94,20 @@ export function parseYouTube(raw: unknown): { videoId: string; startSec: number 
 
 /** oEmbed title → stored title: one line, at most 200 characters. */
 export function cleanMediaTitle(v: unknown): string {
-  return typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, MAX_TITLE) : "";
+  if (typeof v !== "string") return "";
+  // Control and bidi/zero-width characters could spoof text on the dashboard
+  // (whitespace controls become spaces); the cut never splits an emoji.
+  const clean = v
+    .replace(/[\t\n\v\f\r]/g, " ")
+    .replace(/[\u0000-\u001F\u007F-\u009F​-‏‪-‮⁦-⁩﻿]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  let out = "";
+  for (const ch of clean) {
+    if (out.length + ch.length > MAX_TITLE) break;
+    out += ch;
+  }
+  return out;
 }
 
 /**

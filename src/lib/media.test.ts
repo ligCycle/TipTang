@@ -122,3 +122,18 @@ test("elapsedSec counts whole seconds since the start, never negative", () => {
   assert.equal(elapsedSec(s0, new Date("2026-10-23T09:59:00Z")), 0);
   assert.equal(elapsedSec(null, new Date()), 0);
 });
+
+test("task 1 review: live links ignore start; odd hosts; huge start caps", () => {
+  assert.deepEqual(parseYouTube(`https://www.youtube.com/live/${ID}?t=90`), { videoId: ID, startSec: 0 });
+  assert.deepEqual(parseYouTube(`https://YOUTUBE.COM/watch?v=${ID}`), { videoId: ID, startSec: 0 });
+  assert.equal(parseYouTube(`https://evil.com@youtu.be/${ID}`), null);
+  assert.equal(parseYouTube(`https://xn--yutube-wqf.com/watch?v=${ID}`), null);
+  assert.equal(parseStart("9".repeat(400)), 43_200);
+});
+
+test("cleanMediaTitle strips bidi/control characters and never splits a pair", () => {
+  assert.equal(cleanMediaTitle("abc\u202Eevil\u200B\u0007x"), "abcevilx");
+  const t = cleanMediaTitle("a".repeat(199) + "😀😀");
+  assert.ok(!/[\uD800-\uDBFF]$/.test(t));
+  assert.ok(t.length <= 200);
+});
