@@ -9,6 +9,7 @@ import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
 import { AutoSaveInput } from "@/components/features/LibraryBits";
 import { loadHub, type HubState } from "@/components/features/FeatureHub";
+import { SpinTodo } from "@/components/features/SpinTodo";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import {
   MAX_LEVEL_BAHT,
@@ -54,6 +55,7 @@ export function ComboPage() {
   const [error, setError] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedTodo, setCopiedTodo] = useState(false);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
   // Saves replace the table, so they run one at a time on the newest copy.
   const latest = useRef<ComboSettings | null>(null);
@@ -129,11 +131,14 @@ export function ComboPage() {
     ),
   });
 
-  async function copy() {
-    if (!obsUrl) return;
+  const todoUrl = hub ? `${hub.overlayBase}/todo?key=${hub.overlayKey}` : null;
+  async function copy(url: string | null = obsUrl) {
+    if (!url) return;
     try {
-      await navigator.clipboard.writeText(obsUrl);
-      setCopied(true);
+      await navigator.clipboard.writeText(url);
+      setCopied(url === obsUrl);
+      setCopiedTodo(url === todoUrl);
+      setTimeout(() => setCopiedTodo(false), 1500);
       setTimeout(() => setCopied(false), 1500);
     } catch {
       // ignore
@@ -280,13 +285,27 @@ export function ComboPage() {
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <button
               type="button"
-              onClick={copy}
+              onClick={() => copy(obsUrl)}
               className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
             >
               <Icon name="link" className="h-3.5 w-3.5" />
               {copied ? tHub("copied") : tHub("copyObs")}
             </button>
             <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "600×220" })}</span>
+          </p>
+        )}
+        {todoUrl && (
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-sm font-semibold text-brand-900">{t("todoLink")}</span>
+            <button
+              type="button"
+              onClick={() => copy(todoUrl)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
+            >
+              <Icon name="link" className="h-3.5 w-3.5" />
+              {copiedTodo ? tHub("copied") : tHub("copyObs")}
+            </button>
+            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "400×420" })}</span>
           </p>
         )}
         <div className="rounded-xl bg-brand-50 p-3">
@@ -313,6 +332,9 @@ export function ComboPage() {
           )}
         </div>
       </section>
+
+      {/* Rewards reached land here (shared with the wheel's results). */}
+      <SpinTodo />
     </FeatureSettingsLayout>
   );
 }

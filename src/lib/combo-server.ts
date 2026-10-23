@@ -60,6 +60,23 @@ async function lockCreator(tx: Tx, userId: string) {
   await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
 }
 
+/**
+ * For reads outside the tip routes (combo feed, settings page): end a combo
+ * whose countdown ran out, under the creator lock (same order as confirms:
+ * User, then Combo). Opens a transaction only when something has expired.
+ */
+export async function endIfExpired(userId: string, now: Date): Promise<void> {
+  const expired = await prisma.combo.findFirst({
+    where: { userId, status: "ACTIVE", lastTipAt: { lte: new Date(now.getTime() - COUNTDOWN_MS) } },
+    select: { id: true },
+  });
+  if (!expired) return;
+  await prisma.$transaction(async (tx) => {
+    await lockCreator(tx, userId);
+    await endIfExpiredTx(tx, userId, now);
+  });
+}
+
 /** An ACTIVE combo whose countdown ran out becomes ENDED at lastTipAt + countdown; the cooldown starts then. */
 export async function endIfExpiredTx(tx: Tx, userId: string, now: Date): Promise<void> {
   const active = await tx.combo.findFirst({ where: { userId, status: "ACTIVE" }, select: { id: true, lastTipAt: true } });
@@ -220,17 +237,7 @@ export async function comboFeed(userId: string, now: Date, opts: { testOnly?: bo
   const test = await readComboTest(userId, now.getTime());
   if (test) return testSample(now.getTime() - test.startedAt, test.id, now.getTime());
   if (opts.testOnly) return { phase: "idle" };
-  // Only open a locked transaction when a countdown has actually run out.
-  const expired = await prisma.combo.findFirst({
-    where: { userId, status: "ACTIVE", lastTipAt: { lte: new Date(now.getTime() - COUNTDOWN_MS) } },
-    select: { id: true },
-  });
-  if (expired) {
-    await prisma.$transaction(async (tx) => {
-      await lockCreator(tx, userId);
-      await endIfExpiredTx(tx, userId, now);
-    });
-  }
+  await endIfExpired(userId, now);
   const combo = await prisma.combo.findFirst({
     where: {
       userId,

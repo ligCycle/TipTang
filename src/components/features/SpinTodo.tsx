@@ -20,7 +20,14 @@ const COMPACT_ROWS = 3;
  * "ทำแล้ว"; the done tab (last 30 days) can undo. `compact` is the short block
  * on the dashboard home — hidden when nothing is open.
  */
-export function SpinTodo({ compact = false }: { compact?: boolean }) {
+export function SpinTodo({
+  compact = false,
+  seeAllPath = "/dashboard/features/wheel",
+}: {
+  compact?: boolean;
+  /** Where the home block's "see all" goes (the page of a feature the creator uses). */
+  seeAllPath?: string;
+}) {
   const t = useTranslations("wheel");
   const locale = useLocale();
   const [tab, setTab] = useState<"open" | "done">("open");
@@ -77,7 +84,7 @@ export function SpinTodo({ compact = false }: { compact?: boolean }) {
         <h2 className="font-bold text-brand-900">{t("todoTitle", { count: openCount })}</h2>
         {compact ? (
           <Link
-            href={`/${locale}/dashboard/features/wheel`}
+            href={`/${locale}${seeAllPath}`}
             className="text-sm font-semibold text-brand-700 hover:underline"
           >
             {t("todoSeeAll")}

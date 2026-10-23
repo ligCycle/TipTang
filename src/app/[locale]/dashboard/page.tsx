@@ -88,6 +88,8 @@ export default async function DashboardPage({
           username: true,
           promptpayId: true,
           overlayLastSeenAt: true,
+          wheelEnabled: true,
+          comboEnabled: true,
         },
       }),
       prisma.tip.aggregate({
@@ -200,7 +202,10 @@ export default async function DashboardPage({
       <SetSwitcher showManage />
 
       {/* Wheel results still to do (hidden when there are none). */}
-      <SpinTodo compact />
+      <SpinTodo
+        compact
+        seeAllPath={user && !user.wheelEnabled && user.comboEnabled ? "/dashboard/features/combo" : "/dashboard/features/wheel"}
+      />
 
       {/* Overview — one range at a time, chosen via ?range= so the page
           stays a server component and the choice survives a reload. */}

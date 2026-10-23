@@ -982,7 +982,7 @@
     "obsLine": "Add each as its own Browser Source and place it anywhere.",
     "obsWheel": "Wheel",
     "obsTodo": "To-do list",
-    "todoTitle": "To-do from the wheel ({count})",
+    "todoTitle": "To-do ({count})",
     "todoSeeAll": "See all",
     "todoTabOpen": "To do",
     "todoTabDone": "Done",
@@ -1036,6 +1036,7 @@
     "colorReset": "Use the alert colour",
     "colorDefault": "Not set = your alert colour",
     "testOnObs": "Test a combo on OBS",
-    "testSent": "Sent — check OBS (a ~35 s sample combo, not counted)."
+    "testSent": "Sent — check OBS (a ~35 s sample combo, not counted).",
+    "todoLink": "To-do list OBS link"
   }
 }

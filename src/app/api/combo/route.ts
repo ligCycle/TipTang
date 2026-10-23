@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cleanRows, COUNTDOWN_MS, isDifficulty, LIVE_MS, sizeAt, sizesFor, type LevelRow } from "@/lib/combo";
-import { difficultyOf, endIfExpiredTx, rowsOf, typicalFor } from "@/lib/combo-server";
+import { difficultyOf, endIfExpired, rowsOf, typicalFor } from "@/lib/combo-server";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 /** Everything the combo settings page shows, after applying any expired countdown. */
 async function settings(userId: string) {
   const now = new Date();
-  await prisma.$transaction((tx) => endIfExpiredTx(tx, userId, now));
+  await endIfExpired(userId, now);
   const u = await prisma.user.findUnique({
     where: { id: userId },
     select: {
