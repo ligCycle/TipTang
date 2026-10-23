@@ -167,3 +167,9 @@ test("voice limits and file extensions", () => {
   assert.equal(VOICE_MIN_BYTES, 1024);
   assert.deepEqual(VOICE_EXT, { "audio/webm": "weba", "audio/mp4": "m4a", "audio/ogg": "ogg" });
 });
+
+test("voiceBaseType ignores Object.prototype names", () => {
+  assert.equal(voiceBaseType("constructor"), null);
+  assert.equal(voiceBaseType("__proto__"), null);
+  assert.equal(voiceBaseType("toString"), null);
+});

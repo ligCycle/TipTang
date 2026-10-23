@@ -42,3 +42,8 @@ test("voice recordings: iOS audio/mp4 (ftyp), Chrome webm, Firefox ogg", () => {
   assert.ok(bytesMatchType("audio/webm", b(0x1a, 0x45, 0xdf, 0xa3)));
   assert.ok(bytesMatchType("audio/ogg", b("OggS")));
 });
+
+test("Object.prototype names are not file types", () => {
+  assert.equal(bytesMatchType("constructor", b("<html>")), false);
+  assert.equal(bytesMatchType("__proto__", b("<html>")), false);
+});

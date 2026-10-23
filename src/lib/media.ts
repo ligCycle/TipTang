@@ -164,7 +164,7 @@ export const VOICE_EXT: Record<VoiceType, string> = { "audio/webm": "weba", "aud
 /** "audio/webm;codecs=opus" → "audio/webm"; anything a recorder doesn't make → null. */
 export function voiceBaseType(type: string): VoiceType | null {
   const base = type.split(";")[0].trim().toLowerCase();
-  return base in VOICE_EXT ? (base as VoiceType) : null;
+  return Object.hasOwn(VOICE_EXT, base) ? (base as VoiceType) : null;
 }
 
 /** The length the fan's browser measured (display only — the player stops at 30 s). */

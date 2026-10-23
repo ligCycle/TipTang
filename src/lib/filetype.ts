@@ -37,7 +37,8 @@ CHECKS["audio/x-wav"] = CHECKS["audio/wav"];
 
 /** True when `bytes` look like `declaredType`. Unknown types never pass. */
 export function bytesMatchType(declaredType: string, bytes: Uint8Array): boolean {
-  const check = CHECKS[declaredType];
+  // Own keys only: "constructor" and friends are not file types.
+  const check = Object.hasOwn(CHECKS, declaredType) ? CHECKS[declaredType] : undefined;
   return check ? check(bytes) : false;
 }
 
