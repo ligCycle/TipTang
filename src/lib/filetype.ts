@@ -30,6 +30,8 @@ const CHECKS: Record<string, (b: Uint8Array) => boolean> = {
   // MP4 / ISO BMFF: a box size, then "ftyp".
   "video/mp4": (b) => startsWith(b, ascii("ftyp"), 4),
 };
+// Voice recorded on iPhone (AAC in an MP4 box).
+CHECKS["audio/mp4"] = CHECKS["video/mp4"];
 CHECKS["audio/mp3"] = CHECKS["audio/mpeg"];
 CHECKS["audio/x-wav"] = CHECKS["audio/wav"];
 

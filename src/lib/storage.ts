@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { VOICE_EXT, type VoiceType } from "@/lib/media";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -177,6 +178,34 @@ export async function signedSlipUrl(key: string, expiresIn = 60): Promise<string
   }
   // local dev: the uploads route serves LOCAL_DIR directly
   return `/api/uploads/${key}`;
+}
+
+/**
+ * Store a fan's voice message ("ฝากเสียง") in the PRIVATE slip bucket, like a
+ * slip: key only, played through short-lived signed URLs. `baseType` is the
+ * checked type without codec parameters (src/lib/media.ts voiceBaseType).
+ */
+export async function uploadVoice(file: File, baseType: VoiceType): Promise<string> {
+  const key = `voices/${randomUUID()}.${VOICE_EXT[baseType]}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+
+  if (DRIVER === "supabase") {
+    const { error } = await supabaseClient()
+      .storage.from(SLIP_BUCKET)
+      .upload(key, bytes, { contentType: baseType, upsert: false });
+    if (error) throw new Error(`Supabase voice upload failed: ${error.message}`);
+    return key;
+  }
+
+  const filePath = path.join(LOCAL_DIR, key);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, bytes);
+  return key;
+}
+
+/** Remove voice files (same private bucket as slips). False = try again later. */
+export async function deleteVoices(keys: (string | null | undefined)[]): Promise<boolean> {
+  return deleteSlipsBatch(keys.filter((k): k is string => Boolean(k)));
 }
 
 /** Remove a slip by key. Best-effort — never throws. */

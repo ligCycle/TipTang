@@ -35,3 +35,10 @@ test("unknown or empty never passes", () => {
   assert.equal(bytesMatchType("text/html", b("<html>")), false);
   assert.equal(bytesMatchType("image/png", new Uint8Array()), false);
 });
+
+test("voice recordings: iOS audio/mp4 (ftyp), Chrome webm, Firefox ogg", () => {
+  assert.ok(bytesMatchType("audio/mp4", b(0, 0, 0, 0x1c, "ftypM4A ")));
+  assert.equal(bytesMatchType("audio/mp4", b("OggS")), false);
+  assert.ok(bytesMatchType("audio/webm", b(0x1a, 0x45, 0xdf, 0xa3)));
+  assert.ok(bytesMatchType("audio/ogg", b("OggS")));
+});

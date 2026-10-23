@@ -147,3 +147,29 @@ export function mediaExtrasDrop(
   }
   return dropped;
 }
+
+// ---------------------------------------------------------------------------
+// "ฝากเสียง" (fan voice message), recorded in the browser.
+
+export const VOICE_MAX_SEC = 30;
+/** 30 s at 64 kbps is about 240 KB; 1 MB keeps slip + voice under the host's body limit. */
+export const VOICE_MAX_BYTES = 1_000_000;
+/** Anything smaller is an empty or broken recording. */
+export const VOICE_MIN_BYTES = 1024;
+export const VOICE_DEFAULT_MIN = 30;
+
+export type VoiceType = "audio/webm" | "audio/mp4" | "audio/ogg";
+export const VOICE_EXT: Record<VoiceType, string> = { "audio/webm": "weba", "audio/mp4": "m4a", "audio/ogg": "ogg" };
+
+/** "audio/webm;codecs=opus" → "audio/webm"; anything a recorder doesn't make → null. */
+export function voiceBaseType(type: string): VoiceType | null {
+  const base = type.split(";")[0].trim().toLowerCase();
+  return base in VOICE_EXT ? (base as VoiceType) : null;
+}
+
+/** The length the fan's browser measured (display only — the player stops at 30 s). */
+export function clampVoiceSec(v: unknown): number {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  if (!Number.isFinite(n)) return VOICE_MAX_SEC;
+  return Math.min(VOICE_MAX_SEC, Math.max(1, Math.round(n)));
+}

@@ -11,6 +11,12 @@ import {
   isVideoId,
   elapsedSec,
   TEST_VIDEO_ID,
+  voiceBaseType,
+  clampVoiceSec,
+  VOICE_EXT,
+  VOICE_MAX_SEC,
+  VOICE_MAX_BYTES,
+  VOICE_MIN_BYTES,
 } from "./media.ts";
 
 const ID = "dQw4w9WgXcQ";
@@ -136,4 +142,28 @@ test("cleanMediaTitle strips bidi/control characters and never splits a pair", (
   const t = cleanMediaTitle("a".repeat(199) + "😀😀");
   assert.ok(!/[\uD800-\uDBFF]$/.test(t));
   assert.ok(t.length <= 200);
+});
+
+test("voiceBaseType strips codec parameters and keeps only recorder formats", () => {
+  assert.equal(voiceBaseType("audio/webm;codecs=opus"), "audio/webm");
+  assert.equal(voiceBaseType("AUDIO/MP4"), "audio/mp4");
+  assert.equal(voiceBaseType("audio/ogg; codecs=opus"), "audio/ogg");
+  assert.equal(voiceBaseType("audio/mpeg"), null);
+  assert.equal(voiceBaseType("video/webm"), null);
+  assert.equal(voiceBaseType(""), null);
+});
+
+test("clampVoiceSec rounds into 1–30 and defaults to 30", () => {
+  assert.equal(clampVoiceSec("12.7"), 13);
+  assert.equal(clampVoiceSec(0), 1);
+  assert.equal(clampVoiceSec(99), 30);
+  assert.equal(clampVoiceSec("junk"), 30);
+  assert.equal(clampVoiceSec(null), 30);
+});
+
+test("voice limits and file extensions", () => {
+  assert.equal(VOICE_MAX_SEC, 30);
+  assert.equal(VOICE_MAX_BYTES, 1_000_000);
+  assert.equal(VOICE_MIN_BYTES, 1024);
+  assert.deepEqual(VOICE_EXT, { "audio/webm": "weba", "audio/mp4": "m4a", "audio/ogg": "ogg" });
 });

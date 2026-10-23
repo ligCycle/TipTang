@@ -11,6 +11,7 @@ const CONTENT_TYPES: Record<string, string> = {
   wav: "audio/wav",
   ogg: "audio/ogg",
   weba: "audio/webm",
+  m4a: "audio/mp4",
   mp4: "video/mp4",
   webm: "video/webm",
 };
@@ -20,6 +21,11 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
+  // Local storage is for development only: never serve stored files
+  // (slips, voice messages) from a production build.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   const { path } = await params;
   try {
     const file = await readLocalUpload(path);
