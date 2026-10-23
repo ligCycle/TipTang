@@ -23,6 +23,7 @@ export function MediaPicker({
   value,
   onChange,
   onUnsettled,
+  onOpen,
 }: {
   username: string;
   choice: MediaChoice;
@@ -32,6 +33,8 @@ export function MediaPicker({
   onChange: (next: ClipPick | null) => void;
   /** True while a link is typed but not (yet) a playable clip — the form waits. */
   onUnsettled: (unsettled: boolean) => void;
+  /** The fan ticked the clip option (the form clears a voice: one per tip). */
+  onOpen?: () => void;
 }) {
   const t = useTranslations("profile");
   const [open, setOpen] = useState(false);
@@ -71,6 +74,7 @@ export function MediaPicker({
 
   function toggle(next: boolean) {
     setOpen(next);
+    if (next) onOpen?.();
     if (!next) {
       onChange(null);
       setLink("");

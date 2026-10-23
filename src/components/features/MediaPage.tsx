@@ -83,6 +83,14 @@ export function MediaPage() {
     [],
   );
 
+  // The hub's "ฝากเสียง" card links to #voice: scroll there once the page has rendered.
+  const scrolled = useRef(false);
+  useEffect(() => {
+    if (!data || scrolled.current) return;
+    scrolled.current = true;
+    if (window.location.hash === "#voice") document.getElementById("voice")?.scrollIntoView();
+  }, [data]);
+
   useEffect(() => {
     fetchMedia().then((d) => d && setData(d));
     loadHub().then(setHub);
@@ -197,7 +205,18 @@ export function MediaPage() {
         </p>
         {r.message && <p className="truncate text-xs text-brand-900/50">“{r.message}”</p>}
         {listenId === r.id && (
-          <audio src={`/api/media/${r.id}/audio`} controls autoPlay className="mt-1 h-8 w-full max-w-xs" onEnded={() => setListenId(null)} />
+          <audio
+            src={`/api/media/${r.id}/audio`}
+            controls
+            autoPlay
+            preload="auto"
+            className="mt-1 h-8 w-full max-w-xs"
+            onEnded={() => setListenId(null)}
+            onError={() => {
+              setListenId(null);
+              setError(true);
+            }}
+          />
         )}
       </div>
       <div className="flex shrink-0 flex-wrap gap-1.5">

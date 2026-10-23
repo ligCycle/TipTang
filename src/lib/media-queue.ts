@@ -471,7 +471,7 @@ export async function mediaQueueListenUrl(userId: string, id: string): Promise<s
   if (!row) return null;
   if (row.tipId === null) return VOICE_TEST_URL;
   if (!row.audioKey) return null;
-  return signedSlipUrl(row.audioKey, 60).catch(() => null);
+  return signedSlipUrl(row.audioKey, 300).catch(() => null);
 }
 
 /** "ทดสอบบนจอ": one test request at the top of the queue (replaces an earlier test still waiting or playing). */

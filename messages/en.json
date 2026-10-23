@@ -211,7 +211,28 @@
     "mediaFinePrint": "Plays up to {minutes} min · some clips may not play on stream · the creator may skip or not play clips that aren't suitable",
     "mediaCleared": "This amount doesn't cover the clip, so it was removed",
     "mediaDropped": "Your clip didn't join the queue (the link didn't work, the amount was short, or the creator turned this off), but your tip went through.",
-    "mediaWait": "Wait for the clip link to be checked, or fix it (untick to tip without a clip)."
+    "mediaWait": "Wait for the clip link to be checked, or fix it (untick to tip without a clip).",
+    "mediaOneOf": "Pick one per tip",
+    "voiceOption": "Voice message",
+    "voiceOptionHint": "Record a short voice message to play on stream",
+    "voiceRecord": "Tap to record (up to {sec} seconds)",
+    "voiceRecording": "Recording... {sec} seconds left",
+    "voiceStop": "Stop",
+    "voiceRedo": "Record again",
+    "voiceDelete": "Delete",
+    "voiceLength": "{sec} seconds long",
+    "voiceTooShort": "That was too short — try again",
+    "voice_denied": "Microphone access was blocked. Allow the microphone in your browser and try again.",
+    "voice_nodevice": "No microphone found on this device",
+    "voice_unsupported": "This browser can't record audio — try Chrome or Safari",
+    "voiceInApp": "Open this page in Chrome or Safari to record (in-app browsers often can't use the microphone)",
+    "voiceCopyLink": "Copy link",
+    "voiceCopied": "Copied",
+    "voiceOpenBrowser": "Open in browser",
+    "voiceFinePrint": "Up to {sec} seconds · this will be played on stream · the creator listens first (or plays it automatically) · the file is deleted within 7 days after it plays",
+    "voiceWait": "Finish recording first (stop, then you can listen), or untick to tip without a voice message.",
+    "voiceCleared": "This amount doesn't cover the voice message, so it was removed",
+    "voiceDropped": "Your voice message didn't join the queue (the file didn't work, the amount was short, or the creator turned this off), but your tip went through."
   },
   "tipSuccess": {
     "title": "Tip sent!",
@@ -413,7 +434,8 @@
     "spinEmptyReset": "Reset wheel and confirm",
     "spinResetFailed": "Couldn’t reset — the wheel may have been deleted. You can confirm without a spin.",
     "wishBadge": "Helps: {name}",
-    "clipBadge": "Clip: {title}"
+    "clipBadge": "Clip: {title}",
+    "voiceBadge": "Voice {sec}s"
   },
   "settings": {
     "title": "Donate page settings",
@@ -719,7 +741,7 @@
     "lastUpdated": "Last updated: 30 September 2026",
     "intro": "TipTang (data controller — contact support@tiptang.com) cares about your privacy. This policy explains how we collect, use and protect your data under Thailand's Personal Data Protection Act (PDPA).",
     "s1Title": "Data we collect",
-    "s1Body": "• Account info: email, password (stored hashed — never the plain password), display name, bio, profile/cover images, social links\n• If you sign in with Google: the email, name and profile picture Google provides to us (we never see your Google password)\n• The creator's PromptPay ID (sensitive — stored securely server-side, never exposed to donors or the public)\n• Donation info: supporter name/message, amount, transfer-slip image, transaction reference\n• Reviews you post on the home page: the name you give, rating and comment\n• Technical info: IP address (for rate-limiting and security, not stored permanently), a cookie that keeps you signed in, and anonymous page-view statistics via Vercel Analytics",
+    "s1Body": "• Account info: email, password (stored hashed — never the plain password), display name, bio, profile/cover images, social links\n• If you sign in with Google: the email, name and profile picture Google provides to us (we never see your Google password)\n• The creator's PromptPay ID (sensitive — stored securely server-side, never exposed to donors or the public)\n• Donation info: supporter name/message, amount, transfer-slip image, transaction reference\n• Reviews you post on the home page: the name you give, rating and comment\n• Technical info: IP address (for rate-limiting and security, not stored permanently), a cookie that keeps you signed in, and anonymous page-view statistics via Vercel Analytics\n• If a supporter uses \"voice messages\": the audio file recorded in the browser (up to 30 seconds) is stored privately, can only be played by the creator whose page it was sent to and through that creator's OBS link, is used only to play it on stream, and is deleted within 7 days after it plays, is skipped or rejected (30 days after sending at most) — or straight away when the creator removes it from the queue, deletes the tip or deletes their account.",
     "s2Title": "How we use your data",
     "s2Body": "• To run the service — receive donations, show stream alerts, and your profile page\n• To confirm transfers and prevent slip reuse / fraud\n• To email creators when a new donation arrives\n• To maintain and secure the platform\nWe do not use your data for advertising and we do not sell it.",
     "s3Title": "Storage & security",
@@ -752,7 +774,7 @@
     "s7Title": "Governing law & contact",
     "s7Body": "These terms are governed by the laws of Thailand. For questions, contact support@tiptang.com",
     "randomTitle": "Fan features: random features, feature rewards and fan clip requests (e.g. the spin wheel, combo tip, clip requests)",
-    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task.\n• Combo tip rewards (unlocked when viewers tip together to reach a level) follow the same rules: no money, cash equivalents or items of monetary value, and the creator is responsible for delivering the rewards they set.\n• Clips or songs supporters request through \"clip requests\": the copyright and content of a clip are the responsibility of the requester and of the creator who chooses to play it on their stream. The creator may skip or not play any clip, and TipTang doesn't guarantee a clip will play on every platform."
+    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task.\n• Combo tip rewards (unlocked when viewers tip together to reach a level) follow the same rules: no money, cash equivalents or items of monetary value, and the creator is responsible for delivering the rewards they set.\n• Clips or songs supporters request through \"clip requests\": the copyright and content of a clip are the responsibility of the requester and of the creator who chooses to play it on their stream. The creator may skip or not play any clip, and TipTang doesn't guarantee a clip will play on every platform.\n• Voice messages supporters send through \"voice messages\": the sender must not record anything illegal, abusive or another person's personal details. The creator is responsible for what plays on their stream and may skip or not play any message. Voice files are stored privately and deleted within 7 days after they play, are skipped or rejected (30 days after sending at most)."
   },
   "featureHub": {
     "secLook": "Look",
@@ -940,7 +962,7 @@
     "f_media": "Clip requests",
     "d_media": "Fans attach a YouTube clip to a tip; you approve it and it plays on stream from a queue.",
     "f_voice": "Voice messages",
-    "d_voice": "Fans record a short voice message with their tip to play on stream — uses the same OBS link as clip requests."
+    "d_voice": "Fans record a short voice message with their tip to play on stream — uses the clip requests OBS link (in its settings)."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",
@@ -1179,13 +1201,13 @@
     "voiceMinAmount": "Minimum tip per voice message (THB)",
     "voiceAutoHint": "Voice messages go straight into the queue without approval (you can always skip).",
     "voiceAutoLabel": "Auto-approve voice messages",
-    "voiceKeepHint": "Voice files are kept private and deleted automatically 7 days after they play, are skipped or rejected (30 days at most) · removing one from the queue deletes it at once.",
+    "voiceKeepHint": "Voice files are kept private and deleted automatically 7 days after they play, are skipped or rejected (30 days at most). Removing one from the queue deletes it.",
     "voiceTest": "Test a voice on stream",
     "voiceTestWaits": "Test sound added — it plays once voice messages are on and the queue isn't on hold.",
     "voiceWarnTitle": "Before you auto-approve voice messages",
     "voiceWarn1": "Voice messages fans record will play on stream right away, without you hearing them first.",
     "voiceWarn2": "They may contain swearing, inappropriate sounds or someone else's personal details.",
-    "voiceWarn3": "You're responsible for what plays on your stream, and streaming platforms may penalise your channel for content that breaks their rules.",
+    "voiceWarn3": "You're responsible for what plays on your stream, and streaming platforms may penalize your channel for content that breaks their rules.",
     "voiceWarn4": "You can skip any voice message at any time and turn auto-approve off whenever you like.",
     "voiceWarnAccept": "I understand and accept the risk of playing voices I haven't heard first"
   }

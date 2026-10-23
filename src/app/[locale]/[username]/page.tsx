@@ -18,6 +18,7 @@ import { clampSlots, taskOdds } from "@/lib/wheel";
 import { wheelForFans } from "@/lib/wheel-server";
 import { goalItems } from "@/lib/goal-server";
 import { mainItem } from "@/lib/wishlist";
+import { VOICE_MAX_SEC } from "@/lib/media";
 import { jsonLdString } from "@/lib/jsonld";
 
 export async function generateMetadata({
@@ -102,6 +103,8 @@ export default async function ProfilePage({
       mediaEnabled: true,
       mediaMinAmount: true,
       mediaMaxSec: true,
+      voiceEnabled: true,
+      voiceMinAmount: true,
       socialLinks: true,
       profileColor: true,
       timerEnabled: true,
@@ -391,6 +394,7 @@ export default async function ProfilePage({
             wheelChoice={wheelChoice}
             wishChoice={wishChoice}
             mediaChoice={canTip && creator.mediaEnabled ? { minAmount: creator.mediaMinAmount, maxSec: creator.mediaMaxSec } : null}
+            voiceChoice={canTip && creator.voiceEnabled ? { minAmount: creator.voiceMinAmount, maxSec: VOICE_MAX_SEC } : null}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">

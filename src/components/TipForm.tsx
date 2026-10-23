@@ -10,6 +10,7 @@ import { SoundPicker, type SoundChoice } from "@/components/SoundPicker";
 import { WheelPicker, type WheelChoice } from "@/components/WheelPicker";
 import { WishPicker, type WishChoiceItem } from "@/components/WishPicker";
 import { MediaPicker, type ClipPick, type MediaChoice } from "@/components/MediaPicker";
+import { VoicePicker, type VoiceChoice, type VoicePick } from "@/components/VoiceRecorder";
 import { extrasFloor } from "@/lib/wishlist";
 import { mediaExtrasDrop } from "@/lib/media";
 
@@ -45,6 +46,7 @@ export function TipForm({
   wheelChoice = null,
   wishChoice = null,
   mediaChoice = null,
+  voiceChoice = null,
 }: {
   username: string;
   creatorName: string;
@@ -65,6 +67,8 @@ export function TipForm({
   wishChoice?: WishChoiceItem[] | null;
   /** "ขอคลิป/เพลง" when the creator has it on; null = hidden. */
   mediaChoice?: MediaChoice | null;
+  /** "ฝากเสียง" when the creator has it on; null = hidden. */
+  voiceChoice?: VoiceChoice | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -128,9 +132,31 @@ export function TipForm({
     if (!v) setClipWait(false);
   }, []);
   const [mediaDropped, setMediaDropped] = useState(false);
+  // "ฝากเสียง": ticked, the recording, and "continue" waiting on a recording.
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voice, setVoice] = useState<VoicePick | null>(null);
+  const [voiceDropped, setVoiceDropped] = useState(false);
+  const [voiceNote, setVoiceNote] = useState(false);
+  const [voiceStop, setVoiceStop] = useState(0);
+  const [voiceWait, setVoiceWait] = useState(false);
+  const voiceUnsettled = useRef(false);
+  const onVoiceUnsettled = useCallback((v: boolean) => {
+    voiceUnsettled.current = v;
+  }, []);
+  function clearVoice() {
+    setVoice((cur) => {
+      if (cur) URL.revokeObjectURL(cur.url);
+      return null;
+    });
+    setVoiceOn(false);
+    setVoiceWait(false);
+  }
   const pickedSound = soundChoices?.find((c) => c.id === pickedSoundId) ?? null;
   const spinPrice = spin && wheelChoice ? wheelChoice.price : 0;
   const clipPrice = clip && mediaChoice ? mediaChoice.minAmount : 0;
+  // One fan media per tip: the clip or the voice fills the same price slot.
+  const voicePrice = voiceOn && voiceChoice ? voiceChoice.minAmount : 0;
+  const mediaPrice = clipPrice || voicePrice;
 
   // A pick the amount no longer covers is cleared (never the other way round
   // — the amount isn't raised): the clip first, then the spin, then the sound
@@ -142,14 +168,19 @@ export function TipForm({
   // Returns whether anything was cleared.
   function checkPick(n: number): boolean {
     const drop = mediaExtrasDrop(n, minAmount, {
-      media: clip && mediaChoice ? mediaChoice.minAmount : null,
+      media: clip && mediaChoice ? mediaChoice.minAmount : voiceOn && voiceChoice ? voiceChoice.minAmount : null,
       wheel: spin && wheelChoice ? wheelChoice.price : null,
       sound: pickedSound ? pickedSound.minAmount : null,
     });
     if (drop.includes("media")) {
-      setClip(null);
-      setClipKey((k) => k + 1);
-      setClipNote(true);
+      if (voiceOn) {
+        clearVoice();
+        setVoiceNote(true);
+      } else {
+        setClip(null);
+        setClipKey((k) => k + 1);
+        setClipNote(true);
+      }
     }
     if (drop.includes("wheel")) {
       setSpin(false);
@@ -192,6 +223,12 @@ export function TipForm({
     }
     if (mediaChoice && clipUnsettled.current) {
       setClipWait(true);
+      return;
+    }
+    // Ticked but not recorded yet, or still recording: stop (it's kept) and wait.
+    if (voiceChoice && voiceOn && (voiceUnsettled.current || !voice)) {
+      if (voiceUnsettled.current) setVoiceStop((n) => n + 1);
+      setVoiceWait(true);
       return;
     }
     if (method === "PAYPAL") {
@@ -258,10 +295,25 @@ export function TipForm({
         fd.set("mediaVideoId", clip.videoId);
         fd.set("mediaStart", String(clip.startSec));
       }
+      if (voice && voiceOn && voiceChoice) {
+        // The host refuses bodies over ~4.5 MB: say so before sending.
+        if (slip.size + voice.blob.size > 4.2 * 1024 * 1024) {
+          setError(tErr("tooLarge"));
+          return;
+        }
+        const ext = voice.type.includes("mp4") ? "m4a" : voice.type.includes("ogg") ? "ogg" : "weba";
+        fd.set("voice", new File([voice.blob], `voice.${ext}`, { type: voice.type }));
+        fd.set("voiceSec", String(voice.sec));
+      }
       fd.set("slip", slip);
 
       const res = await fetch("/api/tips", { method: "POST", body: fd });
       if (!res.ok) {
+        // An over-size body is refused by the host before our route answers.
+        if (res.status === 413) {
+          setError(tErr("tooLarge"));
+          return;
+        }
         const data = await res.json().catch(() => ({}));
         const map: Record<string, string> = {
           too_large: tErr("tooLarge"),
@@ -281,6 +333,7 @@ export function TipForm({
       setPickDropped(Boolean(data.pickDropped));
       setSpinDropped(Boolean(data.spinDropped));
       setMediaDropped(Boolean(data.mediaDropped));
+      setVoiceDropped(Boolean(data.voiceDropped));
       setStep("done");
     } catch {
       setError(tErr("notFound"));
@@ -309,6 +362,9 @@ export function TipForm({
     setClipKey((k) => k + 1);
     setClipNote(false);
     setMediaDropped(false);
+    clearVoice();
+    setVoiceNote(false);
+    setVoiceDropped(false);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -376,6 +432,11 @@ export function TipForm({
         {mediaDropped && (
           <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
             {t("mediaDropped")}
+          </p>
+        )}
+        {voiceDropped && (
+          <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
+            {t("voiceDropped")}
           </p>
         )}
         <button onClick={reset} className="btn-secondary mt-6">
@@ -469,9 +530,11 @@ export function TipForm({
             <WishPicker items={wishChoice} value={wishItemId} onChange={setWishItemId} />
           )}
 
-          {mediaChoice && (
-            <div>
-              <p className="mb-2 text-sm font-medium text-brand-900/80">{t("mediaLabel")}</p>
+          {(mediaChoice || voiceChoice) && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-brand-900/80">{t("mediaLabel")}</p>
+              {mediaChoice && voiceChoice && <p className="text-xs text-brand-900/55">{t("mediaOneOf")}</p>}
+              {mediaChoice && (
               <MediaPicker
                 key={clipKey}
                 username={username}
@@ -484,7 +547,11 @@ export function TipForm({
                   setClipNote(false);
                 }}
                 onUnsettled={onClipUnsettled}
+                onOpen={() => {
+                  if (voiceOn) clearVoice();
+                }}
               />
+              )}
               {clipWait && (
                 <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
                   {t("mediaWait")}
@@ -493,6 +560,40 @@ export function TipForm({
               {clipNote && (
                 <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
                   {t("mediaCleared")}
+                </p>
+              )}
+              {voiceChoice && (
+                <VoicePicker
+                  choice={voiceChoice}
+                  amount={amount}
+                  floor={extrasFloor(minAmount, [voiceChoice.minAmount, pickedSound?.minAmount ?? null, spinPrice])}
+                  checked={voiceOn}
+                  onCheck={(next) => {
+                    if (next) {
+                      // One per tip: a clip goes.
+                      setClip(null);
+                      setClipKey((k) => k + 1);
+                      setVoiceOn(true);
+                      setVoiceNote(false);
+                    } else clearVoice();
+                  }}
+                  value={voice}
+                  onChange={(next) => {
+                    setVoice(next);
+                    if (next) setVoiceWait(false);
+                  }}
+                  onUnsettled={onVoiceUnsettled}
+                  stopSignal={voiceStop}
+                />
+              )}
+              {voiceWait && (
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
+                  {t("voiceWait")}
+                </p>
+              )}
+              {voiceNote && (
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
+                  {t("voiceCleared")}
                 </p>
               )}
             </div>
@@ -504,7 +605,7 @@ export function TipForm({
               <WheelPicker
                 wheel={wheelChoice}
                 amount={amount}
-                floor={extrasFloor(minAmount, [wheelChoice.price, pickedSound?.minAmount ?? null, clipPrice])}
+                floor={extrasFloor(minAmount, [wheelChoice.price, pickedSound?.minAmount ?? null, mediaPrice])}
                 checked={spin}
                 onChange={(next) => {
                   setSpin(next);
@@ -526,7 +627,7 @@ export function TipForm({
                 setName={soundSetName ?? ""}
                 amount={amount}
                 creatorMin={minAmount}
-                addOn={spinPrice + clipPrice}
+                addOn={spinPrice + mediaPrice}
                 value={pickedSoundId}
                 onChange={(id) => {
                   setPickedSoundId(id);
