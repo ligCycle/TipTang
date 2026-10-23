@@ -37,8 +37,8 @@ export function WishPicker({
 
   return (
     <fieldset>
-      <legend className="mb-2 block text-sm font-medium text-brand-900/80">{t("wishLabel")}</legend>
-      <div className="space-y-1.5" role="radiogroup">
+      <legend id="wish-picker-label" className="mb-2 block text-sm font-medium text-brand-900/80">{t("wishLabel")}</legend>
+      <div className="space-y-1.5" role="radiogroup" aria-labelledby="wish-picker-label">
         <button type="button" role="radio" aria-checked={value === null} onClick={() => onChange(null)} className={row(value === null)}>
           {dot(value === null)}
           <span className="min-w-0">

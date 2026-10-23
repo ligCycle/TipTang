@@ -16,7 +16,7 @@ import { CreatorTheme } from "@/components/CreatorTheme";
 import { libraryNumber } from "@/lib/alert-sets";
 import { clampSlots, taskOdds } from "@/lib/wheel";
 import { wheelForFans } from "@/lib/wheel-server";
-import { goalSettings } from "@/lib/goal-server";
+import { goalItems } from "@/lib/goal-server";
 import { mainItem } from "@/lib/wishlist";
 import { jsonLdString } from "@/lib/jsonld";
 
@@ -97,6 +97,8 @@ export default async function ProfilePage({
       goalTitle: true,
       goalAmount: true,
       goalStartedAt: true,
+      goalType: true,
+      goalOverlayEnabled: true,
       socialLinks: true,
       profileColor: true,
       timerEnabled: true,
@@ -184,7 +186,7 @@ export default async function ProfilePage({
 
   const canTip = Boolean(creator.promptpayId && creator.promptpayId.length > 0);
 
-  const [tips, raised, topSupportersList, shopItemsRaw] = await Promise.all([
+  const [tips, raised, topSupportersList, shopItemsRaw, wishItems] = await Promise.all([
     prisma.tip.findMany({
       where: {
         creatorId: creator.id,
@@ -223,6 +225,8 @@ export default async function ProfilePage({
           },
         })
       : Promise.resolve([]),
+    // Goal "หลายชิ้น" items with their totals; single goals skip this.
+    creator.goalType === "multi" ? goalItems(prisma, creator.id, creator.goalStartedAt) : Promise.resolve(null),
   ]);
 
   const shopItems = shopItemsRaw.map((s) => ({
@@ -240,10 +244,8 @@ export default async function ProfilePage({
   // Goal "หลายชิ้น": fans pick an item in the form when 2+ items are open
   // (and the card is on); the sidebar block then steps aside. Otherwise the
   // block shows the single goal as always, or the main item.
-  const goal = await goalSettings(creator.id);
-  const wishItems = goal?.type === "multi" ? goal.items : null;
   const wishChoice =
-    goal?.enabled && wishItems && wishItems.filter((i) => !i.full).length >= 2
+    canTip && creator.goalOverlayEnabled && wishItems && wishItems.filter((i) => !i.full).length >= 2
       ? wishItems.map((i) => ({ id: i.id, name: i.name, price: i.price, raised: i.raised, imageUrl: i.imageUrl, full: i.full }))
       : null;
   const blockItem = wishItems && !wishChoice ? mainItem(wishItems) : null;
