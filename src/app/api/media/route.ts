@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isMaxSec } from "@/lib/media";
-import { mediaQueueList, mediaQueueTest, MEDIA_SEEN_MS, setMediaEnabled } from "@/lib/media-queue";
+import { mediaQueueList, mediaQueueTest, MEDIA_SEEN_MS, setMediaEnabled, setVoiceEnabled } from "@/lib/media-queue";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -24,6 +24,10 @@ async function state(userId: string) {
       mediaColor: true,
       alertColor: true,
       minTipAmount: true,
+      voiceEnabled: true,
+      voiceMinAmount: true,
+      voiceAutoApprove: true,
+      voiceAutoAckAt: true,
     },
   });
   if (!u) return null;
@@ -39,6 +43,12 @@ async function state(userId: string) {
     color: u.mediaColor,
     alertColor: u.alertColor,
     creatorMin: u.minTipAmount,
+    voice: {
+      enabled: u.voiceEnabled,
+      minAmount: u.voiceMinAmount,
+      autoApprove: u.voiceAutoApprove,
+      autoAcked: u.voiceAutoAckAt !== null,
+    },
     live: Boolean(u.mediaSeenAt && u.mediaSeenAt.getTime() >= now.getTime() - MEDIA_SEEN_MS),
     queue: await mediaQueueList(userId, now),
   };
@@ -76,6 +86,9 @@ export async function PATCH(req: Request) {
     mediaVolume?: number;
     mediaPaused?: boolean;
     mediaColor?: string | null;
+    voiceMinAmount?: number;
+    voiceAutoApprove?: boolean;
+    voiceAutoAckAt?: Date;
   } = {};
   let enabled: boolean | undefined;
   if (body.enabled !== undefined) {
@@ -113,7 +126,29 @@ export async function PATCH(req: Request) {
       }
     }
   }
+  // "ฝากเสียง": its own switch, minimum and auto-approve (with its own warning).
+  let voiceEnabled: boolean | undefined;
+  if (body.voiceEnabled !== undefined) {
+    if (typeof body.voiceEnabled !== "boolean") return bad();
+    voiceEnabled = body.voiceEnabled;
+  }
+  if (body.voiceMinAmount !== undefined) {
+    if (!intIn(body.voiceMinAmount, 1, 100_000)) return bad();
+    data.voiceMinAmount = body.voiceMinAmount;
+  }
+  if (body.voiceAutoApprove !== undefined) {
+    if (typeof body.voiceAutoApprove !== "boolean") return bad();
+    data.voiceAutoApprove = body.voiceAutoApprove;
+    if (body.voiceAutoApprove) {
+      if (body.voiceAck === true) data.voiceAutoAckAt = new Date();
+      else {
+        const u = await prisma.user.findUnique({ where: { id: user.id }, select: { voiceAutoAckAt: true } });
+        if (!u?.voiceAutoAckAt) return NextResponse.json({ error: "voice_ack_required" }, { status: 409 });
+      }
+    }
+  }
   await prisma.user.update({ where: { id: user.id }, data });
+  if (voiceEnabled !== undefined) await setVoiceEnabled(user.id, voiceEnabled);
   // On/off goes through the queue (a clip playing goes back to the top).
   if (enabled !== undefined) await setMediaEnabled(user.id, enabled);
   return NextResponse.json(await state(user.id));

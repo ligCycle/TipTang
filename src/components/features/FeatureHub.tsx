@@ -39,6 +39,7 @@ export async function loadHub(): Promise<HubState | null> {
       wheelEnabled: Boolean(d.wheelEnabled),
       comboEnabled: Boolean(d.comboEnabled),
       mediaEnabled: Boolean(d.mediaEnabled),
+      voiceEnabled: Boolean(d.voiceEnabled),
     },
     featuresOnboardedAt: d.featuresOnboardedAt ?? null,
     wheelRulesAccepted: Boolean(d.wheelRulesAccepted),

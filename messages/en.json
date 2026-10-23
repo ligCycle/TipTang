@@ -938,7 +938,9 @@
     "f_combo": "Combo tip",
     "d_combo": "Fans tip in a row to fill the bar, level up and unlock the rewards you set, live on stream.",
     "f_media": "Clip requests",
-    "d_media": "Fans attach a YouTube clip to a tip; you approve it and it plays on stream from a queue."
+    "d_media": "Fans attach a YouTube clip to a tip; you approve it and it plays on stream from a queue.",
+    "f_voice": "Voice messages",
+    "d_voice": "Fans record a short voice message with their tip to play on stream — uses the same OBS link as clip requests."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",
@@ -1169,6 +1171,22 @@
     "warnAccept": "I understand and accept the copyright risk",
     "warnConfirm": "Turn on auto-approve",
     "volumeLabel": "Clip volume",
-    "untitled": "YouTube clip"
+    "untitled": "YouTube clip",
+    "voiceRow": "Voice message, {sec}s",
+    "voiceTestRow": "Test sound",
+    "listen": "Listen",
+    "voiceHow": "Fans record a short voice message (up to 30 seconds) with their tip. It joins the same queue as clips and plays through the same OBS link. You can press \"Listen\" before approving.",
+    "voiceMinAmount": "Minimum tip per voice message (THB)",
+    "voiceAutoHint": "Voice messages go straight into the queue without approval (you can always skip).",
+    "voiceAutoLabel": "Auto-approve voice messages",
+    "voiceKeepHint": "Voice files are kept private and deleted automatically 7 days after they play, are skipped or rejected (30 days at most) · removing one from the queue deletes it at once.",
+    "voiceTest": "Test a voice on stream",
+    "voiceTestWaits": "Test sound added — it plays once voice messages are on and the queue isn't on hold.",
+    "voiceWarnTitle": "Before you auto-approve voice messages",
+    "voiceWarn1": "Voice messages fans record will play on stream right away, without you hearing them first.",
+    "voiceWarn2": "They may contain swearing, inappropriate sounds or someone else's personal details.",
+    "voiceWarn3": "You're responsible for what plays on your stream, and streaming platforms may penalise your channel for content that breaks their rules.",
+    "voiceWarn4": "You can skip any voice message at any time and turn auto-approve off whenever you like.",
+    "voiceWarnAccept": "I understand and accept the risk of playing voices I haven't heard first"
   }
 }

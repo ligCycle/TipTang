@@ -24,12 +24,16 @@ type MediaState = {
   color: string | null;
   alertColor: string | null;
   creatorMin: number;
+  voice: { enabled: boolean; minAmount: number; autoApprove: boolean; autoAcked: boolean };
   live: boolean;
   queue: { playing: MediaListRow[]; pending: MediaListRow[]; upNext: MediaListRow[]; history: MediaListRow[] };
 };
 
 const QUEUE_REFRESH_MS = 5000;
-const WARNINGS = ["warn1", "warn2", "warn3", "warn4"] as const;
+const WARNINGS = {
+  clip: ["warn1", "warn2", "warn3", "warn4"],
+  voice: ["voiceWarn1", "voiceWarn2", "voiceWarn3", "voiceWarn4"],
+} as const;
 
 async function fetchMedia(): Promise<MediaState | null> {
   const res = await fetch("/api/media", { cache: "no-store" }).catch(() => null);
@@ -45,9 +49,10 @@ function Modal({ children, label }: { children: React.ReactNode; label: string }
 }
 
 /**
- * "ขอคลิป/เพลง" settings: the queue of fans' clips (approve, skip, move up,
- * remove), the rules (minimum, length, auto-approve behind a copyright
- * warning, volume, pause) and the OBS link with colour and a test clip.
+ * "ขอคลิป/เพลง" + "ฝากเสียง" settings: the queue of fans' clips and voice
+ * messages (listen, approve, skip, move up, remove), the clip rules (minimum,
+ * length, auto-approve behind a copyright warning, volume, pause), the OBS
+ * link with colour and a test, and the voice card's own rules (#voice).
  */
 export function MediaPage() {
   const t = useTranslations("mediaPage");
@@ -57,10 +62,13 @@ export function MediaPage() {
   const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [warnOpen, setWarnOpen] = useState(false);
+  // Which auto-approve warning is open (each card has its own consent).
+  const [warnOpen, setWarnOpen] = useState<"clip" | "voice" | null>(null);
+  // Voice message the creator is listening to.
+  const [listenId, setListenId] = useState<string | null>(null);
   const [understood, setUnderstood] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [test, setTest] = useState<"sent" | "failed" | null>(null);
+  const [test, setTest] = useState<{ kind: "clip" | "voice"; ok: boolean } | null>(null);
   const [acking, setAcking] = useState(false);
   const [ackFailed, setAckFailed] = useState(false);
   // The slider moves freely; the value saves shortly after it stops.
@@ -117,14 +125,14 @@ export function MediaPage() {
     setBusyId(null);
   }
 
-  async function testOnObs() {
+  async function testOnObs(kind: "clip" | "voice") {
     setTest(null);
     const res = await fetch("/api/media", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "test" }),
+      body: JSON.stringify({ action: "test", kind }),
     }).catch(() => null);
-    setTest(res?.ok ? "sent" : "failed");
+    setTest({ kind, ok: Boolean(res?.ok) });
     const d = res?.ok ? ((await res.json()) as MediaState) : null;
     if (d) setData((cur) => (cur ? { ...cur, queue: d.queue } : d));
   }
@@ -138,14 +146,15 @@ export function MediaPage() {
     }, 400);
   }
 
-  function setAuto(next: boolean) {
-    if (next && !data?.autoAcked) {
+  function setAuto(kind: "clip" | "voice", next: boolean) {
+    const acked = kind === "voice" ? data?.voice.autoAcked : data?.autoAcked;
+    if (next && !acked) {
       setUnderstood(false);
       setAckFailed(false);
-      setWarnOpen(true);
+      setWarnOpen(kind);
       return;
     }
-    void save({ autoApprove: next });
+    void save(kind === "voice" ? { voiceAutoApprove: next } : { autoApprove: next });
   }
 
   if (!data) return null;
@@ -166,17 +175,39 @@ export function MediaPage() {
   const btn = "rounded-full border px-2.5 py-1 text-xs font-semibold disabled:opacity-50";
   const row = (r: MediaListRow, actions: React.ReactNode) => (
     <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 p-2">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`https://i.ytimg.com/vi/${r.videoId}/mqdefault.jpg`} alt="" className="h-12 w-20 shrink-0 rounded-lg bg-brand-100 object-cover" />
+      {r.kind === "voice" ? (
+        <span className="grid h-12 w-20 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700">
+          <Icon name="mic" className="h-5 w-5" />
+        </span>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={`https://i.ytimg.com/vi/${r.videoId}/mqdefault.jpg`} alt="" className="h-12 w-20 shrink-0 rounded-lg bg-brand-100 object-cover" />
+      )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-brand-900">{r.title || (r.test ? t("testRow") : t("untitled"))}</p>
+        <p className="truncate text-sm font-semibold text-brand-900">
+          {r.kind === "voice"
+            ? r.test
+              ? t("voiceTestRow")
+              : t("voiceRow", { sec: r.durationSec ?? 0 })
+            : r.title || (r.test ? t("testRow") : t("untitled"))}
+        </p>
         <p className="truncate text-xs text-brand-900/60">
           {r.test ? t("testRow") : t("by", { fan: r.fan || t("anonymous"), amount: r.amount.toLocaleString() })}
           {r.startSec > 0 && ` · ${t("startsAt", { time: clock(r.startSec) })}`}
         </p>
         {r.message && <p className="truncate text-xs text-brand-900/50">“{r.message}”</p>}
+        {listenId === r.id && (
+          <audio src={`/api/media/${r.id}/audio`} controls autoPlay className="mt-1 h-8 w-full max-w-xs" onEnded={() => setListenId(null)} />
+        )}
       </div>
-      <div className="flex shrink-0 flex-wrap gap-1.5">{actions}</div>
+      <div className="flex shrink-0 flex-wrap gap-1.5">
+        {r.kind === "voice" && r.hasAudio && listenId !== r.id && (
+          <button type="button" onClick={() => setListenId(r.id)} className={`${btn} border-brand-300 text-brand-700 hover:bg-brand-100`}>
+            {t("listen")}
+          </button>
+        )}
+        {actions}
+      </div>
     </li>
   );
 
@@ -331,7 +362,7 @@ export function MediaPage() {
             <p className="text-sm font-semibold text-brand-900">{t("autoApprove")}</p>
             <p className="text-xs text-brand-900/60">{t("autoApproveHint")}</p>
           </div>
-          <Switch checked={data.autoApprove} onChange={setAuto} label={t("autoApprove")} />
+          <Switch checked={data.autoApprove} onChange={(next) => setAuto("clip", next)} label={t("autoApprove")} />
         </div>
 
         <label className="block">
@@ -382,22 +413,65 @@ export function MediaPage() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={testOnObs} className="btn-primary px-4 py-2 text-sm">
+          <button type="button" onClick={() => testOnObs("clip")} className="btn-primary px-4 py-2 text-sm">
             {t("testOnObs")}
           </button>
-          {test && (
-            <span className={`text-xs ${test === "sent" ? "text-emerald-700" : "text-red-600"}`}>
-              {test === "sent" ? (data.enabled && !data.paused ? t("testSent") : t("testWaits")) : t("saveFailed")}
+          {test?.kind === "clip" && (
+            <span className={`text-xs ${test.ok ? "text-emerald-700" : "text-red-600"}`}>
+              {test.ok ? (data.enabled && !data.paused ? t("testSent") : t("testWaits")) : t("saveFailed")}
+            </span>
+          )}
+        </div>
+      </section>
+
+      <section id="voice" className="scroll-mt-20 space-y-4 rounded-2xl border border-brand-200 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-bold text-brand-900">④ {tHub("f_voice")}</h2>
+          <span className="flex items-center gap-2 text-sm font-semibold text-brand-900/75">
+            {tHub("enable")}
+            <Switch checked={data.voice.enabled} onChange={(next) => void save({ voiceEnabled: next })} label={tHub("f_voice")} />
+          </span>
+        </div>
+        <p className="text-sm text-brand-900/65">{t("voiceHow")}</p>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-brand-900/80">{t("voiceMinAmount")}</span>
+          <AutoSaveInput
+            value={String(data.voice.minAmount)}
+            ariaLabel={t("voiceMinAmount")}
+            inputMode="numeric"
+            className="w-28!"
+            save={(v) => {
+              const n = Number(v);
+              if (!Number.isInteger(n) || n < 1 || n > 100_000) return Promise.resolve(false);
+              return save({ voiceMinAmount: n });
+            }}
+          />
+        </label>
+        <div className="flex items-start justify-between gap-3 rounded-xl bg-brand-50 p-3">
+          <div>
+            <p className="text-sm font-semibold text-brand-900">{t("autoApprove")}</p>
+            <p className="text-xs text-brand-900/60">{t("voiceAutoHint")}</p>
+          </div>
+          <Switch checked={data.voice.autoApprove} onChange={(next) => setAuto("voice", next)} label={t("voiceAutoLabel")} />
+        </div>
+        <p className="text-xs text-brand-900/55">{t("voiceKeepHint")}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => testOnObs("voice")} className="btn-secondary px-4 py-2 text-sm">
+            {t("voiceTest")}
+          </button>
+          {test?.kind === "voice" && (
+            <span className={`text-xs ${test.ok ? "text-emerald-700" : "text-red-600"}`}>
+              {test.ok ? (data.voice.enabled && !data.paused ? t("testSent") : t("voiceTestWaits")) : t("saveFailed")}
             </span>
           )}
         </div>
       </section>
 
       {warnOpen && (
-        <Modal label={t("warnTitle")}>
-          <h2 className="text-lg font-extrabold text-brand-900">{t("warnTitle")}</h2>
+        <Modal label={t(warnOpen === "voice" ? "voiceWarnTitle" : "warnTitle")}>
+          <h2 className="text-lg font-extrabold text-brand-900">{t(warnOpen === "voice" ? "voiceWarnTitle" : "warnTitle")}</h2>
           <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-brand-900/80">
-            {WARNINGS.map((w) => (
+            {WARNINGS[warnOpen].map((w) => (
               <li key={w}>{t(w)}</li>
             ))}
           </ul>
@@ -408,11 +482,11 @@ export function MediaPage() {
               onChange={(e) => setUnderstood(e.target.checked)}
               className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
             />
-            {t("warnAccept")}
+            {t(warnOpen === "voice" ? "voiceWarnAccept" : "warnAccept")}
           </label>
           {ackFailed && <p className="mt-2 text-sm font-medium text-red-600">{t("saveFailed")}</p>}
           <div className="mt-5 flex justify-end gap-2">
-            <button type="button" onClick={() => setWarnOpen(false)} className="btn-secondary px-4 py-2 text-sm">
+            <button type="button" onClick={() => setWarnOpen(null)} className="btn-secondary px-4 py-2 text-sm">
               {tc("cancel")}
             </button>
             <button
@@ -421,9 +495,11 @@ export function MediaPage() {
               onClick={async () => {
                 setAcking(true);
                 setAckFailed(false);
-                const ok = await save({ autoApprove: true, ack: true });
+                const ok = await save(
+                  warnOpen === "voice" ? { voiceAutoApprove: true, voiceAck: true } : { autoApprove: true, ack: true },
+                );
                 setAcking(false);
-                if (ok) setWarnOpen(false);
+                if (ok) setWarnOpen(null);
                 else setAckFailed(true);
               }}
               className="btn-primary px-4 py-2 text-sm"

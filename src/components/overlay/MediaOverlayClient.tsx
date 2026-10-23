@@ -194,8 +194,10 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
         if (started) void report("ended");
       });
       el.addEventListener("error", () => void report("error"));
-      el.play().catch(() => {
-        // A normal browser tab blocks sound until a click; OBS doesn't.
+      el.play().catch((e: unknown) => {
+        // A normal browser tab blocks sound until a click; OBS doesn't. A
+        // play cut short because this voice was skipped is not that.
+        if (audio.current !== el || (e instanceof DOMException && e.name === "AbortError")) return;
         if (!window.obsstudio) setNeedsClick(true);
       });
       return undefined;
@@ -289,13 +291,17 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
               <Icon name="mic" className="h-8 w-8" />
             </span>
             <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/15">
+              {/* A fresh bar when playback begins, filling over the voice's length. */}
+              <style>{"@keyframes media-voice-bar{from{width:0%}to{width:100%}}"}</style>
               <div
                 key={voiceStart ?? 0}
                 className="h-full rounded-full"
                 style={{
                   background: color,
-                  width: voiceStart ? "100%" : "0%",
-                  transition: voiceStart ? `width ${Math.min(current.durationSec ?? current.maxSec, current.maxSec)}s linear` : "none",
+                  width: voiceStart ? undefined : "0%",
+                  animation: voiceStart
+                    ? `media-voice-bar ${Math.min(current.durationSec ?? current.maxSec, current.maxSec)}s linear forwards`
+                    : undefined,
                 }}
               />
             </div>

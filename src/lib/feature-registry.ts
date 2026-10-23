@@ -6,7 +6,7 @@ import type { FeatureFlags } from "@/lib/feature-presets";
  * settings page under /dashboard/features/<id>, and one overlay widget.
  * Message keys: featureHub.f_<id> (name) and featureHub.d_<id> (one line).
  */
-export type FeatureId = "alerts" | "goal" | "subathon" | "soundpick" | "wheel" | "combo" | "media";
+export type FeatureId = "alerts" | "goal" | "subathon" | "soundpick" | "wheel" | "combo" | "media" | "voice";
 
 export type FeatureDef = {
   id: FeatureId;
@@ -17,7 +17,7 @@ export type FeatureDef = {
   /** Adds something to the fan donation page (orange tag on the card). */
   fanPage: boolean;
   /** The /api/overlay/asset kind that switches it. */
-  toggleKind: "alertsToggle" | "goalToggle" | "timerToggle" | "soundPickToggle" | "wheelToggle" | "comboToggle" | "mediaToggle";
+  toggleKind: "alertsToggle" | "goalToggle" | "timerToggle" | "soundPickToggle" | "wheelToggle" | "comboToggle" | "mediaToggle" | "voiceToggle";
   /**
    * Its own OBS browser-source link, after /overlay/<username>. Each feature
    * is a separate source so creators place and size it freely in OBS.
@@ -36,4 +36,6 @@ export const FEATURES: FeatureDef[] = [
   { id: "wheel", icon: "wheel", flag: "wheelEnabled", href: "/dashboard/features/wheel", fanPage: true, toggleKind: "wheelToggle", obsPath: "/wheel", obsSize: "600×600" },
   { id: "combo", icon: "zap", flag: "comboEnabled", href: "/dashboard/features/combo", fanPage: false, toggleKind: "comboToggle", obsPath: "/combo", obsSize: "600×220" },
   { id: "media", icon: "music", flag: "mediaEnabled", href: "/dashboard/features/media", fanPage: true, toggleKind: "mediaToggle", obsPath: "/media", obsSize: "640×480" },
+  // Plays through the clip link (one queue, one OBS source).
+  { id: "voice", icon: "mic", flag: "voiceEnabled", href: "/dashboard/features/media#voice", fanPage: true, toggleKind: "voiceToggle", obsPath: null, obsSize: "" },
 ];

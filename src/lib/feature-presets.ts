@@ -14,6 +14,8 @@ export type FeatureFlags = {
   comboEnabled: boolean;
   /** Fan clip requests (not part of any preset). */
   mediaEnabled: boolean;
+  /** Fan voice messages (not part of any preset). */
+  voiceEnabled: boolean;
 };
 
 export const PRESETS = {

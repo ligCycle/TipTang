@@ -9,7 +9,7 @@ import { isAlertTheme } from "@/lib/alertThemes";
 import { isPresetId, presetChanges } from "@/lib/feature-presets";
 import { cleanName, MAX_NAME } from "@/lib/alert-sets";
 import { getActiveSetId, touchSet } from "@/lib/alert-sets-server";
-import { setMediaEnabled } from "@/lib/media-queue";
+import { setMediaEnabled, setVoiceEnabled } from "@/lib/media-queue";
 import {
   uploadImage,
   deleteFile,
@@ -341,6 +341,13 @@ export async function POST(req: Request) {
   if (kind === "mediaToggle") {
     const enabled = form?.get("enabled") === "1";
     await setMediaEnabled(session.user.id, enabled);
+    return NextResponse.json({ ok: true, enabled });
+  }
+
+  // Feature hub card "ฝากเสียง" (same queue as clips; off re-queues a voice playing).
+  if (kind === "voiceToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await setVoiceEnabled(session.user.id, enabled);
     return NextResponse.json({ ok: true, enabled });
   }
 
