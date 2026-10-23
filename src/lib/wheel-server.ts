@@ -122,11 +122,6 @@ export async function startSpinTx(tx: Tx, tipId: string, now: Date): Promise<Spi
   return "started";
 }
 
-/** For tips that arrive already confirmed (auto-verify / auto-confirm). */
-export async function startSpin(tipId: string): Promise<SpinResult> {
-  return prisma.$transaction((tx) => startSpinTx(tx, tipId, new Date()));
-}
-
 /**
  * Rejecting a confirmed tip: its spin is cancelled and, if the draw took a
  * segment off the wheel, the segment goes back — unless another live spin

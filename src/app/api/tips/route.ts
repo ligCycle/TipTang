@@ -22,8 +22,8 @@ import { linkBase } from "@/lib/site";
 import { applySubathonTip, type TimerEffect } from "@/lib/subathon";
 import { validatePick } from "@/lib/alert-sets";
 import { spinFloor } from "@/lib/wheel";
-import { startSpin, wheelForFans } from "@/lib/wheel-server";
-import { applyCombo } from "@/lib/combo-server";
+import { startSpinTx, wheelForFans } from "@/lib/wheel-server";
+import { onTipConfirmedTx, TIP_TX } from "@/lib/tip-hooks";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 export async function POST(req: Request) {
@@ -303,18 +303,25 @@ export async function POST(req: Request) {
   // Confirmed on arrival (auto-verified or auto-confirm) → add subathon time.
   if (status === "CONFIRMED") {
     after(() => applySubathonTip(creator.id, parsed.data.amount, timerEffect));
-    // Draw now (not after the response) so the overlay sees it on its next poll.
-    // Another tip may have taken the last segment since the check above: the
-    // fan is told the spin didn't happen (the tip row says so too).
-    if (spinWheelId) {
-      const spun = await startSpin(tip.id).catch((err) => {
-        console.error("[wheel] spin failed:", err);
+    // Run every tip feature now (not after the response) so the overlays see it
+    // on their next poll — one transaction, same pipeline and lock order as the
+    // confirm button (src/lib/tip-hooks.ts). Never fails the tip itself. Another
+    // tip may have taken the wheel's last segment since the check above: the fan
+    // is told the spin didn't happen (the tip row says so too).
+    const tipId = tip.id;
+    const spun = await prisma
+      .$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
+        const now = new Date();
+        const spin = spinWheelId ? await startSpinTx(tx, tipId, now) : null;
+        await onTipConfirmedTx(tx, tipId, now);
+        return spin;
+      }, TIP_TX)
+      .catch((err) => {
+        console.error("[tip-hooks] auto-confirm features failed:", err);
         return "empty" as const;
       });
-      if (spun !== "started") spinDropped = true;
-    }
-    // Combo tip: may join or start a combo (never fails the tip).
-    await applyCombo(tip.id).catch((err) => console.error("[combo] failed:", err));
+    if (spinWheelId && spun !== "started") spinDropped = true;
   }
 
   // Notify the creator by email after the response is sent (best-effort — never

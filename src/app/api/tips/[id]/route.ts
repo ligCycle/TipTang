@@ -3,8 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applySubathonTip } from "@/lib/subathon";
 import { deleteSlip, deleteFile } from "@/lib/storage";
-import { cancelSpinTx, startSpinTx } from "@/lib/wheel-server";
-import { comboConfirmTx, comboRejectTx } from "@/lib/combo-server";
+import { startSpinTx } from "@/lib/wheel-server";
+import { onTipConfirmedTx, onTipRejectedTx, TIP_TX } from "@/lib/tip-hooks";
 
 export async function PATCH(
   req: Request,
@@ -49,8 +49,7 @@ export async function PATCH(
         if (spin === "empty" && !force) return { blocked: true as const, before };
       }
     } else if (before === "CONFIRMED") {
-      await cancelSpinTx(tx, id);
-      await comboRejectTx(tx, id, now);
+      await onTipRejectedTx(tx, id, now);
     }
     await tx.tip.update({
       where: { id },
@@ -59,10 +58,10 @@ export async function PATCH(
         confirmedAt: action === "confirm" ? (before === "CONFIRMED" ? undefined : now) : null,
       },
     });
-    // Combo tip (src/lib/combo-server.ts) needs the tip already CONFIRMED.
-    if (action === "confirm" && before !== "CONFIRMED") await comboConfirmTx(tx, id, now);
+    // Every other tip feature (src/lib/tip-hooks.ts) needs the tip already CONFIRMED.
+    if (action === "confirm" && before !== "CONFIRMED") await onTipConfirmedTx(tx, id, now);
     return { blocked: false as const, before };
-  });
+  }, TIP_TX);
   if (result.blocked) {
     return NextResponse.json({ error: "wheel_empty" }, { status: 409 });
   }

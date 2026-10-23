@@ -56,7 +56,7 @@ export async function typicalFor(db: Tx | typeof prisma, userId: string, minTip:
 }
 
 /** Serialise every combo change for one creator. */
-async function lockCreator(tx: Tx, userId: string) {
+export async function lockCreator(tx: Tx, userId: string) {
   await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
 }
 
@@ -129,13 +129,13 @@ async function addTipsTx(
  * it joins the running combo, or may start one with the other eligible tips of
  * the last 5 minutes (3+ different fans, no cooldown).
  */
-export async function comboConfirmTx(tx: Tx, tipId: string, now: Date): Promise<void> {
+export async function comboConfirmTx(tx: Tx, tipId: string, now: Date, opts: { locked?: boolean } = {}): Promise<void> {
   const tip = await tx.tip.findUnique({
     where: { id: tipId },
     select: { id: true, creatorId: true, amount: true, status: true, comboTip: { select: { counted: true } } },
   });
   if (!tip || tip.status !== "CONFIRMED" || tip.comboTip?.counted) return;
-  await lockCreator(tx, tip.creatorId);
+  if (!opts.locked) await lockCreator(tx, tip.creatorId);
   // Re-confirming a rejected tip is a new confirmation: drop its old, uncounted row.
   if (tip.comboTip) await tx.comboTip.delete({ where: { tipId } });
   await endIfExpiredTx(tx, tip.creatorId, now);
@@ -195,21 +195,11 @@ export async function comboConfirmTx(tx: Tx, tipId: string, now: Date): Promise<
   await addTipsTx(tx, tip.creatorId, combo, window, now);
 }
 
-/** For tips confirmed on arrival (auto-verify / auto-confirm). */
-export async function applyCombo(tipId: string): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    // Same order as the confirm/reject PATCH (Tip, then User): a reject arriving
-    // now waits, or has already made the tip non-CONFIRMED.
-    await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
-    await comboConfirmTx(tx, tipId, new Date());
-  });
-}
-
 /** A counted tip was rejected: its baht leaves the combo; levels and rewards stay. */
-export async function comboRejectTx(tx: Tx, tipId: string, now: Date): Promise<void> {
+export async function comboRejectTx(tx: Tx, tipId: string, now: Date, opts: { locked?: boolean } = {}): Promise<void> {
   const ct = await tx.comboTip.findUnique({ where: { tipId }, select: { counted: true, combo: { select: { userId: true } } } });
   if (!ct?.counted) return;
-  await lockCreator(tx, ct.combo.userId);
+  if (!opts.locked) await lockCreator(tx, ct.combo.userId);
   await endIfExpiredTx(tx, ct.combo.userId, now);
   const row = await tx.comboTip.findUnique({
     where: { tipId },
