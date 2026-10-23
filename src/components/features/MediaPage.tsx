@@ -68,6 +68,13 @@ export function MediaPage() {
   const volumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
+  useEffect(
+    () => () => {
+      if (volumeTimer.current) clearTimeout(volumeTimer.current);
+    },
+    [],
+  );
+
   useEffect(() => {
     fetchMedia().then((d) => d && setData(d));
     loadHub().then(setHub);

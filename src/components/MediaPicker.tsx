@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import { parseYouTube } from "@/lib/media";
@@ -22,6 +22,7 @@ export function MediaPicker({
   floor,
   value,
   onChange,
+  onUnsettled,
 }: {
   username: string;
   choice: MediaChoice;
@@ -29,6 +30,8 @@ export function MediaPicker({
   floor: number;
   value: ClipPick | null;
   onChange: (next: ClipPick | null) => void;
+  /** True while a link is typed but not (yet) a playable clip — the form waits. */
+  onUnsettled: (unsettled: boolean) => void;
 }) {
   const t = useTranslations("profile");
   const [open, setOpen] = useState(false);
@@ -37,6 +40,12 @@ export function MediaPicker({
   const asked = useRef("");
   const checked = open || value !== null;
   const locked = !checked && amount < floor;
+  const unsettled = checked && link.trim() !== "" && value === null;
+  // Layout effect: the form must know before the next click (blur → continue).
+  useLayoutEffect(() => {
+    onUnsettled(unsettled);
+    return () => onUnsettled(false);
+  }, [unsettled, onUnsettled]);
 
   async function check(text: string) {
     const trimmed = text.trim();
@@ -44,9 +53,12 @@ export function MediaPicker({
     asked.current = trimmed;
     onChange(null);
     if (trimmed === "") return setStatus("idle");
-    if (!parseYouTube(trimmed)) return setStatus("bad");
+    const parsed = parseYouTube(trimmed);
+    if (!parsed) return setStatus("bad");
     setStatus("checking");
-    const res = await fetch(`/api/media/preview?u=${encodeURIComponent(username)}&url=${encodeURIComponent(trimmed)}`).catch(
+    // Only the clip itself goes to the server (no share/tracking parts of the link).
+    const clean = `https://youtu.be/${parsed.videoId}${parsed.startSec > 0 ? `?t=${parsed.startSec}` : ""}`;
+    const res = await fetch(`/api/media/preview?u=${encodeURIComponent(username)}&url=${encodeURIComponent(clean)}`).catch(
       () => null,
     );
     if (asked.current !== trimmed) return;
@@ -102,15 +114,30 @@ export function MediaPicker({
       {checked && (
         <div className="mt-2 space-y-2 rounded-xl border border-brand-200 p-3">
           <input
-            type="url"
+            type="text"
             inputMode="url"
+            autoComplete="off"
             value={link}
-            onChange={(e) => setLink(e.target.value)}
+            onChange={(e) => {
+              setLink(e.target.value);
+              // A different link than the one checked: the old clip no longer stands.
+              if (value && e.target.value.trim() !== asked.current) {
+                asked.current = "";
+                onChange(null);
+              }
+            }}
             onBlur={(e) => void check(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter checks the link instead of sending the form.
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void check(e.currentTarget.value);
+              }
+            }}
             onPaste={(e) => {
-              const text = e.clipboardData.getData("text");
+              const field = e.currentTarget;
               // Let the paste land in the field, then check what is there.
-              setTimeout(() => void check(text), 0);
+              setTimeout(() => void check(field.value), 0);
             }}
             placeholder={t("mediaLinkPlaceholder")}
             aria-label={t("mediaLinkLabel")}

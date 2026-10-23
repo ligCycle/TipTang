@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
 import { SlipDropzone } from "@/components/SlipDropzone";
@@ -120,6 +120,13 @@ export function TipForm({
   const [clipNote, setClipNote] = useState(false);
   // Bumped when the clip is taken away, so the picker closes and forgets the link.
   const [clipKey, setClipKey] = useState(0);
+  // A typed link that isn't a checked clip yet: "continue" waits for it.
+  const clipUnsettled = useRef(false);
+  const [clipWait, setClipWait] = useState(false);
+  const onClipUnsettled = useCallback((v: boolean) => {
+    clipUnsettled.current = v;
+    if (!v) setClipWait(false);
+  }, []);
   const [mediaDropped, setMediaDropped] = useState(false);
   const pickedSound = soundChoices?.find((c) => c.id === pickedSoundId) ?? null;
   const spinPrice = spin && wheelChoice ? wheelChoice.price : 0;
@@ -181,6 +188,10 @@ export function TipForm({
     // on the form (with the note) if a pick no longer fits the amount.
     if (checkPick(amount) || justCleared.current) {
       justCleared.current = false;
+      return;
+    }
+    if (mediaChoice && clipUnsettled.current) {
+      setClipWait(true);
       return;
     }
     if (method === "PAYPAL") {
@@ -472,7 +483,13 @@ export function TipForm({
                   setClip(next);
                   setClipNote(false);
                 }}
+                onUnsettled={onClipUnsettled}
               />
+              {clipWait && (
+                <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
+                  {t("mediaWait")}
+                </p>
+              )}
               {clipNote && (
                 <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
                   {t("mediaCleared")}

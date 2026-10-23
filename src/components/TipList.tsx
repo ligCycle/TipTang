@@ -61,7 +61,7 @@ export async function TipList({
       pickedSound: { select: { id: true, name: true } },
       spinWheelId: true,
       wishItemId: true,
-      mediaRequest: { select: { title: true } },
+      mediaRequest: { select: { title: true, status: true } },
       spin: { select: { taskText: true, status: true } },
     },
   });
@@ -142,7 +142,10 @@ export async function TipList({
     // Goal item the fan chose to help (deleted items keep their name).
     wishItem: tip.wishItemId ? (wishNames.get(tip.wishItemId) ?? null) : null,
     // "ขอคลิป/เพลง": the clip that came with the tip.
-    clipTitle: tip.mediaRequest?.title ?? null,
+    clipTitle:
+      tip.mediaRequest && tip.mediaRequest.status !== "REMOVED" && tip.mediaRequest.status !== "CANCELLED"
+        ? tip.mediaRequest.title
+        : null,
   }));
 
   return (

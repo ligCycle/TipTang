@@ -210,7 +210,8 @@
     "mediaStartsAt": "starts at {time}",
     "mediaFinePrint": "Plays up to {minutes} min · some clips may not play on stream · the creator may skip or not play clips that aren't suitable",
     "mediaCleared": "This amount doesn't cover the clip, so it was removed",
-    "mediaDropped": "Your clip didn't join the queue (the link didn't work, the amount was short, or the creator turned this off), but your tip went through."
+    "mediaDropped": "Your clip didn't join the queue (the link didn't work, the amount was short, or the creator turned this off), but your tip went through.",
+    "mediaWait": "Wait for the clip link to be checked, or fix it (untick to tip without a clip)."
   },
   "tipSuccess": {
     "title": "Tip sent!",
