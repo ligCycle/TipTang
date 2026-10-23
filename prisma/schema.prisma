@@ -208,6 +208,46 @@ model WishAlloc {
   @@index([tipId])
 }
 
+enum MediaStatus {
+  // Tip not confirmed yet.
+  HELD
+  // Waiting for the creator's approval.
+  PENDING
+  APPROVED
+  PLAYING
+  PLAYED
+  SKIPPED
+  // Creator removed it before it played.
+  REMOVED
+  // Tip rejected (startedAt kept: a re-confirm then counts it as played).
+  CANCELLED
+}
+
+// A fan's clip request ("ขอคลิป/เพลง"): one per tip. Test rows ("ทดสอบบนจอ")
+// have no tip. Only the YouTube ID, title and start are kept — never the URL.
+model MediaRequest {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipId      String?     @unique
+  tip        Tip?        @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  kind       String      @default("clip")
+  videoId    String
+  title      String
+  startSec   Int         @default(0)
+  status     MediaStatus @default(HELD)
+  // Queue order (lower plays first).
+  position   Int         @default(0)
+  queuedAt   DateTime?
+  // Handed to the overlay; startedAt = the video actually began.
+  promotedAt DateTime?
+  startedAt  DateTime?
+  endedAt    DateTime?
+  createdAt  DateTime    @default(now())
+
+  @@index([userId, status, position])
+}
+
 // Combo tip ("คอมโบทิป", src/lib/combo.ts): a run of confirmed tips. Bar sizes
 // and rewards are copied at start (index 0 = level 1); progress = baht in the
 // current level. Levels never go down.
@@ -510,6 +550,21 @@ model User {
   combos             Combo[]
   comboRewards       ComboReward[]
   wishItems          WishItem[]
+  // Feature hub card "ขอคลิป/เพลง" (src/lib/media.ts, src/lib/media-queue.ts).
+  mediaEnabled     Boolean        @default(false)
+  mediaMinAmount   Int            @default(50)
+  mediaMaxSec      Int            @default(180)
+  mediaAutoApprove Boolean        @default(false)
+  // When the creator confirmed the auto-approve copyright warning.
+  mediaAutoAckAt   DateTime?
+  mediaVolume      Int            @default(70)
+  // Queue on hold: the clip playing finishes, nothing new starts.
+  mediaPaused      Boolean        @default(false)
+  // Last poll of the media OBS link ("เชื่อมต่อแล้ว" badge).
+  mediaSeenAt      DateTime?
+  // Media card colour; null = alertColor, then brand pink.
+  mediaColor       String?
+  mediaRequests    MediaRequest[]
   shopItems            ShopItem[]
   shopOrders           ShopOrder[]
 }
@@ -572,6 +627,7 @@ model Tip {
   // Goal item the fan chose (no FK: the item may be deleted later).
   wishItemId      String?
   wishAllocs      WishAlloc[]
+  mediaRequest    MediaRequest?
   status          TipStatus     @default(PENDING)
   isMessagePublic Boolean       @default(true)
   // Bank transaction reference from slip verification — unique to block reuse

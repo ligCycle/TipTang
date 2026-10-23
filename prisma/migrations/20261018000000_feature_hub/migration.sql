@@ -234,3 +234,40 @@ CREATE INDEX "Tip_wishItemId_idx" ON "Tip"("wishItemId");
 
 ALTER TABLE "WishItem" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "WishAlloc" ENABLE ROW LEVEL SECURITY;
+
+-- Project 6: ขอคลิป/เพลง (media request queue)
+CREATE TYPE "MediaStatus" AS ENUM ('HELD', 'PENDING', 'APPROVED', 'PLAYING', 'PLAYED', 'SKIPPED', 'REMOVED', 'CANCELLED');
+
+ALTER TABLE "User" ADD COLUMN "mediaEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "mediaMinAmount" INTEGER NOT NULL DEFAULT 50;
+ALTER TABLE "User" ADD COLUMN "mediaMaxSec" INTEGER NOT NULL DEFAULT 180;
+ALTER TABLE "User" ADD COLUMN "mediaAutoApprove" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "mediaAutoAckAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN "mediaVolume" INTEGER NOT NULL DEFAULT 70;
+ALTER TABLE "User" ADD COLUMN "mediaPaused" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "mediaSeenAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN "mediaColor" TEXT;
+
+CREATE TABLE "MediaRequest" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tipId" TEXT,
+    "kind" TEXT NOT NULL DEFAULT 'clip',
+    "videoId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "startSec" INTEGER NOT NULL DEFAULT 0,
+    "status" "MediaStatus" NOT NULL DEFAULT 'HELD',
+    "position" INTEGER NOT NULL DEFAULT 0,
+    "queuedAt" TIMESTAMP(3),
+    "promotedAt" TIMESTAMP(3),
+    "startedAt" TIMESTAMP(3),
+    "endedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "MediaRequest_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "MediaRequest_tipId_key" ON "MediaRequest"("tipId");
+CREATE INDEX "MediaRequest_userId_status_position_idx" ON "MediaRequest"("userId", "status", "position");
+ALTER TABLE "MediaRequest" ADD CONSTRAINT "MediaRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "MediaRequest" ADD CONSTRAINT "MediaRequest_tipId_fkey" FOREIGN KEY ("tipId") REFERENCES "Tip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "MediaRequest" ENABLE ROW LEVEL SECURITY;

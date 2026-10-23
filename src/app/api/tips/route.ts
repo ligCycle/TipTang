@@ -25,6 +25,11 @@ import { spinFloor } from "@/lib/wheel";
 import { startSpinTx, wheelForFans } from "@/lib/wheel-server";
 import { onTipConfirmedTx, TIP_TX } from "@/lib/tip-hooks";
 import { validChoice } from "@/lib/goal-server";
+import { extrasFloor } from "@/lib/wishlist";
+import { isVideoId, parseStart } from "@/lib/media";
+import { fetchOEmbed, type OEmbedResult } from "@/lib/youtube";
+import { mediaQueueConfirmTx } from "@/lib/media-queue";
+import { lockCreator } from "@/lib/combo-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 export async function POST(req: Request) {
@@ -58,6 +63,8 @@ export async function POST(req: Request) {
       paypalHandle: true,
       soundPickEnabled: true,
       alertsEnabled: true,
+      mediaEnabled: true,
+      mediaMinAmount: true,
     },
   });
   if (!creator?.promptpayId) {
@@ -134,6 +141,7 @@ export async function POST(req: Request) {
   // stands only if that is still the wheel in use (card on, segments left)
   // and the amount covers spin + picked sound. The draw happens on confirm.
   let spinWheelId: string | null = null;
+  let spinPrice: number | null = null;
   let spinDropped = false;
   const spinRaw = form.get("spinWheel");
   if (typeof spinRaw === "string" && spinRaw.length > 0) {
@@ -143,7 +151,35 @@ export async function POST(req: Request) {
       parsed.data.amount >= spinFloor(creator.minTipAmount, wheel.price, pickedSoundPrice)
     ) {
       spinWheelId = wheel.id;
+      spinPrice = wheel.price;
     } else spinDropped = true;
+  }
+
+  // "ขอคลิป/เพลง" (src/lib/media.ts): the form sends only the video ID and
+  // start (never the URL). One kind of fan media per tip. The clip stands if
+  // the card is on and the amount covers it on top of the sound and spin; the
+  // oEmbed check runs alongside the slip check below. Otherwise the tip goes
+  // through without it and the fan is told (never an error — they've paid).
+  const mediaRaw = form.get("mediaVideoId");
+  const voiceRaw = form.get("voice");
+  if (typeof mediaRaw === "string" && mediaRaw.length > 0 && voiceRaw instanceof File && voiceRaw.size > 0) {
+    return NextResponse.json({ error: "media_both" }, { status: 400 });
+  }
+  let mediaDropped = false;
+  let mediaCheck: Promise<OEmbedResult> | null = null;
+  let mediaVideoId: string | null = null;
+  let mediaStart = 0;
+  if (typeof mediaRaw === "string" && mediaRaw.length > 0) {
+    const startRaw = form.get("mediaStart");
+    if (
+      isVideoId(mediaRaw) &&
+      creator.mediaEnabled &&
+      parsed.data.amount >= extrasFloor(creator.minTipAmount, [pickedSoundPrice, spinPrice, creator.mediaMinAmount])
+    ) {
+      mediaVideoId = mediaRaw;
+      mediaStart = parseStart(typeof startRaw === "string" ? startRaw : null);
+      mediaCheck = fetchOEmbed(mediaVideoId);
+    } else mediaDropped = true;
   }
 
   // Goal "หลายชิ้น": the item the fan chose to help. Kept only if it still
@@ -186,6 +222,12 @@ export async function POST(req: Request) {
       : await verifySlip(slip);
   if (!verify.ok && verify.reason === "duplicate") {
     return NextResponse.json({ error: "duplicate_slip" }, { status: 409 });
+  }
+  // The clip's oEmbed check ran alongside: 401/404 = it can't play on stream.
+  const media = mediaCheck ? await mediaCheck : null;
+  if (media && !media.ok) {
+    mediaVideoId = null;
+    mediaDropped = true;
   }
   // Did a verifier actually run? (false only when no provider is configured.)
   const verifierRan = verify.ok || verify.reason !== "disabled";
@@ -291,6 +333,18 @@ export async function POST(req: Request) {
         pickedSoundId,
         spinWheelId,
         wishItemId,
+        ...(mediaVideoId
+          ? {
+              mediaRequest: {
+                create: {
+                  userId: creator.id,
+                  videoId: mediaVideoId,
+                  title: (media?.ok && media.title) || "คลิป YouTube",
+                  startSec: mediaStart,
+                },
+              },
+            }
+          : {}),
         status,
         transRef,
         autoVerified,
@@ -327,6 +381,19 @@ export async function POST(req: Request) {
       }, TIP_TX)
       .catch(async (err) => {
         console.error("[tip-hooks] auto-confirm features failed:", err);
+        // The fan's clip must still reach the queue: retry it on its own.
+        if (mediaVideoId) {
+          await prisma
+            .$transaction(async (tx) => {
+              await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
+              await lockCreator(tx, creator.id);
+              await mediaQueueConfirmTx(tx, tipId, new Date());
+            }, TIP_TX)
+            .catch((err2) => {
+              console.error("[media] queue retry failed:", err2);
+              mediaDropped = true;
+            });
+        }
         // A failure elsewhere (combo, wishlist…) must not cost the fan a paid
         // spin: retry the draw on its own.
         if (!spinWheelId) return null;
@@ -370,6 +437,7 @@ export async function POST(req: Request) {
     confirmed: status === "CONFIRMED",
     pickDropped,
     spinDropped,
+    mediaDropped,
   });
 }
 
