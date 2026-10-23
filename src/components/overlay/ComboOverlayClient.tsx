@@ -27,7 +27,9 @@ export function ComboOverlayClient({ username, apiKey, color }: { username: stri
   const [feed, setFeed] = useState<ComboFeed>({ phase: "idle" });
   const [now, setNow] = useState(() => Date.now());
   const [celebrate, setCelebrate] = useState<{ key: string; level: number; text: string | null } | null>(null);
-  const seen = useRef<{ id: string; level: number } | null>(null);
+  // Highest level already shown per combo (a test and a real combo can interleave).
+  const seen = useRef(new Map<string, number>());
+  const firstPoll = useRef(true);
   const queue = useRef<{ key: string; level: number; text: string | null }[]>([]);
   const showing = useRef(false);
 
@@ -54,15 +56,18 @@ export function ComboOverlayClient({ username, apiKey, color }: { username: stri
         const data = (await res.json()) as ComboFeed;
         if (!active) return;
         if (data.phase === "running") {
-          // A new combo starts from level 1; any level beyond what we last saw gets its moment.
-          const from = seen.current?.id === data.id ? seen.current.level : 1;
+          // A combo already running when the link opens is shown as it is (no replay);
+          // one that starts while it's open celebrates every level past 1.
+          const known = seen.current.get(data.id);
+          const from = known ?? (firstPoll.current ? data.level : 1);
           for (let level = from + 1; level <= data.level; level++) {
             const text = data.unlocked.find((u) => u.level === level)?.text ?? null;
             queue.current.push({ key: `${data.id}_${level}`, level, text });
           }
-          seen.current = { id: data.id, level: Math.max(from, data.level) };
+          seen.current.set(data.id, Math.max(from, data.level));
           if (!showing.current && queue.current.length > 0) nextCelebration();
         }
+        firstPoll.current = false;
         setFeed(data);
       } catch {
         // ignore transient network errors

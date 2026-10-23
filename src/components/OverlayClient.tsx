@@ -34,7 +34,7 @@ export type FeedTip = {
 };
 
 const BASE_DURATION_SEC = 7;
-/** Combo level from which alerts get the big celebration (and, at COMBO_SHAKE_LEVEL in the card, a shake). */
+/** Combo level from which alerts get the big celebration (the card adds a shake from level 5). */
 const COMBO_BIG_LEVEL = 3;
 
 export function OverlayClient({

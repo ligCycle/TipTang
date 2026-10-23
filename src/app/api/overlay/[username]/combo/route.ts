@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { overlayUser, touchOverlaySeen } from "@/lib/overlay-feed";
 import { comboFeed, touchComboSeen } from "@/lib/combo-server";
 
@@ -15,6 +16,12 @@ export async function GET(
   }
   const now = new Date();
   touchOverlaySeen(user);
-  await touchComboSeen(user.id, now);
+  const combo = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { comboEnabled: true, comboOverlaySeenAt: true },
+  });
+  await touchComboSeen(user.id, combo?.comboOverlaySeenAt ?? null, now);
+  // Card off: nothing runs, but the dashboard's test still plays.
+  if (!combo?.comboEnabled) return NextResponse.json(await comboFeed(user.id, now, { testOnly: true }));
   return NextResponse.json(await comboFeed(user.id, now));
 }

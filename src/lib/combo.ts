@@ -180,7 +180,8 @@ export function testSample(elapsedMs: number, id = "test", now = Date.now()): Co
       progress,
       size,
       ...rewardsView(level, SAMPLE_REWARDS),
-      endsAt: new Date(now + COUNTDOWN_MS).toISOString(),
+      // The sample's clock runs from when it started.
+      endsAt: new Date(now - elapsedMs + COUNTDOWN_MS).toISOString(),
     };
   }
   return {

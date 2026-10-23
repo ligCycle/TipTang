@@ -216,15 +216,21 @@ export async function stopComboTx(tx: Tx, userId: string, now: Date): Promise<vo
  * What the combo OBS link shows now: a pending dashboard test first; else the
  * running combo; else the summary of one that ended within SUMMARY_MS.
  */
-export async function comboFeed(userId: string, now: Date): Promise<ComboFeed> {
+export async function comboFeed(userId: string, now: Date, opts: { testOnly?: boolean } = {}): Promise<ComboFeed> {
   const test = await readComboTest(userId, now.getTime());
   if (test) return testSample(now.getTime() - test.startedAt, test.id, now.getTime());
-  await prisma.$transaction(async (tx) => {
-    const ended = await tx.combo.findFirst({ where: { userId, status: "ACTIVE", lastTipAt: { lte: new Date(now.getTime() - COUNTDOWN_MS) } }, select: { id: true } });
-    if (!ended) return;
-    await lockCreator(tx, userId);
-    await endIfExpiredTx(tx, userId, now);
+  if (opts.testOnly) return { phase: "idle" };
+  // Only open a locked transaction when a countdown has actually run out.
+  const expired = await prisma.combo.findFirst({
+    where: { userId, status: "ACTIVE", lastTipAt: { lte: new Date(now.getTime() - COUNTDOWN_MS) } },
+    select: { id: true },
   });
+  if (expired) {
+    await prisma.$transaction(async (tx) => {
+      await lockCreator(tx, userId);
+      await endIfExpiredTx(tx, userId, now);
+    });
+  }
   const combo = await prisma.combo.findFirst({
     where: {
       userId,
@@ -274,7 +280,8 @@ export async function comboFeed(userId: string, now: Date): Promise<ComboFeed> {
 }
 
 /** The combo link was polled: remember it (at most every 30 s) so tips count while it's open. */
-export async function touchComboSeen(userId: string, now: Date): Promise<void> {
+export async function touchComboSeen(userId: string, seenAt: Date | null, now: Date): Promise<void> {
+  if (seenAt && seenAt.getTime() >= now.getTime() - 30_000) return;
   await prisma.user.updateMany({
     where: { id: userId, OR: [{ comboOverlaySeenAt: null }, { comboOverlaySeenAt: { lt: new Date(now.getTime() - 30_000) } }] },
     data: { comboOverlaySeenAt: now },
