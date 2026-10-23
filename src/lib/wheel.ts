@@ -4,6 +4,8 @@
  * the wheel. The server draws uniformly over the segments still left.
  */
 
+import { extrasFloor } from "./wishlist.ts";
+
 export const MAX_WHEELS = 20;
 export const MIN_TASKS = 2;
 export const MAX_TASKS = 24;
@@ -66,7 +68,7 @@ export function taskOdds(tasks: WheelTask[], slots: number, removed: string[]) {
 
 /** Spin and picked sound prices add up; the creator minimum is the floor. */
 export function spinFloor(creatorMin: number, wheelPrice: number, soundPrice: number | null): number {
-  return Math.max(creatorMin, wheelPrice + (soundPrice ?? 0));
+  return extrasFloor(creatorMin, [wheelPrice, soundPrice]);
 }
 
 export const MAX_WHEEL_PRICE = 100_000;
