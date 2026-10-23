@@ -7,6 +7,10 @@ import {
   MEDIA_MAX_SEC_CHOICES,
   isMaxSec,
   overdue,
+  mediaExtrasDrop,
+  isVideoId,
+  elapsedSec,
+  TEST_VIDEO_ID,
 } from "./media.ts";
 
 const ID = "dQw4w9WgXcQ";
@@ -85,9 +89,36 @@ test("max length choices", () => {
   assert.ok(!isMaxSec("180"));
 });
 
-test("overdue: a playing clip past maxSec + 30 s counts as played", () => {
+test("overdue: a playing clip past maxSec + slack counts as played", () => {
   const start = new Date("2026-10-23T10:00:00Z");
-  assert.equal(overdue(start, 180, new Date("2026-10-23T10:03:29Z")), false);
-  assert.equal(overdue(start, 180, new Date("2026-10-23T10:03:31Z")), true);
+  assert.equal(overdue(start, 180, new Date("2026-10-23T10:03:59Z")), false);
+  assert.equal(overdue(start, 180, new Date("2026-10-23T10:04:01Z")), true);
+  assert.equal(overdue(start, 180, new Date("2026-10-23T10:03:31Z"), 30), true);
   assert.equal(overdue(null, 180, new Date()), false);
+});
+
+test("mediaExtrasDrop drops the clip first, then the wheel, then the sound", () => {
+  const prices = { sound: 30, wheel: 40, media: 50 };
+  assert.deepEqual(mediaExtrasDrop(120, 20, prices), []);
+  assert.deepEqual(mediaExtrasDrop(100, 20, prices), ["media"]);
+  assert.deepEqual(mediaExtrasDrop(60, 20, prices), ["media", "wheel"]);
+  assert.deepEqual(mediaExtrasDrop(10, 20, prices), ["media", "wheel", "sound"]);
+  assert.deepEqual(mediaExtrasDrop(10, 20, { sound: null, wheel: null, media: null }), []);
+  assert.deepEqual(mediaExtrasDrop(45, 20, { sound: null, wheel: 40, media: null }), []);
+  assert.deepEqual(mediaExtrasDrop(45, 20, { sound: null, wheel: 40, media: 10 }), ["media"]);
+});
+
+test("isVideoId and the test clip", () => {
+  assert.ok(isVideoId("dQw4w9WgXcQ"));
+  assert.ok(!isVideoId("dQw4w9WgXc"));
+  assert.ok(!isVideoId("dQw4w9WgXc!"));
+  assert.ok(!isVideoId(null));
+  assert.ok(isVideoId(TEST_VIDEO_ID));
+});
+
+test("elapsedSec counts whole seconds since the start, never negative", () => {
+  const s0 = new Date("2026-10-23T10:00:00Z");
+  assert.equal(elapsedSec(s0, new Date("2026-10-23T10:00:42.900Z")), 42);
+  assert.equal(elapsedSec(s0, new Date("2026-10-23T09:59:00Z")), 0);
+  assert.equal(elapsedSec(null, new Date()), 0);
 });
