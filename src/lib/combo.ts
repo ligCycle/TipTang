@@ -127,3 +127,70 @@ export function cleanRows(v: unknown, custom: boolean): LevelRow[] | null {
   }
   return out;
 }
+
+/** What the combo OBS link polls. */
+export type ComboFeed =
+  | { phase: "idle" }
+  | {
+      phase: "running";
+      id: string;
+      level: number;
+      progress: number;
+      size: number;
+      nextReward: string | null;
+      unlocked: { level: number; text: string }[];
+      endsAt: string;
+    }
+  | {
+      phase: "summary";
+      id: string;
+      level: number;
+      total: number;
+      fans: number;
+      won: { level: number; text: string }[];
+      almost: { level: number; text: string } | null;
+      until: string;
+    };
+
+/** Running-state fields for a combo at `level` with `rewards` (index 0 = level 1). */
+export function rewardsView(level: number, rewards: string[]) {
+  const unlocked = rewards
+    .map((text, i) => ({ level: i + 1, text }))
+    .filter((r) => r.level >= 2 && r.level <= level && r.text.length > 0);
+  const next = rewards[level] ?? "";
+  return { unlocked, nextReward: next.length > 0 ? next : null };
+}
+
+const SAMPLE_REWARDS = DEFAULT_ROWS.map((r) => r.reward);
+
+/**
+ * The dashboard's "test on OBS" combo by elapsed time — each phase spans
+ * several 2 s polls: 0–10 s level 1, 10–20 s level 3, 20–35 s summary.
+ */
+export function testSample(elapsedMs: number, id = "test", now = Date.now()): ComboFeed {
+  if (elapsedMs < 0 || elapsedMs >= 35_000) return { phase: "idle" };
+  if (elapsedMs < 20_000) {
+    const level = elapsedMs < 10_000 ? 1 : 3;
+    const size = level === 1 ? 180 : 300;
+    const progress = Math.min(size - 10, Math.round(((elapsedMs % 10_000) / 10_000) * size));
+    return {
+      phase: "running",
+      id,
+      level,
+      progress,
+      size,
+      ...rewardsView(level, SAMPLE_REWARDS),
+      endsAt: new Date(now + COUNTDOWN_MS).toISOString(),
+    };
+  }
+  return {
+    phase: "summary",
+    id,
+    level: 3,
+    total: 650,
+    fans: 7,
+    won: rewardsView(3, SAMPLE_REWARDS).unlocked,
+    almost: { level: 4, text: SAMPLE_REWARDS[3] },
+    until: new Date(now + (35_000 - elapsedMs)).toISOString(),
+  };
+}

@@ -16,6 +16,7 @@ type Alert = {
   timerDelta?: number | null;
   /** The sound the fan picked (beats tier and set); null = none. */
   soundUrl?: string | null;
+  comboLevel?: number | null;
 };
 
 /** One tip as the overlay feeds return it. */
@@ -28,9 +29,13 @@ export type FeedTip = {
   timerDelta: number | null;
   /** The sound the fan picked; null if none or the file is gone. */
   soundUrl: string | null;
+  /** Combo tip level after this tip; null when it wasn't part of a combo. */
+  comboLevel: number | null;
 };
 
 const BASE_DURATION_SEC = 7;
+/** Combo level from which alerts get the big celebration (and, at COMBO_SHAKE_LEVEL in the card, a shake). */
+const COMBO_BIG_LEVEL = 3;
 
 export function OverlayClient({
   username,
@@ -182,6 +187,7 @@ export function OverlayClient({
         message: tip.message,
         timerDelta: tip.timerDelta ?? null,
         soundUrl: tip.soundUrl ?? null,
+        comboLevel: tip.comboLevel ?? null,
       });
     }
     // A test from the dashboard: shown once per id, never moves the timer.
@@ -255,7 +261,9 @@ export function OverlayClient({
 
   // Big celebration when the amount's tier says so (amount may arrive as a
   // decimal / string — coerce before comparing).
-  const isBig = current != null && celebrates(tiers, Number(current.amount));
+  // A combo at level 3+ also gets the big celebration.
+  const isBig =
+    current != null && (celebrates(tiers, Number(current.amount)) || (current.comboLevel ?? 0) >= COMBO_BIG_LEVEL);
 
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -280,6 +288,7 @@ export function OverlayClient({
             imageUrl={media.videoUrl ? null : media.imageUrl}
             videoUrl={media.videoUrl}
             videoMuted={media.videoMuted}
+            comboLevel={current.comboLevel ?? null}
           />
         </div>
       )}

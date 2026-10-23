@@ -142,6 +142,7 @@ export async function alertFeed(
             confirmedAt: true,
             timerEffect: true,
             pickedSound: { select: { url: true } },
+            comboTip: { select: { levelAfter: true, counted: true } },
           },
         }),
     off
@@ -180,6 +181,8 @@ export async function alertFeed(
       timerDelta: timerDeltaFor(t.timerEffect, Number(t.amount)),
       // The sound the fan picked; null if none or the file is gone.
       soundUrl: t.pickedSound?.url ?? null,
+      // Combo tip level after this tip (alert ribbon); null when not in a combo.
+      comboLevel: t.comboTip?.counted ? t.comboTip.levelAfter : null,
     })),
     ...orders.map((o) => ({
       id: `order_${o.id}`,
@@ -189,6 +192,7 @@ export async function alertFeed(
       confirmedAt: o.confirmedAt,
       timerDelta: null as number | null,
       soundUrl: null as string | null,
+      comboLevel: null as number | null,
     })),
   ]
     .sort((a, b) => (a.confirmedAt?.getTime() ?? 0) - (b.confirmedAt?.getTime() ?? 0))
@@ -202,6 +206,7 @@ export async function alertFeed(
     confirmedAt: m.confirmedAt?.toISOString() ?? null,
     timerDelta: m.timerDelta,
     soundUrl: m.soundUrl,
+    comboLevel: m.comboLevel,
   }));
   const cursor = nextCursor(
     validAfter ? validAfter.toISOString() : "",

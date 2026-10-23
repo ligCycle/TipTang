@@ -11,6 +11,7 @@ import {
   cleanRows,
   DEFAULT_ROWS,
   MAX_LEVELS,
+  testSample,
 } from "./combo.ts";
 
 test("typicalTip: median of ≥5 tips; fewer → max(min, 50)", () => {
@@ -116,4 +117,17 @@ test("sizesFor: invalid custom amounts fall back to auto", () => {
   ];
   assert.deepEqual(sizesFor(rows, "custom", 50), [180, 230]);
   assert.deepEqual(autoSizes(1, "easy", 3), [10, 10, 10]);
+});
+
+test("testSample: phases long enough for 2 s polling", () => {
+  const a = testSample(5_000);
+  assert.equal(a.phase, "running");
+  assert.equal(a.phase === "running" && a.level, 1);
+  const b = testSample(15_000);
+  assert.equal(b.phase === "running" && b.level, 3);
+  assert.deepEqual(b.phase === "running" && b.unlocked.map((u) => u.level), [2, 3]);
+  const c = testSample(25_000);
+  assert.equal(c.phase, "summary");
+  assert.equal(c.phase === "summary" && c.almost?.level, 4);
+  assert.equal(testSample(36_000).phase, "idle");
 });

@@ -402,6 +402,16 @@ html.js .reveal.is-in {
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
 }
 
+/* Combo tip level 5+: a short shake of the alert's contents. */
+@keyframes comboShake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  15%, 45%, 75% { transform: translate3d(-6px, 0, 0) rotate(-1deg); }
+  30%, 60%, 90% { transform: translate3d(6px, 0, 0) rotate(1deg); }
+}
+.alert-combo-shake {
+  animation: comboShake 0.6s ease-in-out 0.4s 2;
+}
+
 /* GPU-accelerated fall (translate3d + will-change) to avoid OBS frame drops. */
 @keyframes confettiFall {
   0% {

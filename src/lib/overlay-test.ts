@@ -105,3 +105,41 @@ export async function readWheelTest(userId: string, now: number = Date.now()): P
   }
   return hit.value;
 }
+
+/**
+ * "ทดสอบคอมโบบนจอ OBS": a scripted sample combo on the combo link. Only the
+ * start time is stored; the feed plays phases by elapsed time.
+ */
+export const COMBO_TEST_MS = 35_000;
+export type ComboTest = { id: string; startedAt: number };
+
+const comboKeyFor = (userId: string) => `tiptang/combotest/${userId}`;
+const comboMemory = g as unknown as { __tiptangComboTests?: Map<string, { value: ComboTest; expiresAt: number }> };
+const comboStore = (comboMemory.__tiptangComboTests ??= new Map());
+
+export async function pushComboTest(userId: string, now: number = Date.now()): Promise<ComboTest> {
+  const value: ComboTest = { id: `test_${randomUUID()}`, startedAt: now };
+  if (redis) {
+    await redis.set(comboKeyFor(userId), value, { px: COMBO_TEST_MS });
+  } else {
+    comboStore.set(comboKeyFor(userId), { value, expiresAt: now + COMBO_TEST_MS });
+  }
+  return value;
+}
+
+export async function readComboTest(userId: string, now: number = Date.now()): Promise<ComboTest | null> {
+  if (redis) {
+    try {
+      return (await redis.get<ComboTest>(comboKeyFor(userId))) ?? null;
+    } catch {
+      return null;
+    }
+  }
+  const hit = comboStore.get(comboKeyFor(userId));
+  if (!hit) return null;
+  if (hit.expiresAt <= now) {
+    comboStore.delete(comboKeyFor(userId));
+    return null;
+  }
+  return hit.value;
+}

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pushTestAlert, readTestAlert, pushWheelTest, readWheelTest } from "./overlay-test.ts";
+import { pushTestAlert, readTestAlert, pushWheelTest, readWheelTest, pushComboTest, readComboTest, COMBO_TEST_MS } from "./overlay-test.ts";
 
 test("a pushed test can be read, and reading does not consume it", async () => {
   const now = Date.now();
@@ -47,4 +47,13 @@ test("wheel test: readable until it expires, separate from alert tests", async (
   assert.equal(w.segmentKey, "t1#0");
   assert.equal(await readTestAlert("u9", now + 1000), null);
   assert.equal(await readWheelTest("u9", now + 16_000), null);
+});
+
+test("combo test: keeps its start time until it expires, separate from other tests", async () => {
+  const now = 3_000_000;
+  const c = await pushComboTest("u7", now);
+  assert.equal(c.startedAt, now);
+  assert.deepEqual(await readComboTest("u7", now + 20_000), c);
+  assert.equal(await readWheelTest("u7", now + 1000), null);
+  assert.equal(await readComboTest("u7", now + COMBO_TEST_MS + 1), null);
 });

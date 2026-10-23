@@ -30,6 +30,7 @@ export function AlertCard({
   videoUrl,
   videoMuted = false,
   loop = false,
+  comboLevel = null,
 }: {
   name: string;
   amount: number;
@@ -45,6 +46,8 @@ export function AlertCard({
   videoMuted?: boolean;
   /** Dashboard preview: replay the in/out animation forever instead of once. */
   loop?: boolean;
+  /** Combo tip level this tip reached: a ribbon, and a shake from level 5. */
+  comboLevel?: number | null;
 }) {
   const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
   const dark = alertTheme === "dark";
@@ -73,6 +76,13 @@ export function AlertCard({
           : `ring-1 ring-white/20 ${useCustom ? "" : "bg-gradient-to-br from-brand-500 to-brand-700"}`
       }`}
     >
+      {/* Inner wrapper: the card's own animation is its entrance style. */}
+      <div className={comboLevel != null && comboLevel >= 5 ? "alert-combo-shake" : undefined}>
+      {comboLevel != null && (
+        <p className="mx-auto mb-2 w-fit rounded-full bg-white/20 px-3 py-0.5 text-xs font-extrabold tracking-wide ring-1 ring-white/40">
+          คอมโบทิป เลเวล {comboLevel}
+        </p>
+      )}
       {isBig && (
         <p className="mb-2 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-widest drop-shadow">
           <Icon name="sparkles" className="h-4 w-4" />
@@ -125,6 +135,7 @@ export function AlertCard({
         </p>
       )}
       {message && <p className="mt-2 text-white/95">{message}</p>}
+      </div>
     </div>
   );
 }

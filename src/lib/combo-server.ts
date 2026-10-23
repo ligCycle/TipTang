@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { readComboTest } from "@/lib/overlay-test";
 import {
   addAmount,
   cleanRows,
@@ -11,6 +12,11 @@ import {
   isDifficulty,
   LIVE_MS,
   removeAmount,
+  rewardsView,
+  sizeAt,
+  SUMMARY_MS,
+  testSample,
+  type ComboFeed,
   sizesFor,
   START_FANS,
   typicalTip,
@@ -204,4 +210,73 @@ export async function comboRejectTx(tx: Tx, tipId: string, now: Date): Promise<v
 /** Card turned off: a running combo stops at once (no summary, no cooldown). */
 export async function stopComboTx(tx: Tx, userId: string, now: Date): Promise<void> {
   await tx.combo.updateMany({ where: { userId, status: "ACTIVE" }, data: { status: "STOPPED", endedAt: now } });
+}
+
+/**
+ * What the combo OBS link shows now: a pending dashboard test first; else the
+ * running combo; else the summary of one that ended within SUMMARY_MS.
+ */
+export async function comboFeed(userId: string, now: Date): Promise<ComboFeed> {
+  const test = await readComboTest(userId, now.getTime());
+  if (test) return testSample(now.getTime() - test.startedAt, test.id, now.getTime());
+  await prisma.$transaction(async (tx) => {
+    const ended = await tx.combo.findFirst({ where: { userId, status: "ACTIVE", lastTipAt: { lte: new Date(now.getTime() - COUNTDOWN_MS) } }, select: { id: true } });
+    if (!ended) return;
+    await lockCreator(tx, userId);
+    await endIfExpiredTx(tx, userId, now);
+  });
+  const combo = await prisma.combo.findFirst({
+    where: {
+      userId,
+      OR: [{ status: "ACTIVE" }, { status: "ENDED", endedAt: { gt: new Date(now.getTime() - SUMMARY_MS) } }],
+    },
+    orderBy: { startedAt: "desc" },
+    select: {
+      id: true,
+      status: true,
+      level: true,
+      progress: true,
+      total: true,
+      sizes: true,
+      rewards: true,
+      lastTipAt: true,
+      endedAt: true,
+    },
+  });
+  if (!combo) return { phase: "idle" };
+  const view = rewardsView(combo.level, combo.rewards);
+  if (combo.status === "ACTIVE") {
+    return {
+      phase: "running",
+      id: combo.id,
+      level: combo.level,
+      progress: combo.progress,
+      size: sizeAt(combo.sizes, combo.level),
+      ...view,
+      endsAt: new Date(combo.lastTipAt.getTime() + COUNTDOWN_MS).toISOString(),
+    };
+  }
+  // Fans = names of the tips still counted (a rejected tip isn't a fan).
+  const tips = await prisma.comboTip.findMany({
+    where: { comboId: combo.id, counted: true },
+    select: { tip: { select: { supporterName: true } } },
+  });
+  return {
+    phase: "summary",
+    id: combo.id,
+    level: combo.level,
+    total: combo.total,
+    fans: countFans(tips.map((t) => t.tip.supporterName)),
+    won: view.unlocked,
+    almost: view.nextReward ? { level: combo.level + 1, text: view.nextReward } : null,
+    until: new Date((combo.endedAt?.getTime() ?? now.getTime()) + SUMMARY_MS).toISOString(),
+  };
+}
+
+/** The combo link was polled: remember it (at most every 30 s) so tips count while it's open. */
+export async function touchComboSeen(userId: string, now: Date): Promise<void> {
+  await prisma.user.updateMany({
+    where: { id: userId, OR: [{ comboOverlaySeenAt: null }, { comboOverlaySeenAt: { lt: new Date(now.getTime() - 30_000) } }] },
+    data: { comboOverlaySeenAt: now },
+  });
 }
