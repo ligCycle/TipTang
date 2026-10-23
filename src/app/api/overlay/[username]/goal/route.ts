@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { overlayUser, goalState } from "@/lib/overlay-feed";
+import { overlayUser } from "@/lib/overlay-feed";
+import { goalFeed } from "@/lib/goal-server";
 
 // Polled by the old goal-bar link. Validates the secret key and returns the
 // creator's current fundraising goal + amount raised (confirmed tips).
@@ -12,5 +13,5 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  return NextResponse.json(await goalState(user));
+  return NextResponse.json(await goalFeed(user.id));
 }

@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { GoalView, type GoalState } from "@/components/overlay/GoalView";
+import { useEffect, useRef, useState } from "react";
+import { GoalFullMoment, GoalView } from "@/components/overlay/GoalView";
+import type { GoalFeed, GoalFeedItem } from "@/lib/wishlist";
 
-/** The old per-feature goal link: polls its own endpoint and renders GoalView. */
+const POLL_MS = 5000;
+const ROTATE_MS = 8000;
+const FULL_MOMENT_MS = 5000;
+
+/**
+ * The goal OBS link: polls its feed and renders GoalView. "สลับทีละชิ้น"
+ * advances every 8 s (an item that just got baht comes up next); an item that
+ * fills up between polls gets a short "ครบแล้ว!" moment (never on the first
+ * poll, so opening the link doesn't replay old ones).
+ */
 export function GoalOverlayClient({
   username,
   apiKey,
@@ -13,37 +23,74 @@ export function GoalOverlayClient({
   apiKey: string;
   color: string | null;
 }) {
-  const [goal, setGoal] = useState<GoalState | null>(null);
+  const [goal, setGoal] = useState<GoalFeed | null>(null);
+  const [rotateIndex, setRotateIndex] = useState(0);
+  const [moment, setMoment] = useState<GoalFeedItem | null>(null);
+  const prev = useRef<Map<string, { raised: number; full: boolean }> | null>(null);
+  const jumpTo = useRef<string | null>(null);
+  const moments = useRef<GoalFeedItem[]>([]);
+  const showing = useRef(false);
+  const latest = useRef<GoalFeed | null>(null);
 
   useEffect(() => {
     let active = true;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    function nextMoment() {
+      const m = moments.current.shift();
+      if (!m || !active) {
+        showing.current = false;
+        setMoment(null);
+        return;
+      }
+      showing.current = true;
+      setMoment(m);
+      timers.push(setTimeout(nextMoment, FULL_MOMENT_MS));
+    }
+
     async function poll() {
       try {
-        const res = await fetch(
-          `/api/overlay/${username}/goal?key=${encodeURIComponent(apiKey)}`,
-        );
+        const res = await fetch(`/api/overlay/${username}/goal?key=${encodeURIComponent(apiKey)}`);
         if (!res.ok) return;
-        const data: GoalState = await res.json();
-        if (active) setGoal(data);
+        const data: GoalFeed = await res.json();
+        if (!active) return;
+        const before = prev.current;
+        if (before && data.type === "multi") {
+          for (const i of data.items) {
+            const was = before.get(i.id);
+            if (was && i.raised > was.raised) jumpTo.current = i.id;
+            if (was && !was.full && i.full) moments.current.push(i);
+          }
+          if (!showing.current && moments.current.length > 0) nextMoment();
+        }
+        prev.current = new Map(data.items.map((i) => [i.id, { raised: i.raised, full: i.full }]));
+        latest.current = data;
+        setGoal(data);
       } catch {
         // ignore transient network errors
       }
     }
     poll();
-    const iv = setInterval(poll, 5000);
+    const iv = setInterval(poll, POLL_MS);
+    const rot = setInterval(() => {
+      const g = latest.current;
+      if (!g || g.type !== "multi" || g.display !== "rotate" || g.items.length === 0) return;
+      const target = jumpTo.current ? g.items.findIndex((i) => i.id === jumpTo.current) : -1;
+      jumpTo.current = null;
+      setRotateIndex((n) => (target >= 0 ? target : n + 1));
+    }, ROTATE_MS);
     return () => {
       active = false;
       clearInterval(iv);
+      clearInterval(rot);
+      timers.forEach(clearTimeout);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [username, apiKey]);
 
-  // Disabled or no goal set → render nothing (transparent).
-  if (!goal || !goal.enabled || goal.goal <= 0) return null;
-
+  if (!goal || !goal.enabled) return null;
   return (
     <div className="p-4">
-      <GoalView goal={goal} color={color} />
+      {moment ? <GoalFullMoment item={moment} /> : <GoalView goal={goal} color={color} rotateIndex={rotateIndex} />}
     </div>
   );
 }

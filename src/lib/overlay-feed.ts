@@ -2,13 +2,11 @@ import "server-only";
 import { after as runAfter } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tipSeconds } from "@/lib/subathon-math";
-import { goalRaised, goalPercent } from "@/lib/goal";
 import { readTestAlert, type TestAlert } from "@/lib/overlay-test";
 import { nextCursor } from "@/lib/overlay-cursor";
 import { activeSetMedia } from "@/lib/alert-sets-server";
 import { setVersion, type NormalMedia } from "@/lib/alert-sets";
 import type { FeedTip } from "@/components/OverlayClient";
-import type { GoalState } from "@/components/overlay/GoalView";
 import type { TimerState } from "@/components/overlay/TimerView";
 
 /**
@@ -222,18 +220,6 @@ export async function alertFeed(
   };
 }
 
-/** The creator's goal and how much confirmed tips have raised toward it. */
-export async function goalState(user: OverlayUser): Promise<GoalState> {
-  const goal = user.goalAmount ? Number(user.goalAmount) : 0;
-  const raised = await goalRaised(user.id, user.goalStartedAt);
-  return {
-    enabled: user.goalOverlayEnabled,
-    title: user.goalTitle ?? "",
-    goal,
-    raised,
-    pct: goalPercent(raised, goal),
-  };
-}
 
 /**
  * Derived timer state: running (counting down) / paused (frozen) / stopped

@@ -102,3 +102,33 @@ export function cleanItemPrice(v: unknown): number | null {
   const n = typeof v === "string" && v.trim() !== "" ? Number(v) : v;
   return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= MAX_ITEM_PRICE ? n : null;
 }
+
+/** What the goal OBS link (and previews) render. */
+export type GoalFeedItem = {
+  id: string;
+  name: string;
+  price: number;
+  raised: number;
+  imageUrl: string | null;
+  full: boolean;
+  /** Different fans whose baht is on this item this round. */
+  fans: number;
+};
+export type GoalFeed = {
+  enabled: boolean;
+  type: GoalType;
+  style: GoalStyle;
+  display: GoalDisplay;
+  single: { title: string; goal: number; raised: number; pct: number };
+  items: GoalFeedItem[];
+};
+
+/** Percent of a price raised (not capped — the bar clamps where it's drawn). */
+export function pctOf(raised: number, price: number): number {
+  return price > 0 ? Math.round((raised / price) * 100) : 0;
+}
+
+/** The item "ชิ้นหลัก" shows: the top unfilled one, or the last when all are full. */
+export function mainItem<T extends { full: boolean }>(items: T[]): T | null {
+  return items.find((i) => !i.full) ?? items[items.length - 1] ?? null;
+}

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { goalSettings } from "@/lib/goal-server";
+import { backfillTx, goalSettings } from "@/lib/goal-server";
+import { lockCreator } from "@/lib/combo-server";
 import { ownLibraryImage } from "@/lib/goal-images";
 import { cleanItemName, cleanItemPrice, MAX_ITEMS } from "@/lib/wishlist";
 
@@ -14,10 +15,17 @@ export async function POST(req: Request) {
   const price = cleanItemPrice(body?.price);
   const imageUrl = body?.imageUrl === undefined ? null : await ownLibraryImage(user.id, body.imageUrl);
   if (!name || price === null || imageUrl === undefined) return NextResponse.json({ error: "invalid" }, { status: 400 });
-  const live = await prisma.wishItem.findMany({ where: { userId: user.id, deletedAt: null }, select: { position: true } });
-  if (live.length >= MAX_ITEMS) return NextResponse.json({ error: "too_many" }, { status: 409 });
-  const position = live.reduce((m, i) => Math.max(m, i.position + 1), 0);
-  await prisma.wishItem.create({ data: { userId: user.id, name, price, imageUrl, position } });
+  const created = await prisma.$transaction(async (tx) => {
+    await lockCreator(tx, user.id);
+    const live = await tx.wishItem.findMany({ where: { userId: user.id, deletedAt: null }, select: { position: true } });
+    if (live.length >= MAX_ITEMS) return false;
+    const position = live.reduce((m, i) => Math.max(m, i.position + 1), 0);
+    await tx.wishItem.create({ data: { userId: user.id, name, price, imageUrl, position } });
+    // The first item of a multi goal picks up the round's tips so far.
+    await backfillTx(tx, user.id);
+    return true;
+  });
+  if (!created) return NextResponse.json({ error: "too_many" }, { status: 409 });
   return NextResponse.json(await goalSettings(user.id));
 }
 

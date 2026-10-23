@@ -10,12 +10,16 @@ import {
   isGoalType,
   moveOnDelete,
   spillOnPrice,
+  cleanItemName,
   type Allocation,
   type GoalDisplay,
   type GoalStyle,
   type GoalType,
   type ItemState,
+  type GoalFeed,
+  pctOf,
 } from "@/lib/wishlist";
+import { countFans } from "@/lib/combo";
 
 type Tx = Prisma.TransactionClient;
 type Db = Tx | typeof prisma;
@@ -48,25 +52,53 @@ export async function goalItems(db: Db, userId: string, since: Date | null): Pro
   });
 }
 
-/** A tip became CONFIRMED (inside the tip pipeline, creator already locked): store where its baht lands. */
-export async function wishConfirmTx(tx: Tx, tipId: string, now: Date): Promise<void> {
-  const tip = await tx.tip.findUnique({
-    where: { id: tipId },
-    select: {
-      amount: true,
-      wishItemId: true,
-      creator: { select: { id: true, goalType: true, goalOverlayEnabled: true, goalStartedAt: true } },
-    },
+/**
+ * Give every confirmed tip of the current round that has no allocation yet its
+ * place on the items, oldest first. That covers the tip being confirmed now,
+ * tips confirmed while the goal was single or had no items, and an auto-confirm
+ * whose features failed — so the items always add up to the round's tips.
+ * Runs under the creator lock. Row time = the tip's confirmation (its round).
+ */
+export async function backfillTx(tx: Tx, userId: string): Promise<void> {
+  const u = await tx.user.findUnique({
+    where: { id: userId },
+    select: { goalType: true, goalOverlayEnabled: true, goalStartedAt: true },
   });
-  if (!tip || tip.creator.goalType !== "multi") return;
+  if (!u || u.goalType !== "multi") return;
+  const tips = await tx.tip.findMany({
+    where: {
+      creatorId: userId,
+      status: "CONFIRMED",
+      ...(u.goalStartedAt ? { confirmedAt: { gte: u.goalStartedAt } } : {}),
+      wishAllocs: { none: {} },
+    },
+    orderBy: { confirmedAt: "asc" },
+    select: { id: true, amount: true, wishItemId: true, confirmedAt: true },
+    take: 5000,
+  });
+  if (tips.length === 0) return;
+  const items: ItemState[] = await goalItems(tx, userId, u.goalStartedAt);
+  if (items.length === 0) return;
+  const data: { tipId: string; itemId: string; amount: number; createdAt: Date }[] = [];
+  for (const t of tips) {
+    // Card off: the fan's choice is ignored (counts as no choice).
+    const rows = allocate(items, baht(t.amount), u.goalOverlayEnabled ? t.wishItemId : null);
+    for (const r of rows) {
+      data.push({ tipId: t.id, itemId: r.itemId, amount: r.amount, createdAt: t.confirmedAt ?? new Date() });
+      const it = items.find((i) => i.id === r.itemId);
+      if (it) it.raised += r.amount;
+    }
+  }
+  if (data.length > 0) await tx.wishAlloc.createMany({ data });
+}
+
+/** A tip became CONFIRMED (inside the tip pipeline, creator already locked): store where its baht lands. */
+export async function wishConfirmTx(tx: Tx, tipId: string): Promise<void> {
+  const tip = await tx.tip.findUnique({ where: { id: tipId }, select: { creatorId: true } });
+  if (!tip) return;
   // Re-confirming a rejected tip starts fresh.
   await tx.wishAlloc.deleteMany({ where: { tipId } });
-  const items = await goalItems(tx, tip.creator.id, tip.creator.goalStartedAt);
-  // Card off: the fan's choice is ignored (counts as no choice).
-  const chosen = tip.creator.goalOverlayEnabled ? tip.wishItemId : null;
-  const rows = allocate(items, baht(tip.amount), chosen);
-  if (rows.length === 0) return;
-  await tx.wishAlloc.createMany({ data: rows.map((r) => ({ tipId, itemId: r.itemId, amount: r.amount, createdAt: now })) });
+  await backfillTx(tx, tip.creatorId);
 }
 
 /** A confirmed tip was rejected: its baht leaves every item it landed on. */
@@ -199,18 +231,9 @@ export async function setGoalType(userId: string, type: GoalType): Promise<void>
         const live = await tx.wishItem.count({ where: { userId, deletedAt: null } });
         const amount = u.goalAmount ? Math.round(Number(u.goalAmount)) : 0;
         if (live === 0 && amount > 0) {
-          const item = await tx.wishItem.create({
-            data: { userId, name: (u.goalTitle || "เป้าหมาย").slice(0, 40), price: Math.min(amount, 1_000_000), position: 0 },
-            select: { id: true },
+          await tx.wishItem.create({
+            data: { userId, name: cleanItemName(u.goalTitle) ?? "เป้าหมาย", price: Math.min(amount, 1_000_000), position: 0 },
           });
-          const tips = await tx.tip.findMany({
-            where: { creatorId: userId, status: "CONFIRMED", ...(u.goalStartedAt ? { confirmedAt: { gte: u.goalStartedAt } } : {}) },
-            select: { id: true, amount: true, confirmedAt: true },
-          });
-          const rows = tips
-            .map((t) => ({ tipId: t.id, itemId: item.id, amount: baht(t.amount), createdAt: t.confirmedAt ?? new Date() }))
-            .filter((r) => r.amount > 0);
-          if (rows.length > 0) await tx.wishAlloc.createMany({ data: rows });
         }
       } else {
         const top = await tx.wishItem.findFirst({
@@ -221,6 +244,8 @@ export async function setGoalType(userId: string, type: GoalType): Promise<void>
         if (top) await tx.user.update({ where: { id: userId }, data: { goalTitle: top.name, goalAmount: top.price } });
       }
       await tx.user.update({ where: { id: userId }, data: { goalType: type } });
+      // Tips of this round confirmed while single (or before any item) take their place now.
+      if (type === "multi") await backfillTx(tx, userId);
     },
     { timeout: 15_000, maxWait: 5_000 },
   );
@@ -236,4 +261,37 @@ export async function validChoice(userId: string, itemId: string | null): Promis
   if (!u || u.goalType !== "multi" || !u.goalOverlayEnabled) return null;
   const item = (await goalItems(prisma, userId, u.goalStartedAt)).find((i) => i.id === itemId);
   return item && !item.full ? item.id : null;
+}
+
+/** The goal OBS feed: settings plus, per item, how many different fans helped this round. */
+export async function goalFeed(userId: string): Promise<GoalFeed | null> {
+  const s = await goalSettings(userId);
+  if (!s) return null;
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { goalStartedAt: true } });
+  const since = u?.goalStartedAt ?? null;
+  const rows =
+    s.type === "multi" && s.items.length > 0
+      ? await prisma.wishAlloc.findMany({
+          where: { itemId: { in: s.items.map((i) => i.id) }, ...(since ? { createdAt: { gte: since } } : {}) },
+          select: { itemId: true, tip: { select: { supporterName: true } } },
+        })
+      : [];
+  const names = new Map<string, string[]>();
+  for (const r of rows) names.set(r.itemId, [...(names.get(r.itemId) ?? []), r.tip.supporterName]);
+  return {
+    enabled: s.enabled,
+    type: s.type,
+    style: s.style,
+    display: s.display,
+    single: { title: s.single.title, goal: s.single.amount, raised: s.single.raised, pct: pctOf(s.single.raised, s.single.amount) },
+    items: s.items.map((i) => ({
+      id: i.id,
+      name: i.name,
+      price: i.price,
+      raised: i.raised,
+      imageUrl: i.imageUrl,
+      full: i.full,
+      fans: countFans(names.get(i.id) ?? []),
+    })),
+  };
 }

@@ -3,7 +3,7 @@ import { fileMatchesType } from "@/lib/filetype";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stopComboTx } from "@/lib/combo-server";
+import { lockCreator, stopComboTx } from "@/lib/combo-server";
 import { isAlertStyle } from "@/lib/alertStyles";
 import { isAlertTheme } from "@/lib/alertThemes";
 import { isPresetId, presetChanges } from "@/lib/feature-presets";
@@ -100,9 +100,10 @@ export async function POST(req: Request) {
   // on-stream bar polls /api/overlay/[username]/goal every 5s.
   if (kind === "goalReset") {
     const startedAt = new Date();
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { goalStartedAt: startedAt },
+    // Under the creator lock so a tip confirming right now lands wholly in one round.
+    await prisma.$transaction(async (tx) => {
+      await lockCreator(tx, session.user.id);
+      await tx.user.update({ where: { id: session.user.id }, data: { goalStartedAt: startedAt } });
     });
     return NextResponse.json({ ok: true, goalStartedAt: startedAt.toISOString() });
   }

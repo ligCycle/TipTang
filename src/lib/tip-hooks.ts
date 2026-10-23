@@ -25,7 +25,7 @@ export async function onTipConfirmedTx(tx: Tx, tipId: string, now: Date): Promis
   if (!tip || tip.status !== "CONFIRMED") return;
   await lockCreator(tx, tip.creatorId);
   await comboConfirmTx(tx, tipId, now, { locked: true });
-  await wishConfirmTx(tx, tipId, now);
+  await wishConfirmTx(tx, tipId);
 }
 
 /** A CONFIRMED tip was rejected: undo every feature's effect, in the same lock order. */
