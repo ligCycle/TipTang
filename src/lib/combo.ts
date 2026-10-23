@@ -64,7 +64,8 @@ export function autoSizes(typical: number, difficulty: AutoDifficulty, count: nu
 
 export function sizesFor(rows: LevelRow[], difficulty: Difficulty, typical: number): number[] {
   const auto = autoSizes(typical, difficulty === "custom" ? "medium" : difficulty, rows.length);
-  return difficulty === "custom" ? rows.map((r, i) => r.amount ?? auto[i]) : auto;
+  const ok = (a: number | null): a is number => typeof a === "number" && Number.isInteger(a) && a >= 1 && a <= MAX_LEVEL_BAHT;
+  return difficulty === "custom" ? rows.map((r, i) => (ok(r.amount) ? r.amount : auto[i])) : auto;
 }
 
 /** Size of level `level` (1-based); past the table, the last size. */
@@ -72,17 +73,21 @@ export function sizeAt(sizes: number[], level: number): number {
   return sizes[Math.min(level, sizes.length) - 1];
 }
 
-/** Add baht to the current level; extra carries over. `reached` lists every level newly reached. */
+/** Add baht to the current level; extra carries over. `reached` lists every level newly reached.
+ *  A bad amount adds nothing; a missing or non-positive bar size stops levelling (never loops). */
 export function addAmount(
   s: { level: number; progress: number },
   amount: number,
   sizes: number[],
 ): { level: number; progress: number; reached: number[] } {
   let { level } = s;
-  let progress = s.progress + amount;
   const reached: number[] = [];
-  while (progress >= sizeAt(sizes, level)) {
-    progress -= sizeAt(sizes, level);
+  if (!Number.isFinite(amount) || amount <= 0) return { level, progress: s.progress, reached };
+  let progress = s.progress + amount;
+  for (;;) {
+    const size = sizes.length > 0 ? sizeAt(sizes, level) : NaN;
+    if (!(size > 0) || progress < size) break;
+    progress -= size;
     level += 1;
     reached.push(level);
   }
@@ -91,6 +96,7 @@ export function addAmount(
 
 /** Take baht back (a rejected tip): the level never goes down; the bar floors at empty. */
 export function removeAmount(s: { level: number; progress: number }, amount: number) {
+  if (!Number.isFinite(amount) || amount <= 0) return { level: s.level, progress: s.progress };
   return { level: s.level, progress: Math.max(0, s.progress - amount) };
 }
 

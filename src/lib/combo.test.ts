@@ -91,3 +91,29 @@ test("DEFAULT_ROWS: spec rewards at levels 2–5, level 1 empty", () => {
   );
   assert.ok(DEFAULT_ROWS.every((r) => r.amount === null));
 });
+
+test("addAmount: never loops on a zero/empty/NaN size and ignores bad amounts", () => {
+  assert.deepEqual(addAmount({ level: 1, progress: 0 }, 50, [0, 100]).level, 1);
+  assert.deepEqual(addAmount({ level: 1, progress: 0 }, 50, []), { level: 1, progress: 50, reached: [] });
+  assert.deepEqual(addAmount({ level: 1, progress: 10 }, Number.NaN, [100]), { level: 1, progress: 10, reached: [] });
+  assert.deepEqual(addAmount({ level: 1, progress: 10 }, -5, [100]), { level: 1, progress: 10, reached: [] });
+  assert.deepEqual(addAmount({ level: 1, progress: 10 }, Infinity, [100]), { level: 1, progress: 10, reached: [] });
+});
+
+test("addAmount: beyond the table with existing progress", () => {
+  assert.deepEqual(addAmount({ level: 4, progress: 250 }, 50, [100, 300]), { level: 5, progress: 0, reached: [5] });
+});
+
+test("removeAmount: a negative or NaN amount changes nothing", () => {
+  assert.deepEqual(removeAmount({ level: 2, progress: 30 }, -50), { level: 2, progress: 30 });
+  assert.deepEqual(removeAmount({ level: 2, progress: 30 }, Number.NaN), { level: 2, progress: 30 });
+});
+
+test("sizesFor: invalid custom amounts fall back to auto", () => {
+  const rows = [
+    { amount: 0, reward: "" },
+    { amount: 1.5, reward: "" },
+  ];
+  assert.deepEqual(sizesFor(rows, "custom", 50), [180, 230]);
+  assert.deepEqual(autoSizes(1, "easy", 3), [10, 10, 10]);
+});
