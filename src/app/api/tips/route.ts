@@ -317,9 +317,20 @@ export async function POST(req: Request) {
         await onTipConfirmedTx(tx, tipId, now);
         return spin;
       }, TIP_TX)
-      .catch((err) => {
+      .catch(async (err) => {
         console.error("[tip-hooks] auto-confirm features failed:", err);
-        return "empty" as const;
+        // A failure elsewhere (combo, wishlist…) must not cost the fan a paid
+        // spin: retry the draw on its own.
+        if (!spinWheelId) return null;
+        return prisma
+          .$transaction(async (tx) => {
+            await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
+            return startSpinTx(tx, tipId, new Date());
+          }, TIP_TX)
+          .catch((err2) => {
+            console.error("[wheel] spin retry failed:", err2);
+            return "empty" as const;
+          });
       });
     if (spinWheelId && spun !== "started") spinDropped = true;
   }
