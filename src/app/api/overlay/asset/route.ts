@@ -3,6 +3,7 @@ import { fileMatchesType } from "@/lib/filetype";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { stopComboTx } from "@/lib/combo-server";
 import { isAlertStyle } from "@/lib/alertStyles";
 import { isAlertTheme } from "@/lib/alertThemes";
 import { isPresetId, presetChanges } from "@/lib/feature-presets";
@@ -319,6 +320,16 @@ export async function POST(req: Request) {
     await prisma.user.update({
       where: { id: session.user.id },
       data: { soundPickEnabled: enabled },
+    });
+    return NextResponse.json({ ok: true, enabled });
+  }
+
+  // Feature hub card "คอมโบทิป". Off stops a running combo at once (no summary).
+  if (kind === "comboToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: session.user.id }, data: { comboEnabled: enabled } });
+      if (!enabled) await stopComboTx(tx, session.user.id, new Date());
     });
     return NextResponse.json({ ok: true, enabled });
   }

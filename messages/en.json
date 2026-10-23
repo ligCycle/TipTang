@@ -730,8 +730,8 @@
     "s6Body": "You may stop using the service at any time, and request account deletion by emailing support@tiptang.com — we delete it within 7 days. We may improve or discontinue the service and may update these terms from time to time. Continued use means you accept the updated terms.",
     "s7Title": "Governing law & contact",
     "s7Body": "These terms are governed by the laws of Thailand. For questions, contact support@tiptang.com",
-    "randomTitle": "Random features (such as the spin wheel)",
-    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task."
+    "randomTitle": "Random features and feature rewards (such as the spin wheel and combo tip)",
+    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task.\n• Combo tip rewards (unlocked when viewers tip together to reach a level) follow the same rules: no money, cash equivalents or items of monetary value, and the creator is responsible for delivering the rewards they set."
   },
   "featureHub": {
     "secLook": "Look",
@@ -913,7 +913,9 @@
     "libRenameLabel": "Name (editable, saves by itself)",
     "libRenameHint": "Fans see this name when they pick a sound on your donate page",
     "f_wheel": "Spin wheel",
-    "d_wheel": "Fans pay to spin a wheel; the result shows on stream and lands in your to-do list."
+    "d_wheel": "Fans pay to spin a wheel; the result shows on stream and lands in your to-do list.",
+    "f_combo": "Combo tip",
+    "d_combo": "Fans tip in a row to fill the bar, level up and unlock the rewards you set, live on stream."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",
@@ -999,5 +1001,41 @@
     "rulesAccept": "Confirm and turn on",
     "emptyNote": "No slots left — fans won’t see the spin option until you press “Reset wheel”.",
     "todoComboLevel": "Combo level {level}"
+  },
+  "combo": {
+    "howItWorks": "3 fans tipping within 5 minutes → a combo starts on stream · every tip adds 5 minutes · full bar = next level · afterwards a 1-hour break",
+    "onlyWhenLinkOpen": "Only works while the combo OBS link is open (confirmed tips only).",
+    "linkLive": "Combo OBS link is open",
+    "linkOff": "Combo OBS link isn't open",
+    "running": "Combo running · level {level} · ฿{progress}/{size}",
+    "cooldown": "On a break — a new combo can start from {time}",
+    "autoConfirmHint": "Auto-confirm is off — combos only count confirmed tips, so turning it on makes them smoother.",
+    "autoConfirmLink": "Settings",
+    "saveFailed": "Couldn't save — try again.",
+    "difficulty": "Difficulty",
+    "d_easy": "Easy",
+    "d_medium": "Medium",
+    "d_hard": "Hard",
+    "d_custom": "Custom",
+    "autoHint": "Based on your real tips in the last 30 days (a usual tip is about ฿{typical}) · bigger tips, bigger bars.",
+    "customHint": "Type the baht for each level in the table below (starting from the numbers we worked out).",
+    "levels": "Baht and reward per level",
+    "noMoney": "(no money or anything of monetary value)",
+    "levelN": "Level {level}",
+    "bahtOf": "Baht for level {level}",
+    "rewardOf": "Level {level} reward",
+    "rewardPlaceholder": "No reward",
+    "level1NoReward": "(starts the combo, no reward)",
+    "deleteLevel": "Delete the last level",
+    "addLevel": "+ Add level {level}",
+    "levelsMax": "Up to {max} levels",
+    "levelsHint": "Baht = how much tipping clears that level · past the last level, bars stay the size of the last one · reaching a level adds its reward to your to-do list · changes apply to the next combo.",
+    "obsAndColor": "OBS link and colour",
+    "color": "Combo colour",
+    "colorCode": "Colour code",
+    "colorReset": "Use the alert colour",
+    "colorDefault": "Not set = your alert colour",
+    "testOnObs": "Test a combo on OBS",
+    "testSent": "Sent — check OBS (a ~35 s sample combo, not counted)."
   }
 }

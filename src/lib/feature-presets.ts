@@ -10,6 +10,8 @@ export type FeatureFlags = {
   soundPickEnabled: boolean;
   /** Spin wheel on the donate page (not part of any preset; needs the rules checklist). */
   wheelEnabled: boolean;
+  /** Combo tip (not part of any preset). */
+  comboEnabled: boolean;
 };
 
 export const PRESETS = {

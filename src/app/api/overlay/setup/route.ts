@@ -47,6 +47,7 @@ export async function POST() {
       soundPickEnabled: true,
       wheelEnabled: true,
       wheelRulesAcceptedAt: true,
+      comboEnabled: true,
       featuresOnboardedAt: true,
     },
   });
@@ -106,6 +107,7 @@ export async function POST() {
     soundPickEnabled: user.soundPickEnabled,
     wheelEnabled: user.wheelEnabled,
     wheelRulesAccepted: user.wheelRulesAcceptedAt !== null,
+    comboEnabled: user.comboEnabled,
     activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,
