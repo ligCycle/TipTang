@@ -95,3 +95,39 @@ Schema is folded into the unapplied feature_hub migration, with RLS on.
 - **G3:** the version check protects the odds the fan saw. A mismatch drops the pull and never blocks the tip.
 - **G4:** the prize is snapshotted at draw time.
 - **G5:** an empty box at confirm behaves like the wheel: 409 plus force on manual confirm, dropped on auto-confirm.
+
+## Builder-check rulings (opus, 2026-10-23). These override the sections above.
+
+- **K1. Snapshot on the tip** (replaces G3 and G5).
+  - At creation the server checks `gachaSeen === gachaVersion`. A mismatch means `gachaDropped`.
+  - If the versions match, it writes `Tip.gachaBox Json` = `{odds, prizes:[{id, rarity, text, imageUrl, noAction}]}`, taken from live prizes.
+  - At confirm, the draw uses that snapshot, so the fan gets exactly the odds they saw, even hours later.
+  - A box can't be empty at confirm, so there is no `gacha_empty` 409, and the wheel's 409 contract is untouched.
+- **K2. Draw placement.**
+  - Manual confirm: `gachaStartTx` runs after `startSpinTx`, inside the same Tip-locked transaction.
+  - Auto-confirm: it runs in the main transaction after the spin, with its own retry guarded by `stillConfirmed`, kept separate from the spin retry.
+  - Dropped or failed: `Tip.gachaPull = false`, so a later reject and re-confirm never draws.
+  - Re-confirm restores the earlier pull, keeping `playedAt`, so it doesn't replay.
+- **K3. No User lock is needed for the draw.** It reads only the tip's snapshot.
+- **K4. To-do list.**
+  - `TodoItem` gets `kind: "gacha"` and `rarity`.
+  - `PATCH /api/wheels/spins` gets a gacha branch.
+  - `SpinTodo` and the todo overlay show a rarity chip.
+  - Only `noAction = false` pulls are listed.
+- **K5. Separate rules acceptance** (replaces G2). The wheel's rules promise equal odds, which doesn't hold for the gacha.
+  - `User.gachaRulesAcceptedAt`.
+  - Its own 3-point checklist: odds are set by the creator and shown to fans; prizes must not be money or have money value; the creator is responsible for delivering them.
+  - `POST /api/gacha/rules` enables only the gacha.
+  - The terms' random-features bullet is reworded: the wheel has equal slots; the gacha uses the displayed rarity odds.
+- **K6. All-zero fallback.** If every rarity that has prizes is set to 0%, those rarities share evenly. The settings page warns, and a 0% rarity that has prizes shows "0% (ไม่ออก)" when others can come out.
+- **K7. Display.** Show rarity percentages only, plus "ของในระดับเดียวกันมีโอกาสเท่ากัน". The figures use the largest remainder and always sum to 100.
+- **K8. Server floors.**
+  - Gacha is checked after the wheel: `extrasFloor(min, [sound, spin, gachaPrice])`.
+  - Clip and voice use `[sound, spin, gacha, theirMin]`.
+- **K9. The card shows only** when there is at least one live prize and the effective weights total more than 0. Deleting a prize soft-deletes it and bumps the version.
+- **K10. Overlay.** `nextOverlayPull` mirrors `nextOverlaySpin`: a 3-try claim, the tip must be CONFIRMED, and a 1 h late-play window. The test payload includes `imageUrl`.
+- **K11. Money prizes** (Thai gambling-law sensitivity).
+  - A soft server check refuses prize text matching money terms, `/฿|บาท|\d+\s*(บ\.|thb)|เงิน|โอน|ทรูมันนี่|truemoney|บัตรเติม|gift ?card|voucher|คูปอง/i`, with `money_prize`.
+  - The settings page and the fan's odds sheet say "รางวัลไม่ใช่เงินหรือของมีมูลค่าเป็นเงิน".
+  - **The founder should confirm the wording before launch** (final report).
+- **Noted, not in scope:** the wheel has the same latent issue as K2: a forced or dropped spin keeps `spinWheelId`, so reject and re-confirm can draw. This is flagged in the final report.
