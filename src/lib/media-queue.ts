@@ -117,10 +117,17 @@ const ROW_SELECT = {
   startedAt: true,
   queuedAt: true,
   endedAt: true,
-  tip: { select: { supporterName: true, amount: true, message: true } },
+  tip: { select: { supporterName: true, amount: true } },
 } as const;
 
 type Row = Prisma.MediaRequestGetPayload<{ select: typeof ROW_SELECT }>;
+
+/** The queue page also shows the fan's message (never sent to the overlay). */
+const LIST_SELECT = {
+  ...ROW_SELECT,
+  tip: { select: { supporterName: true, amount: true, message: true } },
+} as const;
+type ListRow = Prisma.MediaRequestGetPayload<{ select: typeof LIST_SELECT }>;
 
 function toCurrent(r: Row, now: Date): MediaCurrent {
   return {
@@ -135,7 +142,7 @@ function toCurrent(r: Row, now: Date): MediaCurrent {
   };
 }
 
-const SETTINGS_SELECT = {
+export const MEDIA_SETTINGS_SELECT = {
   mediaEnabled: true,
   mediaPaused: true,
   mediaVolume: true,
@@ -143,15 +150,22 @@ const SETTINGS_SELECT = {
   mediaColor: true,
   alertColor: true,
 } as const;
+type MediaSettings = Prisma.UserGetPayload<{ select: typeof MEDIA_SETTINGS_SELECT }>;
 
 /**
- * What the OBS link should play now. Fast path: the clip already playing.
- * Otherwise (none playing, or one overdue, or the card went off) take the
- * creator lock, settle the playing rows and hand out the next approved one,
- * so two open sources and a dashboard skip never leave two clips playing.
+ * What the OBS link should play now. Fast path (no lock): the clip already
+ * playing, or nothing to hand out. Only when a clip is waiting, one is
+ * overdue, or the card went off mid-clip does it take the creator lock,
+ * settle the playing rows and hand out the next approved one — so two open
+ * sources and a dashboard skip never leave two clips playing, and an idle
+ * queue costs no lock. `settings` = the caller's read of MEDIA_SETTINGS_SELECT.
  */
-export async function mediaQueueCurrent(userId: string, now: Date): Promise<MediaFeed | null> {
-  const s = await prisma.user.findUnique({ where: { id: userId }, select: SETTINGS_SELECT });
+export async function mediaQueueCurrent(
+  userId: string,
+  now: Date,
+  settings?: MediaSettings | null,
+): Promise<MediaFeed | null> {
+  const s = settings ?? (await prisma.user.findUnique({ where: { id: userId }, select: MEDIA_SETTINGS_SELECT }));
   if (!s) return null;
   const base = {
     enabled: s.mediaEnabled,
@@ -170,31 +184,33 @@ export async function mediaQueueCurrent(userId: string, now: Date): Promise<Medi
   if (only && s.mediaEnabled && !overdue(only.startedAt ?? only.promotedAt, s.mediaMaxSec, now)) {
     return { ...base, current: toCurrent(only, now) };
   }
-  if (playing.length === 0 && (!s.mediaEnabled || s.mediaPaused)) return { ...base, current: null };
+  if (playing.length === 0) {
+    if (!s.mediaEnabled || s.mediaPaused) return { ...base, current: null };
+    const waiting = await prisma.mediaRequest.findFirst({ where: { userId, status: "APPROVED" }, select: { id: true } });
+    if (!waiting) return { ...base, current: null };
+  }
 
   const current = await prisma.$transaction(async (tx) => {
     await lockCreator(tx, userId);
-    const fresh = await tx.user.findUnique({ where: { id: userId }, select: SETTINGS_SELECT });
+    const fresh = await tx.user.findUnique({ where: { id: userId }, select: MEDIA_SETTINGS_SELECT });
     if (!fresh) return null;
     const rows = await tx.mediaRequest.findMany({
       where: { userId, status: "PLAYING" },
       orderBy: { position: "asc" },
       select: ROW_SELECT,
     });
+    if (!fresh.mediaEnabled) {
+      await requeuePlayingTx(tx, userId);
+      return null;
+    }
     let keep: Row | null = null;
     for (const r of rows) {
-      if (!fresh.mediaEnabled) {
-        // Card off mid-clip: it goes back to the top of the queue, from the start.
-        await tx.mediaRequest.update({
-          where: { id: r.id },
-          data: { status: "APPROVED", promotedAt: null, startedAt: null, position: await firstPosition(tx, userId) },
-        });
-      } else if (keep || overdue(r.startedAt ?? r.promotedAt, fresh.mediaMaxSec, now)) {
+      if (keep || overdue(r.startedAt ?? r.promotedAt, fresh.mediaMaxSec, now)) {
         await tx.mediaRequest.update({ where: { id: r.id }, data: { status: "PLAYED", endedAt: now } });
       } else keep = r;
     }
     if (keep) return toCurrent(keep, now);
-    if (!fresh.mediaEnabled || fresh.mediaPaused) return null;
+    if (fresh.mediaPaused) return null;
     const next = await tx.mediaRequest.findFirst({
       where: { userId, status: "APPROVED" },
       orderBy: [{ position: "asc" }, { queuedAt: "asc" }],
@@ -205,6 +221,29 @@ export async function mediaQueueCurrent(userId: string, now: Date): Promise<Medi
     return toCurrent({ ...next, startedAt: null }, now);
   }, TIP_TX);
   return { ...base, current };
+}
+
+/**
+ * Card turned off: a clip playing goes back to the top of the queue, to play
+ * from the start when the card is on again (creator already locked).
+ */
+export async function requeuePlayingTx(tx: Tx, userId: string): Promise<void> {
+  const rows = await tx.mediaRequest.findMany({ where: { userId, status: "PLAYING" }, select: { id: true } });
+  for (const r of rows) {
+    await tx.mediaRequest.update({
+      where: { id: r.id },
+      data: { status: "APPROVED", promotedAt: null, startedAt: null, position: await firstPosition(tx, userId) },
+    });
+  }
+}
+
+/** Switch the card on or off (hub card and settings page). */
+export async function setMediaEnabled(userId: string, enabled: boolean): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await lockCreator(tx, userId);
+    await tx.user.update({ where: { id: userId }, data: { mediaEnabled: enabled } });
+    if (!enabled) await requeuePlayingTx(tx, userId);
+  }, TIP_TX);
 }
 
 /** The OBS link reports on the clip it was given (only the playing clip counts). */
@@ -241,10 +280,8 @@ export async function mediaQueueAction(userId: string, id: string, action: Media
     const where = { id, userId };
     let res: { count: number };
     if (action === "approve") {
-      res = await tx.mediaRequest.updateMany({
-        where: { ...where, status: "PENDING" },
-        data: { status: "APPROVED", position: await lastPosition(tx, userId) },
-      });
+      // Keeps its place (it was queued at the end, or moved up by the creator).
+      res = await tx.mediaRequest.updateMany({ where: { ...where, status: "PENDING" }, data: { status: "APPROVED" } });
     } else if (action === "remove") {
       res = await tx.mediaRequest.updateMany({
         where: { ...where, status: { in: ["PENDING", "APPROVED"] } },
@@ -291,9 +328,9 @@ export async function mediaQueueList(userId: string, now: Date) {
     },
     orderBy: [{ position: "asc" }, { queuedAt: "asc" }],
     take: 300,
-    select: ROW_SELECT,
+    select: LIST_SELECT,
   });
-  const row = (r: Row): MediaListRow => ({
+  const row = (r: ListRow): MediaListRow => ({
     id: r.id,
     videoId: r.videoId,
     title: r.title,

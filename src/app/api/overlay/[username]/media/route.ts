@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { overlayUser, touchOverlaySeen } from "@/lib/overlay-feed";
-import { mediaQueueCurrent, mediaQueueReport, touchMediaSeen } from "@/lib/media-queue";
+import { MEDIA_SETTINGS_SELECT, mediaQueueCurrent, mediaQueueReport, touchMediaSeen } from "@/lib/media-queue";
 
 // Polled by the "ขอคลิป/เพลง" OBS link: the clip to play now (the server owns
 // the queue, so every open source shows the same one).
@@ -11,9 +11,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ username
   if (!user) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   touchOverlaySeen(user);
   const now = new Date();
-  const seen = await prisma.user.findUnique({ where: { id: user.id }, select: { mediaSeenAt: true } });
-  await touchMediaSeen(user.id, seen?.mediaSeenAt ?? null, now);
-  return NextResponse.json(await mediaQueueCurrent(user.id, now));
+  const s = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { ...MEDIA_SETTINGS_SELECT, mediaSeenAt: true },
+  });
+  await touchMediaSeen(user.id, s?.mediaSeenAt ?? null, now);
+  return NextResponse.json(await mediaQueueCurrent(user.id, now, s));
 }
 
 // The source reports on the clip it plays: `{ id, event: "started" | "ended" | "error" }`.

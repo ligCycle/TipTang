@@ -9,6 +9,7 @@ import { isAlertTheme } from "@/lib/alertThemes";
 import { isPresetId, presetChanges } from "@/lib/feature-presets";
 import { cleanName, MAX_NAME } from "@/lib/alert-sets";
 import { getActiveSetId, touchSet } from "@/lib/alert-sets-server";
+import { setMediaEnabled } from "@/lib/media-queue";
 import {
   uploadImage,
   deleteFile,
@@ -339,7 +340,7 @@ export async function POST(req: Request) {
   // confirmed clips; a playing one goes back to the top — src/lib/media-queue.ts).
   if (kind === "mediaToggle") {
     const enabled = form?.get("enabled") === "1";
-    await prisma.user.update({ where: { id: session.user.id }, data: { mediaEnabled: enabled } });
+    await setMediaEnabled(session.user.id, enabled);
     return NextResponse.json({ ok: true, enabled });
   }
 

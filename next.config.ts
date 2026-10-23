@@ -28,7 +28,8 @@ const CSP_BASE = [
   // serves it same-origin from /_vercel/insights.
   `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com",
+  // i.ytimg.com: clip thumbnails ("ขอคลิป/เพลง") on the donate page and dashboard.
+  "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://i.ytimg.com",
   "media-src 'self' blob: https://*.supabase.co",
   "font-src 'self' data:",
   `connect-src 'self'${process.env.NODE_ENV === "development" ? " ws:" : ""}`,
@@ -60,8 +61,13 @@ const FRAME_HEADERS = [
     ? []
     : [{ key: "Content-Security-Policy", value: "frame-ancestors 'none'" }]),
 ];
-// Overlays: same policy, no frame-ancestors, no X-Frame-Options.
-const OVERLAY_HEADERS = [{ key: CSP_KEY, value: CSP_BASE }];
+// Overlays: same policy, no frame-ancestors, no X-Frame-Options. The clip
+// player ("ขอคลิป/เพลง") loads the YouTube IFrame API and its player frame.
+const CSP_OVERLAY = CSP_BASE.replace("script-src 'self'", "script-src 'self' https://www.youtube.com").replace(
+  "frame-src 'self'",
+  "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
+);
+const OVERLAY_HEADERS = [{ key: CSP_KEY, value: CSP_OVERLAY }];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,

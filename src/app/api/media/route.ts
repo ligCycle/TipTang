@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isMaxSec } from "@/lib/media";
-import { mediaQueueList, mediaQueueTest, MEDIA_SEEN_MS } from "@/lib/media-queue";
+import { mediaQueueList, mediaQueueTest, MEDIA_SEEN_MS, setMediaEnabled } from "@/lib/media-queue";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -77,9 +77,10 @@ export async function PATCH(req: Request) {
     mediaPaused?: boolean;
     mediaColor?: string | null;
   } = {};
+  let enabled: boolean | undefined;
   if (body.enabled !== undefined) {
     if (typeof body.enabled !== "boolean") return bad();
-    data.mediaEnabled = body.enabled;
+    enabled = body.enabled;
   }
   if (body.minAmount !== undefined) {
     if (!intIn(body.minAmount, 1, 100_000)) return bad();
@@ -113,6 +114,8 @@ export async function PATCH(req: Request) {
     }
   }
   await prisma.user.update({ where: { id: user.id }, data });
+  // On/off goes through the queue (a clip playing goes back to the top).
+  if (enabled !== undefined) await setMediaEnabled(user.id, enabled);
   return NextResponse.json(await state(user.id));
 }
 
