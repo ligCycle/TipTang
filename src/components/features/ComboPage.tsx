@@ -101,16 +101,18 @@ export function ComboPage() {
   async function toggle(next: boolean) {
     if (!data) return;
     setToggling(true);
-    setData({ ...data, enabled: next });
+    setData((cur) => (cur ? { ...cur, enabled: next } : cur));
     try {
       const fd = new FormData();
       fd.append("kind", "comboToggle");
       fd.append("enabled", next ? "1" : "0");
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
       if (!res.ok) throw new Error();
-      fetchCombo().then(apply);
+      if (latest.current) latest.current = { ...latest.current, enabled: next };
+      // Only the running-combo status can change here (turning off stops it).
+      fetchCombo().then((d) => d && setData((cur) => (cur ? { ...cur, current: d.current } : d)));
     } catch {
-      setData({ ...data, enabled: !next });
+      setData((cur) => (cur ? { ...cur, enabled: !next } : cur));
       setError(true);
     } finally {
       setToggling(false);
@@ -120,7 +122,12 @@ export function ComboPage() {
   if (!data) return null;
   const custom = data.difficulty === "custom";
   const obsUrl = hub ? `${hub.overlayBase}/combo?key=${hub.overlayKey}` : null;
-  const rowsWith = (change: (rows: LevelRow[]) => LevelRow[]) => (cur: ComboSettings) => ({ rows: change(cur.rows) });
+  // In custom mode every row must carry its baht; fill gaps from the shown sizes.
+  const rowsWith = (change: (rows: LevelRow[]) => LevelRow[]) => (cur: ComboSettings) => ({
+    rows: change(
+      cur.difficulty === "custom" ? cur.rows.map((r, j) => ({ ...r, amount: r.amount ?? cur.sizes[j] ?? 100 })) : cur.rows,
+    ),
+  });
 
   async function copy() {
     if (!obsUrl) return;
@@ -204,7 +211,7 @@ export function ComboPage() {
         </h2>
         <ul className="mt-3 space-y-2">
           {data.rows.map((row, i) => (
-            <li key={`${i}-${data.rows.length}`} className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 p-2">
+            <li key={i} className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 p-2">
               <span className="w-16 shrink-0 text-xs font-semibold text-brand-700">{t("levelN", { level: i + 1 })}</span>
               {custom ? (
                 <AutoSaveInput
@@ -215,7 +222,7 @@ export function ComboPage() {
                   save={(v) => {
                     const n = Number(v);
                     if (!Number.isInteger(n) || n < 1 || n > MAX_LEVEL_BAHT) return Promise.resolve(false);
-                    return save(rowsWith((rows) => rows.map((r, j) => ({ ...r, amount: j === i ? n : (r.amount ?? data.sizes[j]) }))));
+                    return save(rowsWith((rows) => rows.map((r, j) => (j === i ? { ...r, amount: n } : r))));
                   }}
                 />
               ) : (
