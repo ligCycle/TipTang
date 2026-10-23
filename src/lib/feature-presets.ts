@@ -12,6 +12,8 @@ export type FeatureFlags = {
   wheelEnabled: boolean;
   /** Combo tip (not part of any preset). */
   comboEnabled: boolean;
+  /** Fan clip requests (not part of any preset). */
+  mediaEnabled: boolean;
 };
 
 export const PRESETS = {

@@ -64,7 +64,8 @@ export type IconName =
   | "list"
   | "play"
   | "upload"
-  | "wheel";
+  | "wheel"
+  | "music";
 
 const paths: Record<IconName, ReactElement> = {
   "alert-triangle": (
@@ -367,6 +368,13 @@ const paths: Record<IconName, ReactElement> = {
     <>
       <path d="M8 6h13M8 12h13M8 18h13" />
       <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+    </>
+  ),
+  music: (
+    <>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
     </>
   ),
   zap: (

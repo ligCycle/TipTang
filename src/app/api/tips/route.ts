@@ -162,7 +162,7 @@ export async function POST(req: Request) {
   // through without it and the fan is told (never an error — they've paid).
   const mediaRaw = form.get("mediaVideoId");
   const voiceRaw = form.get("voice");
-  if (typeof mediaRaw === "string" && mediaRaw.length > 0 && voiceRaw instanceof File && voiceRaw.size > 0) {
+  if (isVideoId(mediaRaw) && voiceRaw instanceof File && voiceRaw.size > 0) {
     return NextResponse.json({ error: "media_both" }, { status: 400 });
   }
   let mediaDropped = false;
@@ -389,9 +389,14 @@ export async function POST(req: Request) {
               await lockCreator(tx, creator.id);
               await mediaQueueConfirmTx(tx, tipId, new Date());
             }, TIP_TX)
-            .catch((err2) => {
+            .catch(async (err2) => {
               console.error("[media] queue retry failed:", err2);
               mediaDropped = true;
+              // The fan was told it won't play: make sure no later reject +
+              // re-confirm brings it back.
+              await prisma.mediaRequest
+                .updateMany({ where: { tipId, status: "HELD" }, data: { status: "REMOVED", endedAt: new Date() } })
+                .catch((err3) => console.error("[media] drop failed:", err3));
             });
         }
         // A failure elsewhere (combo, wishlist…) must not cost the fan a paid

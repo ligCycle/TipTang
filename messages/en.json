@@ -920,7 +920,9 @@
     "f_wheel": "Spin wheel",
     "d_wheel": "Fans pay to spin a wheel; the result shows on stream and lands in your to-do list.",
     "f_combo": "Combo tip",
-    "d_combo": "Fans tip in a row to fill the bar, level up and unlock the rewards you set, live on stream."
+    "d_combo": "Fans tip in a row to fill the bar, level up and unlock the rewards you set, live on stream.",
+    "f_media": "Clip requests",
+    "d_media": "Fans attach a YouTube clip to a tip; you approve it and it plays on stream from a queue."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

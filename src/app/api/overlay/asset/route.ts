@@ -335,6 +335,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, enabled });
   }
 
+  // Feature hub card "ขอคลิป/เพลง". Off: nothing new plays (the queue keeps
+  // confirmed clips; a playing one goes back to the top — src/lib/media-queue.ts).
+  if (kind === "mediaToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await prisma.user.update({ where: { id: session.user.id }, data: { mediaEnabled: enabled } });
+    return NextResponse.json({ ok: true, enabled });
+  }
+
   // Feature hub card "วงล้อสุ่ม". Turning it on needs the first-enable
   // checklist (POST /api/wheels/rules); the client opens it on 409.
   if (kind === "wheelToggle") {
