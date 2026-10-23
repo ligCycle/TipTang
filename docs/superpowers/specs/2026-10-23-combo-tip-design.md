@@ -1,6 +1,6 @@
 # Combo tip ("คอมโบทิป") — design
 
-**Date:** 2026-10-23 · **Status:** draft, awaiting the founder's review of the whole document
+**Date:** 2026-10-23 · **Status:** approved by the founder 2026-10-23
 **Project 4 of the donation-features roadmap** (a "hype train"). Built on branch `feature-hub` after
 projects 1–3 (feature hub, sound sets, spin wheel — not yet deployed; the founder ships them
 together). Mockups: `.superpowers/brainstorm/1407-1792721253/content/hype-v2.html` (on stream,
