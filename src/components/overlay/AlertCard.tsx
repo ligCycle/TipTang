@@ -31,6 +31,7 @@ export function AlertCard({
   videoMuted = false,
   loop = false,
   comboLevel = null,
+  wishName = null,
 }: {
   name: string;
   amount: number;
@@ -48,6 +49,8 @@ export function AlertCard({
   loop?: boolean;
   /** Combo tip level this tip reached: a ribbon, and a shake from level 5. */
   comboLevel?: number | null;
+  /** Goal item the fan chose to help: a small "ช่วยซื้อ <item>" line. */
+  wishName?: string | null;
 }) {
   const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
   const dark = alertTheme === "dark";
@@ -134,6 +137,7 @@ export function AlertCard({
           {Math.max(1, Math.round(Math.abs(timerDelta) / 60))} นาที
         </p>
       )}
+      {wishName && <p className="mt-1 text-sm font-semibold text-white/85">ช่วยซื้อ {wishName}</p>}
       {message && <p className="mt-2 text-white/95">{message}</p>}
       </div>
     </div>

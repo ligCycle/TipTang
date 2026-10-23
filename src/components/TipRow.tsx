@@ -33,6 +33,8 @@ type Tip = {
   spinWheelId?: string | null;
   /** What the wheel landed on (confirmed tips). */
   spinResult?: string | null;
+  /** Goal item the fan chose to help. */
+  wishItem?: string | null;
 };
 
 // Dashboard flag styling per verifier verdict. `ok` = amount + receiver matched
@@ -189,6 +191,12 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
             <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
               <Icon name="volume" className="h-3 w-3" />
               {t("pickedSoundBadge", { name: tip.pickedSound })}
+            </span>
+          )}
+          {tip.wishItem && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+              <Icon name="target" className="h-3 w-3" />
+              {t("wishBadge", { name: tip.wishItem })}
             </span>
           )}
           {tip.spinResult ? (

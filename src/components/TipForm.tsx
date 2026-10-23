@@ -8,6 +8,7 @@ import { Icon } from "@/components/Icon";
 import { PaypalPayPanel } from "@/components/PaypalPayPanel";
 import { SoundPicker, soundFloor, type SoundChoice } from "@/components/SoundPicker";
 import { WheelPicker, type WheelChoice } from "@/components/WheelPicker";
+import { WishPicker, type WishChoiceItem } from "@/components/WishPicker";
 import { spinFloor } from "@/lib/wheel";
 
 const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
@@ -40,6 +41,7 @@ export function TipForm({
   soundChoices = null,
   soundSetName = null,
   wheelChoice = null,
+  wishChoice = null,
 }: {
   username: string;
   creatorName: string;
@@ -56,6 +58,8 @@ export function TipForm({
   soundSetName?: string | null;
   /** The wheel in use, when the card is on and it has segments left; null = hidden. */
   wheelChoice?: WheelChoice | null;
+  /** Goal items fans may choose to help (2+ open, card on); null = hidden. */
+  wishChoice?: WishChoiceItem[] | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -104,6 +108,8 @@ export function TipForm({
   const [spin, setSpin] = useState(false);
   const [spinNote, setSpinNote] = useState(false);
   const [spinDropped, setSpinDropped] = useState(false);
+  // Goal item this tip helps (no price; null = main item).
+  const [wishItemId, setWishItemId] = useState<string | null>(null);
   const pickedSound = soundChoices?.find((c) => c.id === pickedSoundId) ?? null;
   const spinPrice = spin && wheelChoice ? wheelChoice.price : 0;
 
@@ -219,6 +225,7 @@ export function TipForm({
       fd.set("paymentMethod", method);
       if (pickedSoundId) fd.set("pickedSoundId", pickedSoundId);
       if (spin && wheelChoice) fd.set("spinWheel", wheelChoice.id);
+      if (wishItemId && wishChoice) fd.set("wishItemId", wishItemId);
       fd.set("slip", slip);
 
       const res = await fetch("/api/tips", { method: "POST", body: fd });
@@ -264,6 +271,7 @@ export function TipForm({
     setSpin(false);
     setSpinNote(false);
     setSpinDropped(false);
+    setWishItemId(null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -414,6 +422,10 @@ export function TipForm({
               </span>
             )}
           </label>
+
+          {wishChoice && (
+            <WishPicker items={wishChoice} value={wishItemId} onChange={setWishItemId} />
+          )}
 
           {wheelChoice && (
             <div>

@@ -141,6 +141,7 @@ export async function alertFeed(
             timerEffect: true,
             pickedSound: { select: { url: true } },
             comboTip: { select: { levelAfter: true, counted: true } },
+            wishItemId: true,
           },
         }),
     off
@@ -181,6 +182,7 @@ export async function alertFeed(
       soundUrl: t.pickedSound?.url ?? null,
       // Combo tip level after this tip (alert ribbon); null when not in a combo.
       comboLevel: t.comboTip?.counted ? t.comboTip.levelAfter : null,
+      wishItemId: t.wishItemId,
     })),
     ...orders.map((o) => ({
       id: `order_${o.id}`,
@@ -191,11 +193,18 @@ export async function alertFeed(
       timerDelta: null as number | null,
       soundUrl: null as string | null,
       comboLevel: null as number | null,
+      wishItemId: null as string | null,
     })),
   ]
     .sort((a, b) => (a.confirmedAt?.getTime() ?? 0) - (b.confirmedAt?.getTime() ?? 0))
     .slice(0, 15);
 
+  const wishIds = [...new Set(merged.map((m) => m.wishItemId).filter((id): id is string => Boolean(id)))];
+  const wishNames = new Map(
+    wishIds.length > 0
+      ? (await prisma.wishItem.findMany({ where: { id: { in: wishIds }, userId: user.id }, select: { id: true, name: true } })).map((w) => [w.id, w.name])
+      : [],
+  );
   const feedTips: FeedTip[] = merged.map((m) => ({
     id: m.id,
     supporterName: m.supporterName,
@@ -205,6 +214,8 @@ export async function alertFeed(
     timerDelta: m.timerDelta,
     soundUrl: m.soundUrl,
     comboLevel: m.comboLevel,
+    // "ช่วยซื้อ <item>" line on the alert card.
+    wishName: m.wishItemId ? (wishNames.get(m.wishItemId) ?? null) : null,
   }));
   const cursor = nextCursor(
     validAfter ? validAfter.toISOString() : "",

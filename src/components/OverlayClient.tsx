@@ -17,6 +17,7 @@ type Alert = {
   /** The sound the fan picked (beats tier and set); null = none. */
   soundUrl?: string | null;
   comboLevel?: number | null;
+  wishName?: string | null;
 };
 
 /** One tip as the overlay feeds return it. */
@@ -31,6 +32,8 @@ export type FeedTip = {
   soundUrl: string | null;
   /** Combo tip level after this tip; null when it wasn't part of a combo. */
   comboLevel: number | null;
+  /** Goal item the fan chose to help; null = none. */
+  wishName: string | null;
 };
 
 const BASE_DURATION_SEC = 7;
@@ -188,6 +191,7 @@ export function OverlayClient({
         timerDelta: tip.timerDelta ?? null,
         soundUrl: tip.soundUrl ?? null,
         comboLevel: tip.comboLevel ?? null,
+        wishName: tip.wishName ?? null,
       });
     }
     // A test from the dashboard: shown once per id, never moves the timer.
@@ -289,6 +293,7 @@ export function OverlayClient({
             videoUrl={media.videoUrl}
             videoMuted={media.videoMuted}
             comboLevel={current.comboLevel ?? null}
+            wishName={current.wishName ?? null}
           />
         </div>
       )}

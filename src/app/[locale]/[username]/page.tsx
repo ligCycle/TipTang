@@ -16,6 +16,8 @@ import { CreatorTheme } from "@/components/CreatorTheme";
 import { libraryNumber } from "@/lib/alert-sets";
 import { clampSlots, taskOdds } from "@/lib/wheel";
 import { wheelForFans } from "@/lib/wheel-server";
+import { goalSettings } from "@/lib/goal-server";
+import { mainItem } from "@/lib/wishlist";
 import { jsonLdString } from "@/lib/jsonld";
 
 export async function generateMetadata({
@@ -235,8 +237,20 @@ export default async function ProfilePage({
   const topSupporters = topSupportersList;
 
   const socials = normalizeSocialLinks(creator.socialLinks);
-  const goalAmount = creator.goalAmount ? Number(creator.goalAmount) : 0;
-  const goalPct = goalPercent(raised, goalAmount);
+  // Goal "หลายชิ้น": fans pick an item in the form when 2+ items are open
+  // (and the card is on); the sidebar block then steps aside. Otherwise the
+  // block shows the single goal as always, or the main item.
+  const goal = await goalSettings(creator.id);
+  const wishItems = goal?.type === "multi" ? goal.items : null;
+  const wishChoice =
+    goal?.enabled && wishItems && wishItems.filter((i) => !i.full).length >= 2
+      ? wishItems.map((i) => ({ id: i.id, name: i.name, price: i.price, raised: i.raised, imageUrl: i.imageUrl, full: i.full }))
+      : null;
+  const blockItem = wishItems && !wishChoice ? mainItem(wishItems) : null;
+  const goalTitle = blockItem ? blockItem.name : wishItems ? "" : creator.goalTitle;
+  const goalAmount = blockItem ? blockItem.price : wishItems ? 0 : creator.goalAmount ? Number(creator.goalAmount) : 0;
+  const goalShown = blockItem ? blockItem.raised : raised;
+  const goalPct = goalPercent(goalShown, goalAmount);
 
   const initial = creator.displayName.charAt(0).toUpperCase();
   const currencyLocale = locale === "th" ? "th-TH" : "en-US";
@@ -370,6 +384,7 @@ export default async function ProfilePage({
             soundChoices={soundChoices}
             soundSetName={soundSet?.name ?? null}
             wheelChoice={wheelChoice}
+            wishChoice={wishChoice}
           />
         ) : (
           <div className="card rounded-2xl p-6 text-center text-brand-900/70">
@@ -395,7 +410,7 @@ export default async function ProfilePage({
               <h2 className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-900/60">
                 <Icon name="target" />
                 <span className="truncate">
-                  {creator.goalTitle || t("goalDefaultTitle")}
+                  {goalTitle || t("goalDefaultTitle")}
                 </span>
               </h2>
               <span className="shrink-0 text-sm font-bold tabular-nums text-brand-700">
@@ -413,7 +428,7 @@ export default async function ProfilePage({
             </div>
             <p className="mt-2 text-sm tabular-nums text-brand-900/70">
               {t("goalProgress", {
-                raised: formatBaht(raised, currencyLocale),
+                raised: formatBaht(goalShown, currencyLocale),
                 goal: formatBaht(goalAmount, currencyLocale),
               })}
             </p>

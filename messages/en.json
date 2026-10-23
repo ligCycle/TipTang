@@ -192,7 +192,11 @@
     "wheelSlotCount": "{count, plural, one {# slot} other {# slots}}",
     "wheelEqualOdds": "Every slot has the same odds",
     "wheelSpinCleared": "The amount no longer covers the spin, so the spin was removed.",
-    "wheelSpinDropped": "This tip didn’t spin the wheel (the amount didn’t cover the spin, or the wheel was changed, turned off or ran out while you were tipping). Your tip still reached the creator as usual."
+    "wheelSpinDropped": "This tip didn’t spin the wheel (the amount didn’t cover the spin, or the wheel was changed, turned off or ran out while you were tipping). Your tip still reached the creator as usual.",
+    "wishLabel": "This tip helps buy (optional)",
+    "wishNone": "No pick",
+    "wishNoneHint": "Goes to the main item: {name}",
+    "wishFull": "Fully funded"
   },
   "tipSuccess": {
     "title": "Tip sent!",
@@ -392,7 +396,8 @@
     "spinEmptyCancel": "Cancel",
     "spinEmptyForce": "Confirm without spin",
     "spinEmptyReset": "Reset wheel and confirm",
-    "spinResetFailed": "Couldn’t reset — the wheel may have been deleted. You can confirm without a spin."
+    "spinResetFailed": "Couldn’t reset — the wheel may have been deleted. You can confirm without a spin.",
+    "wishBadge": "Helps: {name}"
   },
   "settings": {
     "title": "Donate page settings",

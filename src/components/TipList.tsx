@@ -60,9 +60,16 @@ export async function TipList({
       createdAt: true,
       pickedSound: { select: { id: true, name: true } },
       spinWheelId: true,
+      wishItemId: true,
       spin: { select: { taskText: true, status: true } },
     },
   });
+  const wishIds = [...new Set(tips.map((tip) => tip.wishItemId).filter((id): id is string => Boolean(id)))];
+  const wishNames = new Map(
+    wishIds.length > 0
+      ? (await prisma.wishItem.findMany({ where: { id: { in: wishIds }, userId }, select: { id: true, name: true } })).map((w) => [w.id, w.name])
+      : [],
+  );
   // Unnamed picked sounds show their library number ("เสียง 2"), as everywhere.
   const soundIds = tips.some((tip) => tip.pickedSound && !tip.pickedSound.name)
     ? (
@@ -131,6 +138,8 @@ export async function TipList({
     // Wheel: the wheel the fan asked to spin, and the result once confirmed.
     spinWheelId: tip.spinWheelId,
     spinResult: tip.spin?.status === "ACTIVE" ? tip.spin.taskText : null,
+    // Goal item the fan chose to help (deleted items keep their name).
+    wishItem: tip.wishItemId ? (wishNames.get(tip.wishItemId) ?? null) : null,
   }));
 
   return (
