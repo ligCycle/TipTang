@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { readBossTest, readGachaTest, readWheelTest } from "@/lib/overlay-test";
-import { ownLinkLive, stageCards, type OwnLinks, type StageLink } from "@/lib/obs-stage";
+import { barCards, ownLinkLive, stageCards, type OwnLinks, type StageLink } from "@/lib/obs-stage";
 
 /** Which page polled a feed: the main link, the bars link, or the feature's own link (null). */
 export type Via = StageLink | null;
@@ -10,7 +10,30 @@ export function viaOf(req: Request): Via {
   return v === "main" || v === "bars" ? v : null;
 }
 
-type SeenField = "mainSeenAt" | "barsSeenAt" | "wheelSeenAt" | "gachaSeenAt" | "bossLinkSeenAt";
+type SeenField =
+  | "mainSeenAt"
+  | "barsSeenAt"
+  | "wheelSeenAt"
+  | "gachaSeenAt"
+  | "bossLinkSeenAt"
+  | "goalLinkSeenAt"
+  | "timerLinkSeenAt"
+  | "comboLinkSeenAt"
+  | "pkLinkSeenAt";
+
+/**
+ * A bar's own link was polled (not the bars link): remember it, so the bars
+ * link leaves that bar out while it's open.
+ */
+export async function touchOwnBar(
+  req: Request,
+  user: { id: string } & Partial<Record<"goalLinkSeenAt" | "timerLinkSeenAt" | "comboLinkSeenAt" | "pkLinkSeenAt", Date | null>>,
+  field: "goalLinkSeenAt" | "timerLinkSeenAt" | "comboLinkSeenAt" | "pkLinkSeenAt",
+  now: Date,
+): Promise<void> {
+  if (viaOf(req) !== null) return;
+  await touchSeen(user.id, field, user[field] ?? null, now);
+}
 
 /** Remember a poll (at most every 30 s), like touchComboSeen. */
 export async function touchSeen(userId: string, field: SeenField, seenAt: Date | null, now: Date): Promise<void> {
@@ -61,6 +84,10 @@ export async function stageFor(userId: string, link: StageLink, now: Date) {
       timerEnabled: true,
       comboEnabled: true,
       pkEnabled: true,
+      goalLinkSeenAt: true,
+      timerLinkSeenAt: true,
+      comboLinkSeenAt: true,
+      pkLinkSeenAt: true,
     },
   });
   if (!u) return null;
@@ -77,7 +104,15 @@ export async function stageFor(userId: string, link: StageLink, now: Date) {
     combo: u.comboEnabled,
     pk: u.pkEnabled,
   };
-  if (link === "bars") return stageCards(flags, ownLinksOf(u, now), NO_TESTS, "bars");
+  if (link === "bars") {
+    return barCards({
+      goal: ownLinkLive(u.goalLinkSeenAt, now),
+      timer: ownLinkLive(u.timerLinkSeenAt, now),
+      combo: ownLinkLive(u.comboLinkSeenAt, now),
+      pk: ownLinkLive(u.pkLinkSeenAt, now),
+      boss: ownLinkLive(u.bossLinkSeenAt, now),
+    });
+  }
   const t = now.getTime();
   const [wheel, gacha, boss] = await Promise.all([readWheelTest(userId, t), readGachaTest(userId, t), readBossTest(userId, t)]);
   // A pending test mounts its client even with the card off (C10). Media tests
@@ -85,5 +120,3 @@ export async function stageFor(userId: string, link: StageLink, now: Date) {
   const tests = { wheel: Boolean(wheel), gacha: Boolean(gacha), media: false, boss: Boolean(boss) };
   return stageCards(flags, ownLinksOf(u, now), tests, "main");
 }
-
-const NO_TESTS: OwnLinks = { wheel: false, gacha: false, media: false, boss: false };

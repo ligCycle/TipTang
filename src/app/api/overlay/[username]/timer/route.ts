@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { overlayUser, timerState } from "@/lib/overlay-feed";
+import { touchOwnBar } from "@/lib/obs-stage-server";
 
 // Polled by the subathon-timer link. Validates the secret key and returns
 // the current remaining seconds (server-computed, so the client doesn't depend
@@ -13,6 +14,7 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+  await touchOwnBar(req, user, "timerLinkSeenAt", new Date());
   const t = timerState(user);
   return NextResponse.json({
     enabled: t.enabled,

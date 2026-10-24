@@ -17,7 +17,16 @@ function clock(sec: number): string {
  * winner for a few seconds; hidden when there's no match. The countdown uses
  * the server's clock (endsAt − serverNow), not this computer's.
  */
-export function PkOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
+export function PkOverlayClient({
+  username,
+  apiKey,
+  via = null,
+}: {
+  username: string;
+  apiKey: string;
+  /** Inside the bars link (doesn't count as this bar's own link). */
+  via?: "bars" | null;
+}) {
   const [match, setMatch] = useState<PkFeed | null>(null);
   // Server time minus local time, from the last poll.
   const skew = useRef(0);
@@ -30,7 +39,7 @@ export function PkOverlayClient({ username, apiKey }: { username: string; apiKey
     async function poll() {
       let next: PkFeed | null = null;
       try {
-        const res = await fetch(`/api/overlay/${username}/pk?key=${encodeURIComponent(apiKey)}`, { cache: "no-store" });
+        const res = await fetch(`/api/overlay/${username}/pk?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`, { cache: "no-store" });
         if (res.ok) {
           next = ((await res.json()) as { match: PkFeed | null }).match;
           if (next) {
@@ -51,7 +60,7 @@ export function PkOverlayClient({ username, apiKey }: { username: string; apiKey
       if (timer) clearTimeout(timer);
       clearInterval(tick);
     };
-  }, [username, apiKey]);
+  }, [username, apiKey, via]);
 
   if (!match) return null;
   const left = remainingSec(new Date(match.endsAt), new Date(serverNow || new Date(match.serverNow).getTime()));

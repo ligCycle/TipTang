@@ -52,3 +52,15 @@ export function stageCards(
     boss: on("boss", flags.boss),
   };
 }
+
+/** Bars whose own per-feature link is open (polled within LIVE_MS). */
+export type BarOwnLinks = Record<BarCard, boolean>;
+
+/**
+ * Which bars the bars link mounts: every bar, minus any whose own link is
+ * open — that link shows it, so a creator can place one bar apart and keep
+ * the rest stacked, and nothing shows twice. Idle bars hide themselves.
+ */
+export function barCards(own: BarOwnLinks): Record<BarCard, boolean> {
+  return { goal: !own.goal, timer: !own.timer, combo: !own.combo, pk: !own.pk, boss: !own.boss };
+}

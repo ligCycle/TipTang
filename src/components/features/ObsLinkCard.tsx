@@ -91,6 +91,7 @@ export function ObsLinkCard({
     size: string,
     seen: (string | null)[] | null,
     placedBefore: string | null = null,
+    extra: React.ReactNode = null,
   ) => (
     <li className="space-y-1.5 rounded-xl border border-brand-200 bg-white/60 p-3 dark:bg-transparent">
       <div className="flex flex-wrap items-center gap-2">
@@ -107,8 +108,34 @@ export function ObsLinkCard({
         {copyButton(url)}
         <span className="text-xs text-brand-900/50">{size}</span>
       </div>
+      {extra}
     </li>
   );
+
+  // Bars that are on, each with its own link: placed apart, it leaves the bars link by itself.
+  const ownBars = FEATURES.filter((f) => f.stage.includes("bars") && f.obsPath && flags[f.flag]);
+  const separate =
+    ownBars.length > 0 ? (
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-brand-100 pt-2 text-xs text-brand-900/70">
+        <span className="font-semibold">{t("placeSeparately")}</span>
+        {ownBars.map((f) => {
+          const url = link(f.obsPath ?? "");
+          return (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => copy(url)}
+              aria-label={t("copyOwnLink", { name: t(`f_${f.id}`) })}
+              className="inline-flex items-center gap-1 rounded-full border border-brand-300 px-2.5 py-0.5 font-semibold text-brand-700 hover:bg-brand-100"
+            >
+              <Icon name="link" className="h-3 w-3" />
+              {copied === url ? t("copied") : t(`f_${f.id}`)}
+            </button>
+          );
+        })}
+        <span className="w-full text-brand-900/55">{t("placeSeparatelyHint")}</span>
+      </div>
+    ) : null;
 
   return (
     <section id="obs" className="scroll-mt-4 rounded-2xl border-2 border-brand-400 p-4">
@@ -126,7 +153,7 @@ export function ObsLinkCard({
 
       <ul className="mt-3 space-y-2">
         {row(t("linkMain"), t("linkMainWhat"), names("main"), link(""), t("sizeMain"), times ? [times.mainSeenAt] : null, times?.lastSeenAt ?? null)}
-        {row(t("linkBars"), t("linkBarsWhat"), names("bars"), link("/bars"), t("sizeBars"), times ? [times.barsSeenAt] : null)}
+        {row(t("linkBars"), t("linkBarsWhat"), names("bars"), link("/bars"), t("sizeBars"), times ? [times.barsSeenAt] : null, null, separate)}
         {row(t("linkTodo"), t("linkTodoWhat"), null, link("/todo"), t("sizeTodo"), null)}
       </ul>
       <p className="mt-2 text-xs text-brand-900/55">{t("keepSecret")}</p>

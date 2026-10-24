@@ -18,10 +18,13 @@ export function GoalOverlayClient({
   username,
   apiKey,
   color,
+  via = null,
 }: {
   username: string;
   apiKey: string;
   color: string | null;
+  /** Inside the bars link (doesn't count as this bar's own link). */
+  via?: "bars" | null;
 }) {
   const [goal, setGoal] = useState<GoalFeed | null>(null);
   const [rotateIndex, setRotateIndex] = useState(0);
@@ -50,7 +53,7 @@ export function GoalOverlayClient({
 
     async function poll() {
       try {
-        const res = await fetch(`/api/overlay/${username}/goal?key=${encodeURIComponent(apiKey)}`);
+        const res = await fetch(`/api/overlay/${username}/goal?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`);
         if (!res.ok) return;
         const data: GoalFeed = await res.json();
         if (!active) return;
@@ -87,7 +90,7 @@ export function GoalOverlayClient({
       clearInterval(rot);
       timers.forEach(clearTimeout);
     };
-  }, [username, apiKey]);
+  }, [username, apiKey, via]);
 
   if (!goal || !goal.enabled) return null;
   return (

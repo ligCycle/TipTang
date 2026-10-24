@@ -1007,9 +1007,9 @@
     "testSentObs": "Sent — check your OBS screen",
     "testFailedObs": "Couldn't send. Try again.",
     "advancedTitle": "Advanced: place each one yourself",
-    "advancedHint": "To place a feature in its own spot, use its link below instead. A feature whose own link is open won't also show on the main link.",
+    "advancedHint": "To place a feature in its own spot, use its link below instead. A feature whose own link is open won't also show on the main or bars link.",
     "keepSecret": "Keep these links secret: don't show them on stream or share them.",
-    "oldLinksNote": "Placed a separate link for a feature before (goal, wheel, clip requests…)? Remove it from your live software when you add the bars link, or that bar will show twice. Your old alert link is the main link; keep it as it is.",
+    "oldLinksNote": "Placed separate links for features before? Keep using them: a feature whose own link is open won't also show on the main or bars link. Your old alert link is the main link; keep it as it is.",
     "pvNote": "This sample uses your settings (colour, rewards, names); it isn't a real tip",
     "pvComboRunning": "Running",
     "pvComboLevel": "Level up",
@@ -1024,7 +1024,10 @@
     "pvPkReal": "This is the match running right now",
     "pvBoss": "Sample boss",
     "pvBossCard": "Boss card",
-    "pvBossKill": "Boss defeated"
+    "pvBossKill": "Boss defeated",
+    "placeSeparately": "Place apart:",
+    "placeSeparatelyHint": "Copy a bar's own link into OBS as another source; that bar leaves the bars link by itself, so it never shows twice.",
+    "copyOwnLink": "Copy the {name} link"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

@@ -23,7 +23,18 @@ function clock(ms: number): string {
  * "อีก ฿X → <reward>", the countdown and unlocked rewards; a short
  * celebration for every level reached; then the end summary for ~15 s.
  */
-export function ComboOverlayClient({ username, apiKey, color }: { username: string; apiKey: string; color: string | null }) {
+export function ComboOverlayClient({
+  username,
+  apiKey,
+  color,
+  via = null,
+}: {
+  username: string;
+  apiKey: string;
+  color: string | null;
+  /** Inside the bars link (doesn't count as this bar's own link). */
+  via?: "bars" | null;
+}) {
   const [feed, setFeed] = useState<ComboFeed>({ phase: "idle" });
   const [now, setNow] = useState(() => Date.now());
   const [celebrate, setCelebrate] = useState<{ key: string; level: number; text: string | null } | null>(null);
@@ -51,7 +62,7 @@ export function ComboOverlayClient({ username, apiKey, color }: { username: stri
 
     async function poll() {
       try {
-        const res = await fetch(`/api/overlay/${username}/combo?key=${encodeURIComponent(apiKey)}`);
+        const res = await fetch(`/api/overlay/${username}/combo?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`);
         if (!res.ok) return;
         const data = (await res.json()) as ComboFeed;
         if (!active) return;
@@ -82,7 +93,7 @@ export function ComboOverlayClient({ username, apiKey, color }: { username: stri
       clearInterval(tick);
       timers.forEach(clearTimeout);
     };
-  }, [username, apiKey]);
+  }, [username, apiKey, via]);
 
   if (feed.phase === "idle") return null;
   if (feed.phase === "summary" && Date.parse(feed.until) <= now) return null;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { overlayUser } from "@/lib/overlay-feed";
+import { touchOwnBar } from "@/lib/obs-stage-server";
 import { goalFeed } from "@/lib/goal-server";
 
 // Polled by the old goal-bar link. Validates the secret key and returns the
@@ -13,6 +14,7 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+  await touchOwnBar(req, user, "goalLinkSeenAt", new Date());
   const feed = await goalFeed(user.id);
   // Bars already open in OBS keep the old script until they reload: give them
   // the old top-level fields too (the new client ignores them).

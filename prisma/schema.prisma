@@ -616,6 +616,11 @@ model User {
   wheelSeenAt          DateTime?
   gachaSeenAt          DateTime?
   bossLinkSeenAt       DateTime?
+  // Per-feature bar links (a live one keeps its bar off the bars link).
+  goalLinkSeenAt       DateTime?
+  timerLinkSeenAt      DateTime?
+  comboLinkSeenAt      DateTime?
+  pkLinkSeenAt         DateTime?
   bossDefs             BossDef[]
   bossHits             BossHit[]
   bossKills            BossKill[]

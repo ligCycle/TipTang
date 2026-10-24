@@ -35,6 +35,11 @@ export const OVERLAY_USER_SELECT = {
   goalAmount: true,
   goalStartedAt: true,
   goalOverlayEnabled: true,
+  // Last poll of each bar's own link (the bars link leaves an open one out).
+  goalLinkSeenAt: true,
+  timerLinkSeenAt: true,
+  comboLinkSeenAt: true,
+  pkLinkSeenAt: true,
   // Cheap check each poll: has the active sound set changed? (alertFeed)
   activeSetId: true,
   activeSet: { select: { updatedAt: true } },
@@ -61,6 +66,10 @@ type OverlayUser = {
   goalAmount: unknown;
   goalStartedAt: Date | null;
   goalOverlayEnabled: boolean;
+  goalLinkSeenAt: Date | null;
+  timerLinkSeenAt: Date | null;
+  comboLinkSeenAt: Date | null;
+  pkLinkSeenAt: Date | null;
   activeSetId: string | null;
   activeSet: { updatedAt: Date } | null;
 };

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { overlayUser, touchOverlaySeen } from "@/lib/overlay-feed";
 import { comboFeed, touchComboSeen } from "@/lib/combo-server";
+import { touchOwnBar } from "@/lib/obs-stage-server";
 
 // Polled by the combo OBS link. Polling is also what makes tips count: combos
 // only run while this link is open (src/lib/combo-server.ts).
@@ -16,6 +17,7 @@ export async function GET(
   }
   const now = new Date();
   touchOverlaySeen(user);
+  await touchOwnBar(req, user, "comboLinkSeenAt", new Date());
   const combo = await prisma.user.findUnique({
     where: { id: user.id },
     select: { comboEnabled: true, comboOverlaySeenAt: true },

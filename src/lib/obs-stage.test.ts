@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ownLinkLive, stageCards } from "./obs-stage.ts";
+import { barCards, ownLinkLive, stageCards } from "./obs-stage.ts";
 
 const NOW = new Date("2026-10-24T10:00:00Z");
 const ago = (s: number) => new Date(NOW.getTime() - s * 1000);
@@ -30,4 +30,21 @@ test("main: voice alone turns the media player on", () => {
 
 test("bars: every bar card is listed (they hide themselves)", () => {
   assert.deepEqual(stageCards(FLAGS, NONE, NONE, "bars"), { goal: true, timer: true, combo: true, pk: true, boss: true });
+});
+
+test("bars: a bar whose own link is open is left out, so it never shows twice", () => {
+  assert.deepEqual(barCards({ goal: true, timer: false, combo: false, pk: false, boss: false }), {
+    goal: false,
+    timer: true,
+    combo: true,
+    pk: true,
+    boss: true,
+  });
+  assert.deepEqual(barCards({ goal: false, timer: false, combo: false, pk: false, boss: false }), {
+    goal: true,
+    timer: true,
+    combo: true,
+    pk: true,
+    boss: true,
+  });
 });

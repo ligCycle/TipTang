@@ -8,10 +8,13 @@ export function TimerOverlayClient({
   username,
   apiKey,
   color,
+  via = null,
 }: {
   username: string;
   apiKey: string;
   color: string | null;
+  /** Inside the bars link (doesn't count as this bar's own link). */
+  via?: "bars" | null;
 }) {
   const [timer, setTimer] = useState<TimerState | null>(null);
 
@@ -20,7 +23,7 @@ export function TimerOverlayClient({
     async function poll() {
       try {
         const res = await fetch(
-          `/api/overlay/${username}/timer?key=${encodeURIComponent(apiKey)}`,
+          `/api/overlay/${username}/timer?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`,
         );
         if (!res.ok) return;
         const d = await res.json();
