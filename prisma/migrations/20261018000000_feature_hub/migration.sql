@@ -450,3 +450,6 @@ ALTER TABLE "User" ADD COLUMN "gachaSeenAt" TIMESTAMP(3);
 ALTER TABLE "User" ADD COLUMN "bossLinkSeenAt" TIMESTAMP(3);
 ALTER TABLE "MediaRequest" ADD COLUMN "pausedMs" INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE "MediaRequest" ADD COLUMN "pausedAt" TIMESTAMP(3);
+
+-- PK: a side that gives up loses (founder 2026-10-24)
+ALTER TABLE "PkMatch" ADD COLUMN "forfeitBy" TEXT;

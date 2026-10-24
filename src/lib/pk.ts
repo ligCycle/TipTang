@@ -32,7 +32,13 @@ export function cleanHex(v: unknown): string | null {
   return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : null;
 }
 
-export function winnerOf(totalA: number, totalB: number): PkSide | "draw" {
+/**
+ * The winner of a finished match. A side that gave up (cancelled a running
+ * creator-vs-creator match) loses whatever the totals (founder, 2026-10-24).
+ */
+export function winnerOf(totalA: number, totalB: number, forfeitBy?: PkSide | null): PkSide | "draw" {
+  if (forfeitBy === "A") return "B";
+  if (forfeitBy === "B") return "A";
   return totalA > totalB ? "A" : totalB > totalA ? "B" : "draw";
 }
 

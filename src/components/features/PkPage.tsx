@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FeaturePreviewLayout } from "@/components/features/PreviewPanel";
 import { PkPreview } from "@/components/features/FeaturePreviews";
 import { barShare, DEFAULT_SIDES, MAX_SIDE_NAME, PK_DURATIONS, remainingSec } from "@/lib/pk";
@@ -22,6 +23,8 @@ type HistoryRow = {
   startedAt: string | null;
   endedAt: string | null;
   winner: "A" | "B" | "draw" | null;
+  /** The losing side gave up mid-match. */
+  forfeit?: boolean;
 };
 type Invite = { id: string; name: string; durationSec: number; createdAt: string };
 type PkState = {
@@ -60,6 +63,8 @@ export function PkPage() {
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
   // Creator vs creator: who to invite and for how long.
   const [invite, setInvite] = useState({ username: "", durationSec: 300 as number });
+  // A running creator-vs-creator match waiting for "give up" to be confirmed.
+  const [giveUp, setGiveUp] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Server clock minus this browser's, recorded when each refresh arrives.
   const [skew, setSkew] = useState(0);
@@ -182,6 +187,7 @@ export function PkPage() {
             </div>
             <p className="shrink-0 text-center text-sm font-semibold text-brand-900/70">
               {m.phase === "live" ? clock(left) : m.phase === "grace" ? t("graceNow") : m.winner === "draw" ? t("draw") : t("wins", { name: m.winner === "A" ? m.nameA : m.nameB })}
+              {m.phase === "ended" && m.forfeit && <span className="block text-xs font-normal">{t("forfeited")}</span>}
             </p>
             <div className="min-w-0 text-right">
               <p className="truncate font-bold" style={{ color: m.colorB }}>{m.nameB}</p>
@@ -220,15 +226,23 @@ export function PkPage() {
           </div>
           <p className="text-xs text-brand-900/55">{t("duoCounting")}</p>
           {m.phase !== "ended" && (
-            <button
-              type="button"
-              onClick={() => void call(`/api/pk/${m.id}`, "PATCH", { action: "cancel" }, () => t("saveFailed"))}
-              disabled={busy}
-              className="btn-secondary px-4 py-2 text-sm"
-            >
-              {t("cancelMatch")}
+            <button type="button" onClick={() => setGiveUp(m.id)} disabled={busy} className="btn-secondary px-4 py-2 text-sm">
+              {t("giveUp")}
             </button>
           )}
+          {/* Cancelling a running match against another creator = giving up (founder 2026-10-24). */}
+          <ConfirmDialog
+            open={giveUp === m.id}
+            message={t("giveUpConfirm", { name: m.nameB })}
+            confirmLabel={t("giveUp")}
+            danger
+            busy={busy}
+            onConfirm={async () => {
+              await call(`/api/pk/${m.id}`, "PATCH", { action: "cancel" }, () => t("saveFailed"));
+              setGiveUp(null);
+            }}
+            onCancel={() => setGiveUp(null)}
+          />
         </section>
       ) : (
         <section className="space-y-4 rounded-2xl border border-brand-200 p-4">
@@ -365,7 +379,8 @@ export function PkPage() {
                   <span className="font-semibold" style={{ color: h.colorB }}>{h.nameB}</span> ฿{(h.totalB ?? 0).toLocaleString()}
                 </span>
                 <span className="text-xs text-brand-900/60">
-                  {h.status === "CANCELLED" ? t("cancelled") : h.winner === "draw" ? t("draw") : t("wins", { name: h.winner === "A" ? h.nameA : h.nameB })} · {fmt(h.endedAt)}
+                  {h.status === "CANCELLED" ? t("cancelled") : h.winner === "draw" ? t("draw") : t("wins", { name: h.winner === "A" ? h.nameA : h.nameB })}
+                  {h.forfeit ? ` (${t("forfeited")})` : ""} · {fmt(h.endedAt)}
                 </span>
               </li>
             ))}

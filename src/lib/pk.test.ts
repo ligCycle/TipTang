@@ -69,3 +69,11 @@ test("distinctColorB never repeats A's colour", () => {
   assert.equal(distinctColorB("#22c55e", "#22c55e"), "#3b82f6");
   assert.equal(distinctColorB("#3b82f6", "#3b82f6"), "#ef4444");
 });
+
+test("founder 2026-10-24: a side that gives up loses at once, whatever the totals", () => {
+  assert.equal(winnerOf(100, 900, "B"), "A");
+  assert.equal(winnerOf(900, 100, "A"), "B");
+  assert.equal(winnerOf(500, 500, "A"), "B");
+  assert.equal(winnerOf(900, 100, null), "A");
+  assert.equal(winnerOf(500, 500), "draw");
+});

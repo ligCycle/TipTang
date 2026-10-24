@@ -42,6 +42,7 @@ const MATCH_SELECT = {
   endedAt: true,
   totalA: true,
   totalB: true,
+  forfeitBy: true,
   owner: { select: { autoConfirmTips: true } },
   opponent: { select: { autoConfirmTips: true } },
 } as const;
@@ -136,7 +137,11 @@ export type PkFeed = {
   /** "live" = counting, "grace" = time is up, waiting for confirms in flight, "ended" = frozen. */
   phase: "live" | "grace" | "ended";
   winner: PkSide | "draw" | null;
+  /** The loser gave up (cancelled mid-match); shown with the winner banner. */
+  forfeit: boolean;
 };
+
+const sideOf = (v: string | null | undefined): PkSide | null => (v === "A" || v === "B" ? v : null);
 
 async function toFeed(m: Match, now: Date, viewerId?: string): Promise<PkFeed> {
   const frozen = m.status === "ENDED";
@@ -155,7 +160,8 @@ async function toFeed(m: Match, now: Date, viewerId?: string): Promise<PkFeed> {
     serverNow: now.toISOString(),
     graceSec: graceOf(m),
     phase: frozen ? "ended" : now < ends ? "live" : "grace",
-    winner: frozen ? winnerOf(t.A, t.B) : null,
+    winner: frozen ? winnerOf(t.A, t.B, sideOf(m.forfeitBy)) : null,
+    forfeit: Boolean(m.forfeitBy),
   };
   // Creator vs creator: each stream shows its own creator on the left.
   if (m.kind === "duo" && viewerId && viewerId === m.opponentId) {
@@ -257,9 +263,10 @@ export async function endEarly(userId: string, now: Date): Promise<boolean> {
 }
 
 /**
- * Card off or account deleted (Q8, Q9): running and pending matches involving
- * the user are cancelled with their totals so far (no winner). Caller holds
- * no tip transaction; locks every creator involved in id order.
+ * Card off or account deleted (Q8, Q9): pending invitations and solo matches
+ * are cancelled with their totals so far (no winner); a running creator-vs-
+ * creator match is lost by this creator (forfeit, founder 2026-10-24). Caller
+ * holds no tip transaction; locks every creator involved in id order.
  */
 export async function cancelAllFor(userId: string, now: Date): Promise<void> {
   const open = await prisma.pkMatch.findMany({
@@ -275,10 +282,22 @@ export async function cancelAllFor(userId: string, now: Date): Promise<void> {
       const t = m.status === "ACTIVE" ? await totalsOf(tx, m) : { A: 0, B: 0 };
       await tx.pkMatch.updateMany({
         where: { id: m.id, status: { in: ["ACTIVE", "PENDING"] } },
-        data: { status: "CANCELLED", totalA: t.A, totalB: t.B, endedAt: now },
+        data: endData(m, userId, t, now),
       });
     }, TIP_TX);
   }
+}
+
+/**
+ * How a match ends when a creator stops it early: a running creator-vs-
+ * creator match is a loss for that creator (the other side wins at once);
+ * anything else (an invitation, a solo match) is cancelled with no result.
+ */
+function endData(m: Match, userId: string, t: { A: number; B: number }, now: Date) {
+  if (m.kind === "duo" && m.status === "ACTIVE") {
+    return { status: "ENDED" as const, totalA: t.A, totalB: t.B, endedAt: now, forfeitBy: userId === m.ownerId ? "A" : "B" };
+  }
+  return { status: "CANCELLED" as const, totalA: t.A, totalB: t.B, endedAt: now };
 }
 
 export async function setPkEnabled(userId: string, enabled: boolean, now: Date): Promise<void> {
@@ -311,12 +330,12 @@ export async function pkHistory(userId: string) {
     where: { OR: [{ ownerId: userId }, { opponentId: userId }], status: { in: ["ENDED", "CANCELLED"] }, startedAt: { not: null } },
     orderBy: { endedAt: "desc" },
     take: 10,
-    select: { id: true, kind: true, status: true, ownerId: true, opponentId: true, nameA: true, nameB: true, colorA: true, colorB: true, totalA: true, totalB: true, startedAt: true, endedAt: true },
+    select: { id: true, kind: true, status: true, ownerId: true, opponentId: true, nameA: true, nameB: true, colorA: true, colorB: true, totalA: true, totalB: true, forfeitBy: true, startedAt: true, endedAt: true },
   });
-  return rows.map(({ ownerId: _o, opponentId, ...r }) => {
+  return rows.map(({ ownerId: _o, opponentId, forfeitBy, ...r }) => {
     void _o;
-    const winner = r.status === "ENDED" ? winnerOf(r.totalA ?? 0, r.totalB ?? 0) : null;
-    const base = { ...r, startedAt: r.startedAt?.toISOString() ?? null, endedAt: r.endedAt?.toISOString() ?? null, winner };
+    const winner = r.status === "ENDED" ? winnerOf(r.totalA ?? 0, r.totalB ?? 0, sideOf(forfeitBy)) : null;
+    const base = { ...r, startedAt: r.startedAt?.toISOString() ?? null, endedAt: r.endedAt?.toISOString() ?? null, winner, forfeit: Boolean(forfeitBy) };
     // Creator vs creator: the viewer's own side first.
     if (r.kind === "duo" && opponentId === userId) {
       return {
@@ -357,6 +376,7 @@ export function testFeed(t: { id: string; startedAt: number }, now: Date): PkFee
     graceSec: 0,
     phase: ended ? "ended" : "live",
     winner: ended ? winnerOf(totalA, totalB) : null,
+    forfeit: false,
   };
 }
 
@@ -504,9 +524,10 @@ export async function cancelDuo(userId: string, id: string, now: Date): Promise<
   await prisma.$transaction(async (tx) => {
     await lockCreatorsOf(tx, m);
     const t = m.status === "ACTIVE" ? await totalsOf(tx, m) : { A: 0, B: 0 };
+    // Withdrawing an invitation has no result; cancelling a running match = giving up.
     await tx.pkMatch.updateMany({
       where: { id: m.id, status: { in: ["PENDING", "ACTIVE"] } },
-      data: { status: "CANCELLED", totalA: t.A, totalB: t.B, endedAt: now },
+      data: endData(m, userId, t, now),
     });
   }, TIP_TX);
 }

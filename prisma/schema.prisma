@@ -789,6 +789,8 @@ model PkMatch {
   // Frozen result (whole baht).
   totalA      Int?
   totalB      Int?
+  // Creator vs creator: the side ("A" owner, "B" opponent) that gave up mid-match; the other wins.
+  forfeitBy   String?
   createdAt   DateTime  @default(now())
 
   @@index([ownerId, status])

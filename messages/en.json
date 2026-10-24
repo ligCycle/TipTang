@@ -1350,7 +1350,6 @@
     "cancelled": "Cancelled",
     "duoLive": "PK with another creator",
     "duoCounting": "Each side counts tips sent during the match and confirmed by that side's creator.",
-    "cancelMatch": "Cancel PK (no winner)",
     "duoTitle": "PK with another creator",
     "duoHow": "Invite another TipTang creator by username. Once they accept, the PK starts on both streams at the same time. Each side's total is that creator's own tips (no money moves between you). Invitations expire after 10 minutes. · Totals count the tips each side confirms.",
     "invitesOff": "Don't accept invitations",
@@ -1364,7 +1363,10 @@
     "cantInvite": "You can't invite this creator right now.",
     "tooManyInvites": "You already have 3 invitations waiting.",
     "slowDown": "Too many invitations — try again later.",
-    "inviteGone": "This invitation has expired or was cancelled."
+    "inviteGone": "This invitation has expired or was cancelled.",
+    "giveUp": "Give up (they win now)",
+    "giveUpConfirm": "Give up this PK? {name} wins at once, and the winner banner shows on both streams.",
+    "forfeited": "the other side gave up"
   },
   "bossPage": {
     "howItWorks": "Confirmed tips damage the current boss, 1 baht = 1 HP. Extra damage carries over to the next boss. Each boss defeated adds its reward to the to-do list; after the last one, the last boss keeps respawning.",

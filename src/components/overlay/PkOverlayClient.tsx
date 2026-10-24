@@ -59,7 +59,9 @@ export function PkOverlayClient({ username, apiKey }: { username: string; apiKey
 }
 
 /** What the PK bar needs (the OBS link's feed, or a sample on the settings page). */
-export type PkViewMatch = Pick<PkFeed, "kind" | "phase" | "nameA" | "nameB" | "colorA" | "colorB" | "totalA" | "totalB" | "winner">;
+export type PkViewMatch = Pick<PkFeed, "kind" | "phase" | "nameA" | "nameB" | "colorA" | "colorB" | "totalA" | "totalB" | "winner"> & {
+  forfeit?: boolean;
+};
 
 /** The PK bar: names, totals, countdown, split bar, winner (the OBS link and the settings preview). */
 export function PkView({ match, left }: { match: PkViewMatch; left: number }) {
@@ -102,6 +104,7 @@ export function PkView({ match, left }: { match: PkViewMatch; left: number }) {
         {match.phase === "ended" && (
           <p className="mt-3 text-center text-2xl font-extrabold" style={{ color: winnerName ? (match.winner === "A" ? match.colorA : match.colorB) : "#ffffff" }}>
             {winnerName ? `${winnerName} ชนะ!` : "เสมอ!"}
+            {match.forfeit && <span className="block text-base font-semibold text-white/75">อีกฝ่ายยอมแพ้</span>}
           </p>
         )}
       </div>
