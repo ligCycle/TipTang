@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyDamage, undoDamage, bossAt, topDamage, cleanBossName, cleanBossHp, MAX_BOSSES } from "./boss.ts";
+import { applyDamage, undoDamage, bossAt, topDamage, cleanBossName, cleanBossHp, MAX_BOSSES, MAX_KILLS_PER_TIP, ANON_FAN, fanName } from "./boss.ts";
 
 const HPS = [100, 200, 300];
 
@@ -84,4 +84,21 @@ test("cleaners", () => {
   assert.equal(cleanBossHp(0), null);
   assert.equal(cleanBossHp(1.5), null);
   assert.equal(cleanBossHp(1_000_001), null);
+});
+
+test("C6: boss HP is at least 10; one tip kills at most 100 bosses", () => {
+  assert.equal(cleanBossHp(9), null);
+  assert.equal(cleanBossHp(10), 10);
+  const r = applyDamage({ life: 0, damage: 0 }, 100_000, [10]);
+  assert.equal(r.kills.length, MAX_KILLS_PER_TIP);
+  assert.equal(r.life, 100);
+  assert.equal(r.damage, 0);
+  assert.equal(r.pieces.reduce((s, p) => s + p.amount, 0), 1000);
+});
+
+test("C7: ties go to the earliest fan; an empty name shows as the generic supporter", () => {
+  assert.deepEqual(topDamage([{ fan: "A", amount: 50 }, { fan: "B", amount: 50 }]), { fan: "A", amount: 50 });
+  assert.deepEqual(topDamage([{ fan: "  ", amount: 80 }, { fan: "B", amount: 50 }]), { fan: ANON_FAN, amount: 80 });
+  assert.equal(fanName(""), ANON_FAN);
+  assert.equal(fanName(" Mali "), "Mali");
 });

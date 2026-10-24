@@ -5,7 +5,14 @@
  * counted in "lives": life N fights boss min(N, count − 1).
  */
 
+import { fanKey } from "./combo.ts";
+
 export const MAX_BOSSES = 10;
+export const MIN_BOSS_HP = 10;
+/** One tip defeats at most this many bosses; damage beyond it is not counted (C6). */
+export const MAX_KILLS_PER_TIP = 100;
+/** How an empty supporter name shows (C7). */
+export const ANON_FAN = "ผู้สนับสนุน";
 export const MAX_BOSS_NAME = 30;
 export const MAX_BOSS_HP = 1_000_000;
 export const MAX_BOSS_REWARD = 40;
@@ -32,8 +39,7 @@ export function applyDamage(
   const kills: number[] = [];
   if (hps.length === 0 || !Number.isFinite(amount) || amount <= 0) return { life, damage, pieces, kills };
   let left = amount;
-  // A guard against absurd chains (1 baht bosses and a huge tip).
-  for (let guard = 0; guard < 10_000 && left > 0; guard++) {
+  while (left > 0 && kills.length < MAX_KILLS_PER_TIP) {
     const hp = hps[bossAt(hps, life)];
     if (!(hp > 0)) break;
     const need = Math.max(0, hp - damage);
@@ -58,12 +64,20 @@ export function undoDamage(s: BossState, tipPieces: BossPiece[]): BossState {
   return { life: s.life, damage: Math.max(0, s.damage - onCurrent) };
 }
 
-/** The fan who dealt the most damage to one boss (names trimmed, case-insensitive; empty = one fan). */
+/** A supporter name for display: trimmed, or the generic supporter when empty. */
+export function fanName(name: string): string {
+  return name.trim() || ANON_FAN;
+}
+
+/**
+ * The fan who dealt the most damage to one boss (grouped like the combo's
+ * fanKey). Hits come in time order, so on a tie the earliest fan wins.
+ */
 export function topDamage(hits: { fan: string; amount: number }[]): { fan: string; amount: number } | null {
   const sums = new Map<string, { fan: string; amount: number }>();
   for (const h of hits) {
-    const key = h.fan.trim().toLowerCase();
-    const cur = sums.get(key) ?? { fan: h.fan.trim(), amount: 0 };
+    const key = fanKey(h.fan);
+    const cur = sums.get(key) ?? { fan: fanName(h.fan), amount: 0 };
     cur.amount += h.amount;
     sums.set(key, cur);
   }
@@ -78,7 +92,7 @@ export function cleanBossName(v: unknown): string | null {
 }
 
 export function cleanBossHp(v: unknown): number | null {
-  return typeof v === "number" && Number.isInteger(v) && v >= 1 && v <= MAX_BOSS_HP ? v : null;
+  return typeof v === "number" && Number.isInteger(v) && v >= MIN_BOSS_HP && v <= MAX_BOSS_HP ? v : null;
 }
 
 export function cleanBossReward(v: unknown): string | null {
