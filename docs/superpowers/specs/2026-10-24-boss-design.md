@@ -97,3 +97,47 @@ All schema goes into the feature_hub migration, with RLS on new tables.
 - **B3:** the last boss respawns forever. Reset goes back to boss 1 and clears damage, but keeps the history.
 - **B4:** rewards follow the no-money rule. The same soft check as the gacha (`looksLikeMoney`) applies to boss rewards.
 - **B5:** editing the list during a run keeps `bossLife`/`bossDamage`. If the current boss is deleted, the next one in order becomes current, with damage kept and capped.
+
+## Builder-check rulings (opus, 2026-10-24). These override the sections above.
+
+- **C1. Locks.**
+  - Boss confirm and reject run under the pipeline's creator lock. No insert happens before the lock.
+  - Settings writes (list, reset, toggle) take `lockCreator`.
+  - Reject runs after `comboRejectTx`.
+- **C2. Re-confirm.**
+  - BossHit gets a `counted` flag (like ComboTip).
+  - A re-confirmed tip deals `amount − its kept hits on earlier (dead) lives`.
+  - Live is re-checked.
+  - A repeated confirm does nothing.
+- **C3. Runs.**
+  - `User.bossRun` goes up on reset. `run` is stored on BossHit and BossKill, indexed `(userId, run, life)`.
+  - Reset marks unplayed kills as played (to-do items stay).
+- **C4. Pointer.**
+  - `User.bossDefId` points at the current boss. `bossLife` counts kills in the run.
+  - Damage is applied over `[current, next…, last]` (the last boss respawns).
+  - If the current boss is deleted, the next one by position becomes current, otherwise the last.
+  - Damage is kept uncapped, so a boss whose HP was lowered below it dies on the next hit. The HP bar clamps at 0.
+- **C5.** An empty list mid-run does nothing: no hits, the state is kept, the overlay is hidden.
+- **C6. Big tips.**
+  - Boss HP is at least 10 baht.
+  - At most 100 kills per tip. Damage beyond that is not counted, since a tip can be at most ฿100,000.
+- **C7. Ties and anonymous fans.**
+  - Hits are ordered `createdAt, id` (earliest fan wins a tie), and the killing piece is included.
+  - Fans are grouped with combo's `fanKey`.
+  - An empty name shows as "ผู้สนับสนุน".
+- **C8. Amounts.** Whole baht via combo's `baht()`. Under 0.5 deals no damage.
+- **C9. Overlay.**
+  - The feed carries `run`, `life` and `bossDefId`. The hit flash shows only when all three match the last poll and damage went up, and never on the first poll.
+  - The feed returns `pending`. More than 3 waiting kills are claimed together as one summary `{count, lastKiller}`; otherwise one kill is claimed per poll.
+  - Kills can only be claimed within 10 minutes (older ones are marked played).
+  - BossKill stores `hp`.
+- **C10. Test and card off.**
+  - The test plays even with the card off, using a sample boss when the list is empty. It is never claimed and writes nothing to the DB.
+  - `bossSeenAt` is touched before the enabled check, throttled to 30 s.
+  - Card off keeps the state and marks unplayed kills as played.
+- **C11. To-do.**
+  - `TodoItem` gets `kind "boss"` plus `topFan`/`topAmount`.
+  - The PATCH route gets a boss branch.
+  - SpinTodo shows "ปิดโดย X · ดาเมจสูงสุด Y ฿N".
+  - The todo overlay shows the boss name.
+- **C12. Rewards.** The same 400 `money_prize` block as the gacha.
