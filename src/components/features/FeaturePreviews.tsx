@@ -13,7 +13,7 @@ import { PkView } from "@/components/overlay/PkOverlayClient";
 import { GachaReveal } from "@/components/overlay/GachaOverlayClient";
 import { BossView } from "@/components/overlay/BossOverlayClient";
 import { MediaInfoCard } from "@/components/overlay/MediaOverlayClient";
-import { PreviewStage, SampleButton } from "@/components/features/PreviewPanel";
+import { PREVIEW_WIDTH, PreviewStage, SampleButton } from "@/components/features/PreviewPanel";
 
 /*
  * Each feature's settings preview: the real overlay view drawn with sample
@@ -60,7 +60,7 @@ export function ComboPreview({ rows, sizes, color }: { rows: LevelRow[]; sizes: 
   const celebrate = sample === "level" ? { key: "preview", level, text: rows[level - 1]?.reward || null } : null;
   return (
     <PreviewStage
-      width={600}
+      width={PREVIEW_WIDTH}
       controls={
         <>
           <SampleButton on={sample === "running"} onClick={() => setSample("running")}>{t("pvComboRunning")}</SampleButton>
@@ -82,7 +82,7 @@ export function MediaPreview({ color }: { color: string | null }) {
   const c = okColor(color) ?? DEFAULT_COLOR;
   return (
     <PreviewStage
-      width={640}
+      width={PREVIEW_WIDTH}
       controls={
         <>
           <SampleButton on={sample === "clip"} onClick={() => setSample("clip")}>{t("pvClip")}</SampleButton>
@@ -91,15 +91,15 @@ export function MediaPreview({ color }: { color: string | null }) {
       }
       note={t("pvMediaNote")}
     >
-      <div className="w-[640px]">
+      <div className="w-full">
         {sample === "clip" ? (
-          <div className="grid h-[360px] w-[640px] place-items-center rounded-2xl bg-black">
+          <div className="grid aspect-video w-full place-items-center rounded-2xl bg-black">
             <span className="grid h-20 w-28 place-items-center rounded-2xl bg-white/15 text-white">
               <Icon name="play" className="h-10 w-10" />
             </span>
           </div>
         ) : (
-          <div className="flex h-[120px] w-[640px] items-center gap-4 rounded-2xl bg-[#120c16]/90 px-6">
+          <div className="flex h-[120px] w-full items-center gap-4 rounded-2xl bg-[#120c16]/90 px-6">
             <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full text-white" style={{ background: c }}>
               <Icon name="mic" className="h-8 w-8" />
             </span>
@@ -138,7 +138,7 @@ export function GachaPreview({
   const prize = prizes.find((p) => p.rarity === rarity);
   return (
     <PreviewStage
-      width={500}
+      width={440}
       controls={(["common", "rare", "epic"] as const).map((r) => (
         <SampleButton
           key={r}
@@ -153,7 +153,7 @@ export function GachaPreview({
       ))}
       note={t("pvNote")}
     >
-      <div className="h-[500px] w-[500px]">
+      <div className="h-[440px] w-[440px]">
         <GachaReveal
           key={`${rarity}-${round}`}
           pull={{ id: "preview", rarity, fan: t("sampleName"), prizeText: prize?.text ?? t("pvPrize"), imageUrl: prize?.imageUrl ?? null }}
@@ -181,7 +181,7 @@ export function PkPreview({ match, now }: { match: PkFeed | null; now: number })
   const left = match ? Math.max(0, Math.round((Date.parse(match.endsAt) - now) / 1000)) : 272;
   return (
     <PreviewStage
-      width={800}
+      width={PREVIEW_WIDTH}
       controls={
         match ? undefined : (
           <>
@@ -242,7 +242,7 @@ export function BossPreview({
       : null;
   return (
     <PreviewStage
-      width={600}
+      width={PREVIEW_WIDTH}
       controls={
         <>
           <SampleButton on={sample === "card"} onClick={() => setSample("card")}>{t("pvBossCard")}</SampleButton>

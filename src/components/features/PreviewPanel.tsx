@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
  */
 export function FeaturePreviewLayout({ preview, children }: { preview: ReactNode; children: ReactNode }) {
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start">
       <aside className="space-y-3 lg:sticky lg:top-4">{preview}</aside>
       <div className="min-w-0 space-y-4">{children}</div>
     </div>
@@ -27,7 +27,11 @@ export function PreviewStage({
   note,
   controls,
 }: {
-  /** The overlay's natural width in px. */
+  /**
+   * The width the overlay is laid out at, in px. Fluid overlays (combo, PK,
+   * boss) use PREVIEW_WIDTH so their text stays readable; only what's left
+   * wider is scaled down to the column.
+   */
   width: number;
   children: ReactNode;
   /** One line under the stage. */
@@ -80,6 +84,9 @@ export function PreviewStage({
     </div>
   );
 }
+
+/** Layout width for fluid overlays: about one column, so scaling stays small. */
+export const PREVIEW_WIDTH = 420;
 
 /** A small pill that switches between preview samples. */
 export function SampleButton({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {

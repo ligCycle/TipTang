@@ -1683,7 +1683,7 @@ export function OverlaySettings({
 
   const left = aside ? aside(config) : view === "subathon" ? timerPreview : null;
   return left ? (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start">
       <div className="lg:sticky lg:top-4">{left}</div>
       {body}
     </div>

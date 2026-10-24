@@ -294,7 +294,7 @@ function WheelEditor({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start">
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           {active ? (
