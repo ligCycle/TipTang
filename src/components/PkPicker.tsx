@@ -56,10 +56,18 @@ export function PkPicker({ username, value, onChange }: { username: string; valu
     }
     void poll();
     const tick = setInterval(() => setNow(Date.now() + skew.current), 1000);
+    // Back on the tab: check now (the match may have ended while hidden).
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (timer) clearTimeout(timer);
+      void poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       active = false;
       if (timer) clearTimeout(timer);
       clearInterval(tick);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [username]);
 

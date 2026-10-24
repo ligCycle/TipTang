@@ -3,7 +3,17 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { lockCreator } from "@/lib/combo-server";
 import { TIP_TX } from "@/lib/tip-hooks";
-import { cleanHex, cleanSideName, DEFAULT_SIDES, isPkDuration, isPkSide, winnerOf, type PkSide } from "@/lib/pk";
+import {
+  cleanHex,
+  cleanSideName,
+  DEFAULT_SIDES,
+  distinctColorB,
+  effectiveGraceSec,
+  isPkDuration,
+  isPkSide,
+  winnerOf,
+  type PkSide,
+} from "@/lib/pk";
 
 type Tx = Prisma.TransactionClient;
 
@@ -31,6 +41,7 @@ const MATCH_SELECT = {
   endedAt: true,
   totalA: true,
   totalB: true,
+  owner: { select: { autoConfirmTips: true } },
 } as const;
 type Match = Prisma.PkMatchGetPayload<{ select: typeof MATCH_SELECT }>;
 
@@ -53,6 +64,11 @@ export async function soloTotals(db: Tx | typeof prisma, matchId: string): Promi
   const out = { A: 0, B: 0 };
   for (const r of rows) if (isPkSide(r.pkSide)) out[r.pkSide] = Math.round(Number(r._sum.amount ?? 0));
   return out;
+}
+
+/** Grace for this match now (Q4 + review): never shorter than the creator's current setting needs. */
+function graceOf(m: Match): number {
+  return effectiveGraceSec(m.graceSec, m.owner ? m.owner.autoConfirmTips : null);
 }
 
 async function totalsOf(db: Tx | typeof prisma, m: Match): Promise<{ A: number; B: number }> {
@@ -82,7 +98,7 @@ async function lockCreatorsOf(tx: Tx, m: { ownerId: string | null; opponentId: s
  */
 export async function freezeIfDue(m: Match, now: Date): Promise<Match> {
   if (m.status !== "ACTIVE" || !m.endsAt) return m;
-  if (now.getTime() <= m.endsAt.getTime() + m.graceSec * 1000) return m;
+  if (now.getTime() <= m.endsAt.getTime() + graceOf(m) * 1000) return m;
   return prisma.$transaction(async (tx) => {
     await lockCreatorsOf(tx, m);
     const [row] = await tx.$queryRaw<{ status: string }[]>`
@@ -111,6 +127,8 @@ export type PkFeed = {
   /** ISO; the countdown uses endsAt − serverNow. */
   endsAt: string;
   serverNow: string;
+  /** Seconds after the end that confirms in flight still count. */
+  graceSec: number;
   /** "live" = counting, "grace" = time is up, waiting for confirms in flight, "ended" = frozen. */
   phase: "live" | "grace" | "ended";
   winner: PkSide | "draw" | null;
@@ -131,6 +149,7 @@ async function toFeed(m: Match, now: Date): Promise<PkFeed> {
     totalB: t.B,
     endsAt: ends.toISOString(),
     serverNow: now.toISOString(),
+    graceSec: graceOf(m),
     phase: frozen ? "ended" : now < ends ? "live" : "grace",
     winner: frozen ? winnerOf(t.A, t.B) : null,
   };
@@ -159,7 +178,7 @@ export async function currentFor(userId: string, now: Date, opts: { soloOnly?: b
       select: MATCH_SELECT,
     });
     // The banner shows for a while after the freeze (end + grace + 15 s).
-    if (recent?.endedAt && now.getTime() < recent.endedAt.getTime() + recent.graceSec * 1000 + SHOW_RESULT_MS) m = recent;
+    if (recent?.endedAt && now.getTime() < recent.endedAt.getTime() + graceOf(recent) * 1000 + SHOW_RESULT_MS) m = recent;
     else m = null;
   }
   return m ? toFeed(m, now) : null;
@@ -197,7 +216,7 @@ export async function startSolo(
         nameA,
         nameB,
         colorA,
-        colorB: colorB === colorA ? DEFAULT_SIDES.colorB : colorB,
+        colorB: distinctColorB(colorA, colorB),
         durationSec,
         graceSec: u.autoConfirmTips ? 60 : 300,
         startedAt: now,
@@ -229,7 +248,10 @@ export async function cancelAllFor(userId: string, now: Date): Promise<void> {
     where: { OR: [{ ownerId: userId }, { opponentId: userId }], status: { in: ["ACTIVE", "PENDING"] } },
     select: MATCH_SELECT,
   });
-  for (const m of open) {
+  for (const found of open) {
+    // A match already over (and only waiting to be read) keeps its result.
+    const m = await freezeIfDue(found, now);
+    if (m.status !== "ACTIVE" && m.status !== "PENDING") continue;
     await prisma.$transaction(async (tx) => {
       await lockCreatorsOf(tx, m);
       const t = m.status === "ACTIVE" ? await totalsOf(tx, m) : { A: 0, B: 0 };
@@ -300,6 +322,7 @@ export function testFeed(t: { id: string; startedAt: number }, now: Date): PkFee
     totalB,
     endsAt: new Date(t.startedAt + race).toISOString(),
     serverNow: now.toISOString(),
+    graceSec: 0,
     phase: ended ? "ended" : "live",
     winner: ended ? winnerOf(totalA, totalB) : null,
   };

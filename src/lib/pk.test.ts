@@ -8,8 +8,8 @@ import {
   winnerOf,
   barShare,
   remainingSec,
-  freezeDue,
-  PK_GRACE_MS,
+  effectiveGraceSec,
+  distinctColorB,
   DEFAULT_SIDES,
 } from "./pk.ts";
 
@@ -18,7 +18,6 @@ test("durations and defaults", () => {
   assert.ok(isPkDuration(600));
   assert.ok(!isPkDuration(601));
   assert.ok(!isPkDuration("600"));
-  assert.equal(PK_GRACE_MS, 60_000);
   assert.deepEqual(DEFAULT_SIDES, { nameA: "ทีมแดง", nameB: "ทีมน้ำเงิน", colorA: "#ef4444", colorB: "#3b82f6" });
 });
 
@@ -52,10 +51,21 @@ test("barShare: A's share in whole percent, 50 at 0-0, never 0/100 while the oth
   assert.equal(barShare(0, 50), 0);
 });
 
-test("remainingSec and freezeDue", () => {
+test("remainingSec", () => {
   const ends = new Date("2026-10-24T10:10:00Z");
   assert.equal(remainingSec(ends, new Date("2026-10-24T10:09:30.200Z")), 30);
   assert.equal(remainingSec(ends, new Date("2026-10-24T10:11:00Z")), 0);
-  assert.equal(freezeDue(ends, new Date("2026-10-24T10:10:59Z")), false);
-  assert.equal(freezeDue(ends, new Date("2026-10-24T10:11:01Z")), true);
+});
+
+test("effectiveGraceSec: the longer of the stored grace and today's setting", () => {
+  assert.equal(effectiveGraceSec(60, true), 60);
+  assert.equal(effectiveGraceSec(60, false), 300);
+  assert.equal(effectiveGraceSec(300, true), 300);
+  assert.equal(effectiveGraceSec(60, null), 60);
+});
+
+test("distinctColorB never repeats A's colour", () => {
+  assert.equal(distinctColorB("#ef4444", "#22c55e"), "#22c55e");
+  assert.equal(distinctColorB("#22c55e", "#22c55e"), "#3b82f6");
+  assert.equal(distinctColorB("#3b82f6", "#3b82f6"), "#ef4444");
 });

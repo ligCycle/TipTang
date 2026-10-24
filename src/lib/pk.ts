@@ -7,9 +7,14 @@
 
 export const PK_DURATIONS = [300, 600, 900] as const;
 export type PkDuration = (typeof PK_DURATIONS)[number];
-export const PK_GRACE_MS = 60_000;
 export const MAX_SIDE_NAME = 20;
 export const DEFAULT_SIDES = { nameA: "ทีมแดง", nameB: "ทีมน้ำเงิน", colorA: "#ef4444", colorB: "#3b82f6" } as const;
+
+/** Two sides never share a colour: B gets blue, or red when A is already blue. */
+export function distinctColorB(colorA: string, colorB: string): string {
+  if (colorB !== colorA) return colorB;
+  return colorA === DEFAULT_SIDES.colorB ? DEFAULT_SIDES.colorA : DEFAULT_SIDES.colorB;
+}
 
 export type PkSide = "A" | "B";
 export const isPkSide = (v: unknown): v is PkSide => v === "A" || v === "B";
@@ -48,7 +53,11 @@ export function remainingSec(endsAt: Date, now: Date): number {
   return Math.max(0, Math.ceil((endsAt.getTime() - now.getTime()) / 1000));
 }
 
-/** The result can be frozen: the match ended a grace minute ago. */
-export function freezeDue(endsAt: Date, now: Date): boolean {
-  return now.getTime() > endsAt.getTime() + PK_GRACE_MS;
+/**
+ * Seconds tips still being confirmed keep counting after the end: the
+ * longer of what was set at the start and the creator's setting now (a
+ * creator who turns auto-confirm off mid-match doesn't lose tips).
+ */
+export function effectiveGraceSec(storedSec: number, autoConfirmNow: boolean | null): number {
+  return Math.max(storedSec, autoConfirmNow === false ? 300 : 60);
 }

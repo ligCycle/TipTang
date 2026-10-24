@@ -53,11 +53,19 @@ export function PkPage() {
   const [copied, setCopied] = useState(false);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Server clock minus this browser's, recorded when each refresh arrives.
+  const [skew, setSkew] = useState(0);
+
+  function apply(d: PkState | null) {
+    if (!d) return;
+    if (d.current) setSkew(new Date(d.current.serverNow).getTime() - Date.now());
+    setData(d);
+  }
 
   useEffect(() => {
-    fetchPk().then((d) => d && setData(d));
+    fetchPk().then(apply);
     loadHub().then(setHub);
-    const id = setInterval(() => fetchPk().then((d) => d && setData(d)), REFRESH_MS);
+    const id = setInterval(() => fetchPk().then(apply), REFRESH_MS);
     const tick = setInterval(() => setNow(Date.now()), 500);
     return () => {
       clearInterval(id);
@@ -108,9 +116,7 @@ export function PkPage() {
   if (!data) return null;
   const obsUrl = hub ? `${hub.overlayBase}/pk?key=${hub.overlayKey}` : null;
   const m = data.current;
-  // Countdown on the server clock (skew from the last refresh).
-  const skew = m ? new Date(m.serverNow).getTime() - now : 0;
-  const left = m ? remainingSec(new Date(m.endsAt), new Date(now + Math.max(0, skew))) : 0;
+  const left = m ? remainingSec(new Date(m.endsAt), new Date(now + skew)) : 0;
   const fmt = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString(locale === "th" ? "th-TH" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" }) : "";
 
@@ -136,7 +142,7 @@ export function PkPage() {
       }
     >
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
-      <p className="text-xs text-brand-900/55">{t("graceNote", { min: Math.round(data.graceSec / 60) })}</p>
+      <p className="text-xs text-brand-900/55">{t("graceNote", { min: Math.round((m?.graceSec || data.graceSec) / 60) })}</p>
       {error && <p className="text-sm font-medium text-red-600 dark:text-red-400">{error}</p>}
 
       {m && m.kind === "solo" ? (
