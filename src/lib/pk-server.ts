@@ -8,6 +8,7 @@ import {
   cleanSideName,
   DEFAULT_SIDES,
   distinctColorB,
+  MAX_SIDE_NAME,
   effectiveGraceSec,
   isPkDuration,
   isPkSide,
@@ -42,6 +43,7 @@ const MATCH_SELECT = {
   totalA: true,
   totalB: true,
   owner: { select: { autoConfirmTips: true } },
+  opponent: { select: { autoConfirmTips: true } },
 } as const;
 type Match = Prisma.PkMatchGetPayload<{ select: typeof MATCH_SELECT }>;
 
@@ -68,7 +70,9 @@ export async function soloTotals(db: Tx | typeof prisma, matchId: string): Promi
 
 /** Grace for this match now (Q4 + review): never shorter than the creator's current setting needs. */
 function graceOf(m: Match): number {
-  return effectiveGraceSec(m.graceSec, m.owner ? m.owner.autoConfirmTips : null);
+  const own = effectiveGraceSec(m.graceSec, m.owner ? m.owner.autoConfirmTips : null);
+  // Creator vs creator: the slower confirmer sets the pace (spec P9b).
+  return m.kind === "duo" ? Math.max(own, effectiveGraceSec(m.graceSec, m.opponent ? m.opponent.autoConfirmTips : null)) : own;
 }
 
 async function totalsOf(db: Tx | typeof prisma, m: Match): Promise<{ A: number; B: number }> {
@@ -134,11 +138,11 @@ export type PkFeed = {
   winner: PkSide | "draw" | null;
 };
 
-async function toFeed(m: Match, now: Date): Promise<PkFeed> {
+async function toFeed(m: Match, now: Date, viewerId?: string): Promise<PkFeed> {
   const frozen = m.status === "ENDED";
   const t = frozen ? { A: m.totalA ?? 0, B: m.totalB ?? 0 } : await totalsOf(prisma, m);
   const ends = m.endsAt ?? now;
-  return {
+  const feed: PkFeed = {
     id: m.id,
     kind: m.kind === "duo" ? "duo" : "solo",
     nameA: m.nameA,
@@ -153,6 +157,20 @@ async function toFeed(m: Match, now: Date): Promise<PkFeed> {
     phase: frozen ? "ended" : now < ends ? "live" : "grace",
     winner: frozen ? winnerOf(t.A, t.B) : null,
   };
+  // Creator vs creator: each stream shows its own creator on the left.
+  if (m.kind === "duo" && viewerId && viewerId === m.opponentId) {
+    return {
+      ...feed,
+      nameA: feed.nameB,
+      nameB: feed.nameA,
+      colorA: feed.colorB,
+      colorB: feed.colorA,
+      totalA: feed.totalB,
+      totalB: feed.totalA,
+      winner: feed.winner === "A" ? "B" : feed.winner === "B" ? "A" : feed.winner,
+    };
+  }
+  return feed;
 }
 
 /**
@@ -181,7 +199,7 @@ export async function currentFor(userId: string, now: Date, opts: { soloOnly?: b
     if (recent?.endedAt && now.getTime() < recent.endedAt.getTime() + graceOf(recent) * 1000 + SHOW_RESULT_MS) m = recent;
     else m = null;
   }
-  return m ? toFeed(m, now) : null;
+  return m ? toFeed(m, now, userId) : null;
 }
 
 /** Start a solo match (two sides in one stream). One match at a time (R3, Q7). */
@@ -292,14 +310,27 @@ export async function pkHistory(userId: string) {
     where: { OR: [{ ownerId: userId }, { opponentId: userId }], status: { in: ["ENDED", "CANCELLED"] } },
     orderBy: { endedAt: "desc" },
     take: 10,
-    select: { id: true, kind: true, status: true, nameA: true, nameB: true, colorA: true, colorB: true, totalA: true, totalB: true, startedAt: true, endedAt: true },
+    select: { id: true, kind: true, status: true, ownerId: true, opponentId: true, nameA: true, nameB: true, colorA: true, colorB: true, totalA: true, totalB: true, startedAt: true, endedAt: true },
   });
-  return rows.map((r) => ({
-    ...r,
-    startedAt: r.startedAt?.toISOString() ?? null,
-    endedAt: r.endedAt?.toISOString() ?? null,
-    winner: r.status === "ENDED" ? winnerOf(r.totalA ?? 0, r.totalB ?? 0) : null,
-  }));
+  return rows.map(({ ownerId: _o, opponentId, ...r }) => {
+    void _o;
+    const winner = r.status === "ENDED" ? winnerOf(r.totalA ?? 0, r.totalB ?? 0) : null;
+    const base = { ...r, startedAt: r.startedAt?.toISOString() ?? null, endedAt: r.endedAt?.toISOString() ?? null, winner };
+    // Creator vs creator: the viewer's own side first.
+    if (r.kind === "duo" && opponentId === userId) {
+      return {
+        ...base,
+        nameA: r.nameB,
+        nameB: r.nameA,
+        colorA: r.colorB,
+        colorB: r.colorA,
+        totalA: r.totalB,
+        totalB: r.totalA,
+        winner: winner === "A" ? ("B" as const) : winner === "B" ? ("A" as const) : winner,
+      };
+    }
+    return base;
+  });
 }
 
 /** The scripted sample match for "ทดสอบบนจอ" (15 s race, then the result). */
@@ -325,5 +356,165 @@ export function testFeed(t: { id: string; startedAt: number }, now: Date): PkFee
     graceSec: 0,
     phase: ended ? "ended" : "live",
     winner: ended ? winnerOf(totalA, totalB) : null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Creator vs creator (P9b, Q6–Q12). Only display names and totals cross over.
+
+const INVITE_MS = 10 * 60_000;
+const DECLINE_COOLDOWN_MS = 60 * 60_000;
+const MAX_PENDING_OUT = 3;
+
+/** Invitations older than 10 minutes lapse (on read). */
+async function expireInvites(userId: string, now: Date): Promise<void> {
+  await prisma.pkMatch.updateMany({
+    where: {
+      kind: "duo",
+      status: "PENDING",
+      OR: [{ ownerId: userId }, { opponentId: userId }],
+      createdAt: { lt: new Date(now.getTime() - INVITE_MS) },
+    },
+    data: { status: "CANCELLED", endedAt: now },
+  });
+}
+
+/** The two creators' locks, lower id first (never inside a tip transaction). */
+async function lockPair(tx: Tx, a: string, b: string) {
+  for (const id of [a, b].sort()) await lockCreator(tx, id);
+}
+
+function sideName(displayName: string): string {
+  return displayName.trim().slice(0, MAX_SIDE_NAME) || "TipTang";
+}
+
+/**
+ * Invite another creator by username. Generic "invalid" for anything about
+ * the other creator (unknown, PK off, invites off, self) so nobody can probe.
+ */
+export async function inviteDuo(ownerId: string, username: unknown, durationSec: unknown, now: Date): Promise<void> {
+  if (typeof username !== "string" || !isPkDuration(durationSec)) throw new PkError("invalid");
+  const other = await prisma.user.findUnique({
+    where: { username: username.trim().replace(/^@/, "").toLowerCase() },
+    select: { id: true, displayName: true, alertColor: true, pkEnabled: true, pkInvitesOff: true, autoConfirmTips: true },
+  });
+  if (!other || other.id === ownerId || !other.pkEnabled || other.pkInvitesOff) throw new PkError("invalid");
+  await expireInvites(ownerId, now);
+  await prisma.$transaction(async (tx) => {
+    await lockPair(tx, ownerId, other.id);
+    const me = await tx.user.findUnique({
+      where: { id: ownerId },
+      select: { displayName: true, alertColor: true, pkEnabled: true, autoConfirmTips: true },
+    });
+    if (!me?.pkEnabled) throw new PkError("off");
+    const pendingOut = await tx.pkMatch.count({ where: { ownerId, kind: "duo", status: "PENDING" } });
+    if (pendingOut >= MAX_PENDING_OUT) throw new PkError("busy");
+    const sameOpen = await tx.pkMatch.count({
+      where: { ownerId, opponentId: other.id, kind: "duo", status: { in: ["PENDING", "ACTIVE"] } },
+    });
+    const declined = await tx.pkMatch.count({
+      where: { ownerId, opponentId: other.id, kind: "duo", status: "DECLINED", endedAt: { gt: new Date(now.getTime() - DECLINE_COOLDOWN_MS) } },
+    });
+    if (sameOpen > 0 || declined > 0) throw new PkError("invalid");
+    const colorA = cleanHex(me.alertColor) ?? DEFAULT_SIDES.colorA;
+    await tx.pkMatch.create({
+      data: {
+        kind: "duo",
+        ownerId,
+        opponentId: other.id,
+        status: "PENDING",
+        nameA: sideName(me.displayName),
+        nameB: sideName(other.displayName),
+        colorA,
+        colorB: distinctColorB(colorA, cleanHex(other.alertColor) ?? DEFAULT_SIDES.colorB),
+        durationSec,
+        graceSec: me.autoConfirmTips && other.autoConfirmTips ? 60 : 300,
+      },
+    });
+  }, TIP_TX);
+}
+
+/**
+ * The invited creator answers. Accepting starts the match for both at once,
+ * only if neither is already in a running PK (R3), and withdraws every other
+ * invitation involving either of them.
+ */
+export async function respondDuo(userId: string, id: string, answer: "accept" | "decline", now: Date): Promise<void> {
+  await expireInvites(userId, now);
+  const m = await prisma.pkMatch.findFirst({
+    where: { id, opponentId: userId, kind: "duo", status: "PENDING" },
+    select: { id: true, ownerId: true, opponentId: true, durationSec: true },
+  });
+  if (!m?.ownerId || !m.opponentId) throw new PkError("not_found");
+  const ownerId = m.ownerId;
+  await prisma.$transaction(async (tx) => {
+    await lockPair(tx, ownerId, userId);
+    const [row] = await tx.$queryRaw<{ status: string }[]>`
+      SELECT "status"::text AS "status" FROM "PkMatch" WHERE "id" = ${m.id} FOR UPDATE`;
+    if (row?.status !== "PENDING") throw new PkError("not_found");
+    if (answer === "decline") {
+      await tx.pkMatch.update({ where: { id: m.id }, data: { status: "DECLINED", endedAt: now } });
+      return;
+    }
+    const people = await tx.user.findMany({ where: { id: { in: [ownerId, userId] } }, select: { pkEnabled: true } });
+    if (people.length !== 2 || people.some((p) => !p.pkEnabled)) throw new PkError("off");
+    const busy = await tx.pkMatch.count({
+      where: { status: "ACTIVE", OR: [{ ownerId: { in: [ownerId, userId] } }, { opponentId: { in: [ownerId, userId] } }] },
+    });
+    if (busy > 0) throw new PkError("busy");
+    await tx.pkMatch.update({
+      where: { id: m.id },
+      data: { status: "ACTIVE", startedAt: now, endsAt: new Date(now.getTime() + m.durationSec * 1000) },
+    });
+    await tx.pkMatch.updateMany({
+      where: {
+        id: { not: m.id },
+        kind: "duo",
+        status: "PENDING",
+        OR: [{ ownerId: { in: [ownerId, userId] } }, { opponentId: { in: [ownerId, userId] } }],
+      },
+      data: { status: "CANCELLED", endedAt: now },
+    });
+  }, TIP_TX);
+}
+
+/** Either creator withdraws an invitation or stops a running match (no winner). */
+export async function cancelDuo(userId: string, id: string, now: Date): Promise<void> {
+  const found = await prisma.pkMatch.findFirst({
+    where: { id, kind: "duo", status: { in: ["PENDING", "ACTIVE"] }, OR: [{ ownerId: userId }, { opponentId: userId }] },
+    select: MATCH_SELECT,
+  });
+  if (!found) throw new PkError("not_found");
+  const m = await freezeIfDue(found, now);
+  if (m.status !== "ACTIVE" && m.status !== "PENDING") return;
+  await prisma.$transaction(async (tx) => {
+    await lockCreatorsOf(tx, m);
+    const t = m.status === "ACTIVE" ? await totalsOf(tx, m) : { A: 0, B: 0 };
+    await tx.pkMatch.updateMany({
+      where: { id: m.id, status: { in: ["PENDING", "ACTIVE"] } },
+      data: { status: "CANCELLED", totalA: t.A, totalB: t.B, endedAt: now },
+    });
+  }, TIP_TX);
+}
+
+export type PkInvite = { id: string; name: string; durationSec: number; createdAt: string };
+
+/** Pending invitations to and from this creator (stale ones lapse first). */
+export async function invitesFor(userId: string, now: Date): Promise<{ incoming: PkInvite[]; outgoing: PkInvite[] }> {
+  await expireInvites(userId, now);
+  const rows = await prisma.pkMatch.findMany({
+    where: { kind: "duo", status: "PENDING", OR: [{ ownerId: userId }, { opponentId: userId }] },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, ownerId: true, nameA: true, nameB: true, durationSec: true, createdAt: true },
+  });
+  const row = (r: (typeof rows)[number], name: string): PkInvite => ({
+    id: r.id,
+    name,
+    durationSec: r.durationSec,
+    createdAt: r.createdAt.toISOString(),
+  });
+  return {
+    incoming: rows.filter((r) => r.ownerId !== userId).map((r) => row(r, r.nameA)),
+    outgoing: rows.filter((r) => r.ownerId === userId).map((r) => row(r, r.nameB)),
   };
 }
