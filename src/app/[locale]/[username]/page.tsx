@@ -106,6 +106,7 @@ export default async function ProfilePage({
       mediaMaxSec: true,
       voiceEnabled: true,
       voiceMinAmount: true,
+      pkEnabled: true,
       socialLinks: true,
       profileColor: true,
       timerEnabled: true,
@@ -396,6 +397,7 @@ export default async function ProfilePage({
             soundSetName={soundSet?.name ?? null}
             wheelChoice={wheelChoice}
             gachaChoice={canTip ? gachaChoice : null}
+            pkOn={canTip && creator.pkEnabled}
             wishChoice={wishChoice}
             mediaChoice={canTip && creator.mediaEnabled ? { minAmount: creator.mediaMinAmount, maxSec: creator.mediaMaxSec } : null}
             voiceChoice={canTip && creator.voiceEnabled ? { minAmount: creator.voiceMinAmount, maxSec: VOICE_MAX_SEC } : null}

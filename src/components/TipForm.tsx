@@ -13,6 +13,7 @@ import { WishPicker, type WishChoiceItem } from "@/components/WishPicker";
 import { MediaPicker, type ClipPick, type MediaChoice } from "@/components/MediaPicker";
 import { VoicePicker, type VoiceChoice, type VoicePick } from "@/components/VoiceRecorder";
 import { GachaPicker, type GachaChoice } from "@/components/GachaPicker";
+import { PkPicker, type PkPick } from "@/components/PkPicker";
 import { extrasFloor } from "@/lib/wishlist";
 import { mediaExtrasDrop, voiceBaseType, VOICE_EXT } from "@/lib/media";
 
@@ -52,6 +53,7 @@ export function TipForm({
   mediaChoice = null,
   voiceChoice = null,
   gachaChoice = null,
+  pkOn = false,
 }: {
   username: string;
   creatorName: string;
@@ -76,6 +78,8 @@ export function TipForm({
   voiceChoice?: VoiceChoice | null;
   /** "กาชา" when the card is on and something can come out; null = hidden. */
   gachaChoice?: GachaChoice | null;
+  /** The creator has PK on: the side picker shows while a match runs. */
+  pkOn?: boolean;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -126,6 +130,8 @@ export function TipForm({
   const [spinDropped, setSpinDropped] = useState(false);
   // "สุ่มกาชา": ticked by the fan; its price adds to the other extras.
   const router = useRouter();
+  // "PK": the side this tip goes to (null = none).
+  const [pk, setPk] = useState<PkPick>(null);
   const [gachaOn, setGachaOn] = useState(false);
   const [gachaNote, setGachaNote] = useState(false);
   const [gachaDropped, setGachaDropped] = useState(false);
@@ -312,6 +318,10 @@ export function TipForm({
       fd.set("paymentMethod", method);
       if (pickedSoundId) fd.set("pickedSoundId", pickedSoundId);
       if (spin && wheelChoice) fd.set("spinWheel", wheelChoice.id);
+      if (pk) {
+        fd.set("pkMatchId", pk.matchId);
+        fd.set("pkSide", pk.side);
+      }
       if (gachaOn && gachaChoice) {
         fd.set("gachaPull", "1");
         fd.set("gachaSeen", String(gachaChoice.version));
@@ -390,6 +400,7 @@ export function TipForm({
     setSpinNote(false);
     setSpinDropped(false);
     setGachaOn(false);
+    setPk(null);
     setGachaNote(false);
     setGachaDropped(false);
     setWishItemId(null);
@@ -565,6 +576,8 @@ export function TipForm({
               </span>
             )}
           </label>
+
+          {pkOn && <PkPicker username={username} value={pk} onChange={setPk} />}
 
           {wishChoice && (
             <WishPicker items={wishChoice} value={wishItemId} onChange={setWishItemId} />

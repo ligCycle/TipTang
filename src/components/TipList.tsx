@@ -63,9 +63,22 @@ export async function TipList({
       wishItemId: true,
       mediaRequest: { select: { title: true, status: true, kind: true, durationSec: true } },
       gachaResult: { select: { prizeText: true, status: true } },
+      pkMatchId: true,
+      pkSide: true,
       spin: { select: { taskText: true, status: true } },
     },
   });
+  const pkIds = [...new Set(tips.map((tip) => tip.pkMatchId).filter((id): id is string => Boolean(id)))];
+  const pkNames = new Map<string, string>();
+  if (pkIds.length > 0) {
+    for (const m of await prisma.pkMatch.findMany({
+      where: { id: { in: pkIds }, ownerId: userId },
+      select: { id: true, nameA: true, nameB: true },
+    })) {
+      pkNames.set(`${m.id}:A`, m.nameA);
+      pkNames.set(`${m.id}:B`, m.nameB);
+    }
+  }
   const wishIds = [...new Set(tips.map((tip) => tip.wishItemId).filter((id): id is string => Boolean(id)))];
   const wishNames = new Map(
     wishIds.length > 0
@@ -147,6 +160,8 @@ export async function TipList({
       tip.mediaRequest?.kind !== "voice" && tip.mediaRequest && tip.mediaRequest.status !== "REMOVED" && tip.mediaRequest.status !== "CANCELLED"
         ? tip.mediaRequest.title || "YouTube"
         : null,
+    // "PK": the side's name in that match.
+    pkSideName: tip.pkMatchId && tip.pkSide ? (pkNames.get(`${tip.pkMatchId}:${tip.pkSide}`) ?? null) : null,
     // "กาชา": the prize the pull drew.
     gachaPrize: tip.gachaResult?.status === "ACTIVE" ? tip.gachaResult.prizeText : null,
     // "ฝากเสียง": length of the fan's voice message.

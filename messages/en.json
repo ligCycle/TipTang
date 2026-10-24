@@ -245,7 +245,10 @@
     "gachaOddsNote": "Drawn from this box when your tip is confirmed · prizes within a rarity have equal odds · prizes are never money or anything of money value.",
     "gachaCleared": "This amount doesn't cover the gacha pull, so it was removed",
     "gachaDropped": "No gacha pull this time (the creator just changed the prizes or odds, the amount was short, or it was turned off), but your tip went through.",
-    "gachaZero": "0% (can't come out)"
+    "gachaZero": "0% (can't come out)",
+    "pkLabel": "This tip goes to (optional)",
+    "pkLeft": "{time} left",
+    "pkHint": "Tap again to pick no side · tips count once the creator confirms them"
   },
   "tipSuccess": {
     "title": "Tip sent!",
@@ -449,7 +452,8 @@
     "wishBadge": "Helps: {name}",
     "clipBadge": "Clip: {title}",
     "voiceBadge": "Voice {sec}s",
-    "gachaBadge": "Gacha: {prize}"
+    "gachaBadge": "Gacha: {prize}",
+    "pkBadge": "PK: {side}"
   },
   "settings": {
     "title": "Donate page settings",
