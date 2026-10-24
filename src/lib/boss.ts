@@ -2,10 +2,12 @@
  * "ตีบอส" (spec docs/superpowers/specs/2026-10-24-boss-design.md) — pure rules.
  * Confirmed tips deal damage, 1 baht = 1 HP. Overkill carries over to the
  * next boss (R4); after the last boss the last one keeps respawning. A run is
- * counted in "lives": life N fights boss min(N, count − 1).
+ * counted in "lives" (bosses defeated); the server keeps a pointer to the
+ * current boss and applies damage over [current, next…, last].
  */
 
 import { fanKey } from "./combo.ts";
+import { looksLikeMoney } from "./gacha.ts";
 
 export const MAX_BOSSES = 10;
 export const MIN_BOSS_HP = 10;
@@ -84,6 +86,11 @@ export function topDamage(hits: { fan: string; amount: number }[]): { fan: strin
   let best: { fan: string; amount: number } | null = null;
   for (const v of sums.values()) if (!best || v.amount > best.amount) best = v;
   return best;
+}
+
+/** Both texts show on stream ("ปิดบอส <name>!"), so neither may be money or worth money (C12). */
+export function bossHasMoney(v: { name?: string; reward?: string }): boolean {
+  return Boolean((v.name && looksLikeMoney(v.name)) || (v.reward && looksLikeMoney(v.reward)));
 }
 
 export function cleanBossName(v: unknown): string | null {

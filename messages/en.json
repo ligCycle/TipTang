@@ -1334,7 +1334,7 @@
     "linkLive": "OBS link connected",
     "linkOff": "OBS link not open",
     "bosses": "Bosses ({count}/{max})",
-    "noMoney": "Rewards can't be money or worth money",
+    "noMoney": "Names and rewards can't be money or worth money",
     "empty": "No bosses yet. Add the first one below.",
     "picture": "Boss picture",
     "name": "Boss name",
@@ -1371,7 +1371,7 @@
     "testOnObs": "Test on OBS",
     "testSent": "Sent — check the boss OBS link",
     "saveFailed": "Couldn't save. Try again.",
-    "moneyPrize": "Rewards can't be money or worth money",
+    "moneyPrize": "Boss names and rewards can't be money or worth money",
     "tooMany": "Up to 10 bosses"
   }
 }

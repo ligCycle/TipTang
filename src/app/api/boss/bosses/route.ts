@@ -3,13 +3,12 @@ import { requireUser } from "@/lib/auth";
 import { lockCreator } from "@/lib/combo-server";
 import { TIP_TX } from "@/lib/tip-hooks";
 import { prisma } from "@/lib/prisma";
-import { cleanBossHp, cleanBossName, cleanBossReward, MAX_BOSSES } from "@/lib/boss";
-import { looksLikeMoney } from "@/lib/gacha";
+import { bossHasMoney, cleanBossHp, cleanBossName, cleanBossReward, MAX_BOSSES } from "@/lib/boss";
 import { bossSettings } from "@/lib/boss-server";
 import { ownLibraryImage } from "@/lib/goal-images";
 
 /**
- * Add a boss at the end: `{ name, hp, reward?, imageUrl? }`. The reward can't
+ * Add a boss at the end: `{ name, hp, reward?, imageUrl? }`. The name and reward can't
  * be money or worth money (`money_prize`, same rule as the gacha); the picture
  * must be the creator's own library image.
  */
@@ -21,7 +20,7 @@ export async function POST(req: Request) {
   const hp = cleanBossHp(body?.hp);
   const reward = cleanBossReward(body?.reward);
   if (!body || !name || !hp || reward === null) return NextResponse.json({ error: "invalid" }, { status: 400 });
-  if (reward && looksLikeMoney(reward)) return NextResponse.json({ error: "money_prize" }, { status: 400 });
+  if (bossHasMoney({ name, reward })) return NextResponse.json({ error: "money_prize" }, { status: 400 });
   const imageUrl = body.imageUrl === undefined ? null : await ownLibraryImage(user.id, body.imageUrl);
   if (imageUrl === undefined) return NextResponse.json({ error: "invalid" }, { status: 400 });
   const res = await prisma.$transaction(async (tx) => {

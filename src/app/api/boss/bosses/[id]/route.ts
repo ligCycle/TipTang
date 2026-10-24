@@ -3,8 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { lockCreator } from "@/lib/combo-server";
 import { TIP_TX } from "@/lib/tip-hooks";
 import { prisma } from "@/lib/prisma";
-import { cleanBossHp, cleanBossName, cleanBossReward } from "@/lib/boss";
-import { looksLikeMoney } from "@/lib/gacha";
+import { bossHasMoney, cleanBossHp, cleanBossName, cleanBossReward } from "@/lib/boss";
 import { bossSettings, deleteDef } from "@/lib/boss-server";
 import { ownLibraryImage } from "@/lib/goal-images";
 
@@ -22,6 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (body.name !== undefined) {
     const name = cleanBossName(body.name);
     if (!name) return NextResponse.json({ error: "invalid" }, { status: 400 });
+    if (bossHasMoney({ name })) return NextResponse.json({ error: "money_prize" }, { status: 400 });
     data.name = name;
   }
   if (body.hp !== undefined) {
@@ -32,7 +32,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (body.reward !== undefined) {
     const reward = cleanBossReward(body.reward);
     if (reward === null) return NextResponse.json({ error: "invalid" }, { status: 400 });
-    if (reward && looksLikeMoney(reward)) return NextResponse.json({ error: "money_prize" }, { status: 400 });
+    if (bossHasMoney({ reward })) return NextResponse.json({ error: "money_prize" }, { status: 400 });
     data.reward = reward;
   }
   if (body.imageUrl !== undefined) {

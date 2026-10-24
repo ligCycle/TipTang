@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyDamage, undoDamage, bossAt, topDamage, cleanBossName, cleanBossHp, MAX_BOSSES, MAX_KILLS_PER_TIP, ANON_FAN, fanName, bossTestFeed } from "./boss.ts";
+import { applyDamage, undoDamage, bossAt, topDamage, cleanBossName, cleanBossHp, MAX_BOSSES, MAX_KILLS_PER_TIP, ANON_FAN, fanName, bossTestFeed, bossHasMoney } from "./boss.ts";
 
 const HPS = [100, 200, 300];
 
@@ -121,4 +121,11 @@ test("the OBS test: damage ticks up, one kill at 7.5 s, then the boss respawns",
   assert.equal(c.life, 1);
   assert.equal(c.boss.damage, 0);
   assert.equal(c.test, true);
+});
+
+test("final review M1: money in a boss name is refused like money in the reward", () => {
+  assert.equal(bossHasMoney({ name: "ปิดได้ 500 บาท" }), true);
+  assert.equal(bossHasMoney({ reward: "แจกเงินสด" }), true);
+  assert.equal(bossHasMoney({ name: "มังกรไฟ", reward: "ร้องเพลง 1 เพลง" }), false);
+  assert.equal(bossHasMoney({}), false);
 });
