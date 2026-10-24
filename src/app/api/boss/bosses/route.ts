@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   return NextResponse.json(await bossSettings(user.id));
 }
 
-/** Reorder: `{ order: [bossId, …] }` (live bosses of this creator). The current boss stays current. */
+/** Reorder: `{ order: [bossId, …] }`, every live boss exactly once. The current boss stays current. */
 export async function PATCH(req: Request) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -46,11 +46,17 @@ export async function PATCH(req: Request) {
   if (!Array.isArray(order) || !order.every((id) => typeof id === "string") || order.length > MAX_BOSSES) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
-  await prisma.$transaction(async (tx) => {
+  const ok = await prisma.$transaction(async (tx) => {
     await lockCreator(tx, user.id);
-    for (const [i, id] of (order as string[]).entries()) {
-      await tx.bossDef.updateMany({ where: { id, userId: user.id, deletedAt: null }, data: { position: i + 1 } });
+    // Positions decide "the next boss", so a partial or repeated list would leave ties.
+    const live = await tx.bossDef.findMany({ where: { userId: user.id, deletedAt: null }, select: { id: true } });
+    const ids = order as string[];
+    if (new Set(ids).size !== ids.length || ids.length !== live.length || !live.every((d) => ids.includes(d.id))) return false;
+    for (const [i, id] of ids.entries()) {
+      await tx.bossDef.update({ where: { id }, data: { position: i + 1 } });
     }
+    return true;
   }, TIP_TX);
+  if (!ok) return NextResponse.json({ error: "invalid" }, { status: 400 });
   return NextResponse.json(await bossSettings(user.id));
 }

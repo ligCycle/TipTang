@@ -435,6 +435,7 @@ CREATE TABLE "BossKill" (
 CREATE UNIQUE INDEX "BossKill_userId_run_life_key" ON "BossKill"("userId", "run", "life");
 CREATE INDEX "BossKill_userId_playedAt_idx" ON "BossKill"("userId", "playedAt");
 CREATE INDEX "BossKill_userId_doneAt_idx" ON "BossKill"("userId", "doneAt");
+CREATE INDEX "BossKill_userId_killedAt_idx" ON "BossKill"("userId", "killedAt");
 ALTER TABLE "BossKill" ADD CONSTRAINT "BossKill_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE "BossDef" ENABLE ROW LEVEL SECURITY;

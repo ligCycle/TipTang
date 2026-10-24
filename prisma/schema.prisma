@@ -843,4 +843,5 @@ model BossKill {
   @@unique([userId, run, life])
   @@index([userId, playedAt])
   @@index([userId, doneAt])
+  @@index([userId, killedAt])
 }

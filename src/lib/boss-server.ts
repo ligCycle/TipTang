@@ -251,43 +251,52 @@ export async function bossFeed(userId: string, now: Date, opts: { testOnly?: boo
   if (idx < 0) return { phase: "off" };
   const d = defs[idx];
 
-  await prisma.bossKill.updateMany({
-    where: { userId, playedAt: null, killedAt: { lt: new Date(now.getTime() - KILL_PLAY_MS) } },
-    data: { playedAt: now },
-  });
-  const waiting = await prisma.bossKill.findMany({
-    where: { userId, playedAt: null },
-    orderBy: [{ killedAt: "asc" }, { run: "asc" }, { life: "asc" }],
-    take: 200,
-    select: KILL_SELECT,
-  });
-  let kill: BossKillView | null = null;
-  let chain: { id: string; count: number; lastKiller: string } | null = null;
-  let claimed = 0;
-  if (waiting.length > CHAIN_AT) {
-    const r = await prisma.bossKill.updateMany({
-      where: { id: { in: waiting.map((w) => w.id) }, playedAt: null },
-      data: { playedAt: now },
-    });
-    claimed = waiting.length;
-    const last = waiting[waiting.length - 1];
-    if (r.count > 0) chain = { id: last.id, count: r.count, lastKiller: last.killer };
-  } else if (waiting.length > 0) {
-    const w = waiting[0];
-    const r = await prisma.bossKill.updateMany({ where: { id: w.id, playedAt: null }, data: { playedAt: now } });
-    claimed = 1;
-    if (r.count > 0) kill = killView(w);
-  }
+  const claim = await claimKills(userId, now);
   return {
     phase: "live",
     run: user.bossRun,
     life: user.bossLife,
     bossDefId: d.id,
     boss: { id: d.id, name: d.name, imageUrl: d.imageUrl, hp: d.hp, damage: user.bossDamage, index: idx + 1, total: defs.length },
-    kill,
-    chain,
-    pending: Math.max(0, waiting.length - claimed),
+    ...claim,
   };
+}
+
+/**
+ * Claim the next kill to play, or all of them as one summary when more than
+ * CHAIN_AT wait. Runs under the creator lock (same order as reset and the
+ * toggle), so two OBS sources polling at once never split a batch.
+ * Opens a transaction only when something is waiting.
+ */
+async function claimKills(
+  userId: string,
+  now: Date,
+): Promise<{ kill: BossKillView | null; chain: { id: string; count: number; lastKiller: string } | null; pending: number }> {
+  const none = { kill: null, chain: null, pending: 0 };
+  const any = await prisma.bossKill.findFirst({ where: { userId, playedAt: null }, select: { id: true } });
+  if (!any) return none;
+  return prisma.$transaction(async (tx) => {
+    await lockCreator(tx, userId);
+    await tx.bossKill.updateMany({
+      where: { userId, playedAt: null, killedAt: { lt: new Date(now.getTime() - KILL_PLAY_MS) } },
+      data: { playedAt: now },
+    });
+    const waiting = await tx.bossKill.findMany({
+      where: { userId, playedAt: null },
+      orderBy: [{ killedAt: "asc" }, { run: "asc" }, { life: "asc" }],
+      // A lower bound past this many; the next poll picks up the rest.
+      take: 200,
+      select: KILL_SELECT,
+    });
+    if (waiting.length > CHAIN_AT) {
+      await tx.bossKill.updateMany({ where: { id: { in: waiting.map((w) => w.id) } }, data: { playedAt: now } });
+      const last = waiting[waiting.length - 1];
+      return { kill: null, chain: { id: last.id, count: waiting.length, lastKiller: last.killer }, pending: 0 };
+    }
+    if (waiting.length === 0) return none;
+    await tx.bossKill.update({ where: { id: waiting[0].id }, data: { playedAt: now } });
+    return { kill: killView(waiting[0]), chain: null, pending: waiting.length - 1 };
+  }, TIP_TX);
 }
 
 /** The boss link was polled: remember it (at most every 30 s) so tips count while it's open. */

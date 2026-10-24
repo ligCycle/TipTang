@@ -22,7 +22,7 @@ export async function GET(
     items: shown.map((i) => ({
       id: `${i.kind}_${i.id}`,
       taskText: i.taskText,
-      fan: i.kind === "combo" ? `คอมโบเลเวล ${i.level}` : i.fan,
+      fan: i.kind === "combo" ? `คอมโบเลเวล ${i.level}` : i.kind === "boss" ? `บอส ${i.bossName}` : i.fan,
     })),
     more: open.length - shown.length,
   });

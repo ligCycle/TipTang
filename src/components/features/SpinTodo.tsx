@@ -131,7 +131,11 @@ export function SpinTodo({
                 {i.taskText}
               </span>
               <span className="text-xs text-brand-900/60">
-                {i.kind === "combo" ? t("todoComboLevel", { level: i.level ?? 0 }) : `${i.fan} · ฿${(i.amount ?? 0).toLocaleString()}`} · {time(tab === "open" ? i.confirmedAt : (i.doneAt ?? i.confirmedAt))}
+                {i.kind === "combo"
+                  ? t("todoComboLevel", { level: i.level ?? 0 })
+                  : i.kind === "boss"
+                    ? t("todoBoss", { boss: i.bossName ?? "", killer: i.fan, top: i.topFan ?? "", amount: (i.topAmount ?? 0).toLocaleString() })
+                    : `${i.fan} · ฿${(i.amount ?? 0).toLocaleString()}`} · {time(tab === "open" ? i.confirmedAt : (i.doneAt ?? i.confirmedAt))}
               </span>
               {tab === "open" ? (
                 <button
