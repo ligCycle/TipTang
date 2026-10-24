@@ -144,3 +144,12 @@ test("isGachaBox requires whole, non-negative odds", () => {
   assert.ok(!isGachaBox({ ...BOX, odds: { common: 70.5, rare: 25, epic: 4.5 } }));
   assert.ok(!isGachaBox({ ...BOX, odds: { common: -1, rare: 96, epic: 5 } }));
 });
+
+test("looksLikeMoney: Thai digits, written amounts, gifts of value", () => {
+  for (const t of ["ห้าร้อยบาท", "๑๐๐ บาท", "แจกเงิน 100", "ให้เงิน", "บัตรของขวัญ", "ทองคำ 1 สลึง", "Steam Wallet"]) {
+    assert.ok(looksLikeMoney(t), t);
+  }
+  for (const t of ["บาทหลวงอวยพร", "ทองหล่อ", "สีทอง"]) {
+    assert.ok(!looksLikeMoney(t), t);
+  }
+});

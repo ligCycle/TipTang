@@ -94,6 +94,10 @@ export async function gachaSnapshot(userId: string, seenVersion: number): Promis
     },
   });
   if (!u?.gachaEnabled || u.gachaVersion !== seenVersion) return null;
+  // The nested read may run as two queries: if the box changed in between,
+  // the prizes could be from a version the fan never saw. Check again.
+  const again = await prisma.user.findUnique({ where: { id: userId }, select: { gachaVersion: true } });
+  if (again?.gachaVersion !== seenVersion) return null;
   const prizes = u.gachaPrizes.filter((p) => isRarity(p.rarity)) as (Omit<(typeof u.gachaPrizes)[number], "rarity"> & { rarity: Rarity })[];
   const box: GachaBox = { odds: oddsOf(u), prizes: prizes.map(toBoxPrize) };
   const odds = boxOdds(box);

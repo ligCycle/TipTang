@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { formatBaht } from "@/lib/format";
 import { SlipDropzone } from "@/components/SlipDropzone";
@@ -124,6 +125,7 @@ export function TipForm({
   const [spinNote, setSpinNote] = useState(false);
   const [spinDropped, setSpinDropped] = useState(false);
   // "สุ่มกาชา": ticked by the fan; its price adds to the other extras.
+  const router = useRouter();
   const [gachaOn, setGachaOn] = useState(false);
   const [gachaNote, setGachaNote] = useState(false);
   const [gachaDropped, setGachaDropped] = useState(false);
@@ -359,6 +361,9 @@ export function TipForm({
       setPickDropped(Boolean(data.pickDropped));
       setSpinDropped(Boolean(data.spinDropped));
       setGachaDropped(Boolean(data.gachaDropped));
+      // Usually the creator just changed the box: fetch it again so another
+      // tip shows (and is drawn from) the current odds.
+      if (data.gachaDropped) router.refresh();
       setMediaDropped(Boolean(data.mediaDropped));
       setVoiceDropped(Boolean(data.voiceDropped));
       setStep("done");

@@ -83,7 +83,7 @@ export function GachaPicker({
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: RARITY_COLOR[tier.rarity] }} />
                   {t(`gacha_${tier.rarity}`)}
                 </span>
-                <span>{gacha.odds[tier.rarity]}%</span>
+                <span>{gacha.odds[tier.rarity] === 0 && tier.prizes.length > 0 ? t("gachaZero") : `${gacha.odds[tier.rarity]}%`}</span>
               </p>
               {tier.prizes.length > 0 ? (
                 <p className="text-xs text-brand-900/70">{tier.prizes.join(" · ")}</p>

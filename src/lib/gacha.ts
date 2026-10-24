@@ -166,7 +166,7 @@ export function isGachaBox(v: unknown): v is GachaBox {
  * like a lottery under Thai law). A soft check on the creator's text.
  */
 const MONEY =
-  /฿|\$|\d[\d,]*\s*(บาท|บ\.?(?![ก-๙])|thb|baht)|เงินสด|เงินรางวัล|โอนเงิน|พร้อมเพย์|promptpay|ทรูมันนี่|truemoney|บัตรเติม|เติมเกม|robux|gift[ -]?card|voucher|\bcash\b/i;
+  /฿|\$|[0-9๐-๙][0-9๐-๙,]*\s*(บ\.?(?![ก-๙])|thb|baht)|บาท(?!หลวง)|เงินสด|เงินรางวัล|โอนเงิน|แจกเงิน|ให้เงิน|พร้อมเพย์|promptpay|ทรูมันนี่|truemoney|บัตรเติม|บัตรของขวัญ|เติมเกม|ทองคำ|robux|wallet|gift[ -]?card|voucher|\bcash\b/i;
 export function looksLikeMoney(text: string): boolean {
   return MONEY.test(text);
 }
