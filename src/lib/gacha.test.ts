@@ -14,6 +14,11 @@ import {
   MAX_PRIZES_PER_RARITY,
   MAX_PRIZES,
   MAX_PRIZE_TEXT,
+  drawFromBox,
+  boxOdds,
+  looksLikeMoney,
+  isGachaBox,
+  type GachaBox,
 } from "./gacha.ts";
 
 test("constants", () => {
@@ -91,4 +96,46 @@ test("cleanPrizeText trims and caps at 40", () => {
   assert.equal(cleanPrizeText(""), null);
   assert.equal(cleanPrizeText("x".repeat(41)), null);
   assert.equal(cleanPrizeText(42), null);
+});
+
+const BOX: GachaBox = {
+  odds: { common: 70, rare: 25, epic: 5 },
+  prizes: [
+    { id: "c1", rarity: "common", text: "ขอบคุณ", imageUrl: null, noAction: true },
+    { id: "c2", rarity: "common", text: "เต้น", imageUrl: null, noAction: false },
+    { id: "e1", rarity: "epic", text: "ร้องเพลง", imageUrl: "/x.png", noAction: false },
+  ],
+};
+
+test("drawFromBox uses the box the fan saw: an empty rare tier never comes out", () => {
+  // weights from the box: common 70, rare 0 (no prizes), epic 5 → total 75
+  assert.deepEqual(boxOdds(BOX), { common: 93, rare: 0, epic: 7 });
+  const picks = new Set<string>();
+  for (let roll = 0; roll < 75; roll++) {
+    let call = 0;
+    const r = drawFromBox(BOX, (n) => (call++ === 0 ? roll : n - 1));
+    if (r) picks.add(r.rarity);
+  }
+  assert.deepEqual([...picks].sort(), ["common", "epic"]);
+  assert.equal(drawFromBox(BOX, () => 74)?.prize.id, "e1");
+  assert.equal(drawFromBox(BOX, () => 0)?.prize.id, "c1");
+  assert.equal(drawFromBox({ odds: BOX.odds, prizes: [] }, () => 0), null);
+});
+
+test("looksLikeMoney catches money and money-like prizes only", () => {
+  for (const t of ["เงิน 100 บาท", "โอนให้ 50฿", "บัตรเติมเงิน", "TrueMoney 20", "gift card", "Giftcard", "คูปองส่วนลด", "500 thb", "100บ."]) {
+    assert.ok(looksLikeMoney(t), t);
+  }
+  for (const t of ["ร้องเพลง 1 เพลง", "เต้น", "ชื่อในคลิป", "เล่นเกม 10 นาที"]) {
+    assert.ok(!looksLikeMoney(t), t);
+  }
+});
+
+test("isGachaBox accepts a stored box and rejects junk", () => {
+  assert.ok(isGachaBox(BOX));
+  assert.ok(isGachaBox(JSON.parse(JSON.stringify(BOX))));
+  assert.ok(!isGachaBox(null));
+  assert.ok(!isGachaBox({ odds: BOX.odds }));
+  assert.ok(!isGachaBox({ odds: { common: 1 }, prizes: [] }));
+  assert.ok(!isGachaBox({ odds: BOX.odds, prizes: [{ id: "x", rarity: "mythic", text: "a", imageUrl: null, noAction: false }] }));
 });

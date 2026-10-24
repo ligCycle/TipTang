@@ -103,10 +103,69 @@ export function drawRarity(weights: Odds, randInt: (n: number) => number): Rarit
 /** Every prize of the rarity has the same chance. */
 export function drawPrize<T extends { rarity: Rarity }>(prizes: T[], rarity: Rarity, randInt: (n: number) => number): T | null {
   const pool = prizes.filter((p) => p.rarity === rarity);
-  return pool.length > 0 ? pool[randInt(pool.length)] : null;
+  return pool.length > 0 ? pool[randInt(pool.length) % pool.length] : null;
 }
 
 export function cleanPrizeText(v: unknown): string | null {
   const s = typeof v === "string" ? v.trim() : "";
   return s.length > 0 && s.length <= MAX_PRIZE_TEXT ? s : null;
+}
+
+// ---------------------------------------------------------------------------
+// The box a fan saw, saved on their tip (K1): the draw at confirm uses it, so
+// the fan gets exactly the odds and prizes shown, even if the creator edits
+// the box before confirming.
+
+export type BoxPrize = { id: string; rarity: Rarity; text: string; imageUrl: string | null; noAction: boolean };
+export type GachaBox = { odds: Odds; prizes: BoxPrize[] };
+
+function countByRarity(prizes: { rarity: Rarity }[]): Record<Rarity, number> {
+  const counts = { common: 0, rare: 0, epic: 0 };
+  for (const p of prizes) counts[p.rarity] += 1;
+  return counts;
+}
+
+/** What fans see for this box: whole percentages per rarity, summing to 100. */
+export function boxOdds(box: GachaBox): Odds {
+  return displayPercents(effectiveOdds(box.odds, countByRarity(box.prizes)));
+}
+
+/** Draw a rarity by the effective odds of the box, then a prize evenly within it. */
+export function drawFromBox(box: GachaBox, randInt: (n: number) => number): { rarity: Rarity; prize: BoxPrize } | null {
+  const rarity = drawRarity(effectiveOdds(box.odds, countByRarity(box.prizes)), randInt);
+  if (!rarity) return null;
+  const prize = drawPrize(box.prizes, rarity, randInt);
+  return prize ? { rarity, prize } : null;
+}
+
+/** A stored box (Json) that still has the shape the draw needs. */
+export function isGachaBox(v: unknown): v is GachaBox {
+  if (!v || typeof v !== "object") return false;
+  const b = v as { odds?: unknown; prizes?: unknown };
+  if (!b.odds || typeof b.odds !== "object") return false;
+  const o = b.odds as Record<string, unknown>;
+  if (!RARITIES.every((r) => typeof o[r] === "number")) return false;
+  return (
+    Array.isArray(b.prizes) &&
+    b.prizes.every((p) => {
+      const x = p as Record<string, unknown>;
+      return (
+        Boolean(x) &&
+        typeof x.id === "string" &&
+        isRarity(x.rarity) &&
+        typeof x.text === "string" &&
+        (x.imageUrl === null || typeof x.imageUrl === "string") &&
+        typeof x.noAction === "boolean"
+      );
+    })
+  );
+}
+
+/**
+ * Prizes must not be money or worth money (a paid random draw for money looks
+ * like a lottery under Thai law). A soft check on the creator's text.
+ */
+const MONEY = /฿|บาท|\d+\s*(บ\.|thb)|เงิน|โอน|ทรูมันนี่|truemoney|บัตรเติม|gift ?card|voucher|คูปอง/i;
+export function looksLikeMoney(text: string): boolean {
+  return MONEY.test(text);
 }
