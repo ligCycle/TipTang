@@ -4,7 +4,7 @@ import { mediaQueueListenUrl } from "@/lib/media-queue";
 
 /**
  * "ฟัง": the creator listens to a fan's voice message before approving it.
- * Owner only; answers with a redirect to a one-minute signed URL.
+ * Owner only; answers with a redirect to a short-lived (5 minute) signed URL.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();

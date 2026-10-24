@@ -532,9 +532,11 @@ export async function DELETE() {
   // Collect the slip files first so they can be removed after the rows are.
   const doomed = await prisma.tip.findMany({
     where,
-    select: { slipKey: true, slipUrl: true, mediaRequest: { select: { audioKey: true } } },
+    select: { id: true, slipKey: true, slipUrl: true, mediaRequest: { select: { audioKey: true } } },
   });
-  const result = await prisma.tip.deleteMany({ where });
+  // Delete exactly the rows whose files were collected (a tip rejected in
+  // between waits for the next clear-out, files and all).
+  const result = await prisma.tip.deleteMany({ where: { ...where, id: { in: doomed.map((t) => t.id) } } });
   after(async () => {
     for (const t of doomed) {
       await deleteSlip(t.slipKey);

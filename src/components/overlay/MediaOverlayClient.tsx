@@ -166,7 +166,9 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
     if (clip.kind === "voice") {
       box.current.replaceChildren();
       if (!clip.audioUrl) {
-        void report("error");
+        // Signing failed for a moment: ask again on the next poll (never burn
+        // the fan's voice on a storage hiccup).
+        loadedId.current = null;
         return;
       }
       const el = new Audio(clip.audioUrl);
@@ -193,7 +195,24 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       el.addEventListener("ended", () => {
         if (started) void report("ended");
       });
-      el.addEventListener("error", () => void report("error"));
+      // Only the real OBS source may give up on a voice (and only after one
+      // retry): a preview tab that can't decode it must not use it up for
+      // everyone. Otherwise the watchdog / server time limit moves on.
+      let audioRetried = false;
+      el.addEventListener("error", () => {
+        if (started) return;
+        if (!window.obsstudio) {
+          sourceBroken = true;
+          return;
+        }
+        if (!audioRetried) {
+          audioRetried = true;
+          el.load();
+          void el.play().catch(() => {});
+          return;
+        }
+        void report("error");
+      });
       el.play().catch((e: unknown) => {
         // A normal browser tab blocks sound until a click; OBS doesn't. A
         // play cut short because this voice was skipped is not that.

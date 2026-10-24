@@ -753,7 +753,7 @@
     "s5Title": "Your rights (PDPA)",
     "s5Body": "You have the right to access, obtain a copy of, correct, delete, or object to / withdraw consent for the processing of your personal data. Creators can delete their account themselves under Settings → Account security → Delete account. For the other rights, contact support@tiptang.com.",
     "s6Title": "Retention & deletion",
-    "s6Body": "We keep data only as long as needed to provide the service.\n• Payment slips and receipts: deleted automatically 90 days after the creator confirms or rejects the payment (180 days if never decided). We keep only the transaction reference, to stop the same slip being reused.\n• When an account is deleted: its profile, tip history, shop, orders, slips and uploaded files are deleted immediately, except where the law requires us to keep something.",
+    "s6Body": "We keep data only as long as needed to provide the service.\n• Payment slips and receipts: deleted automatically 90 days after the creator confirms or rejects the payment (180 days if never decided). We keep only the transaction reference, to stop the same slip being reused.\n• When an account is deleted: its profile, tip history, shop, orders, slips and uploaded files are deleted immediately, except where the law requires us to keep something.\n• Voice files from \"voice messages\" are deleted within 7 days after they play, are skipped or rejected (30 days after sending at most), or straight away when the creator removes one from the queue, deletes the tip or deletes their account.",
     "s7Title": "Contact us",
     "s7Body": "For questions about this policy or to exercise your rights, contact us at support@tiptang.com"
   },

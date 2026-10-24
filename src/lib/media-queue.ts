@@ -400,7 +400,7 @@ async function purgeVoiceNow(userId: string, id: string, now: Date): Promise<voi
   if (await deleteVoices([row.audioKey])) {
     signed.delete(id);
     await prisma.mediaRequest.update({ where: { id }, data: { audioKey: null, audioPurgedAt: now } });
-  }
+  } else console.error("[voice] delete on remove failed (the daily purge retries)");
 }
 
 export type MediaListRow = {
@@ -508,8 +508,10 @@ export async function touchMediaSeen(userId: string, seenAt: Date | null, now: D
 // ---------------------------------------------------------------------------
 // Retention: voice files are personal data (spec "Retention / privacy").
 
-const VOICE_KEEP_MS = 7 * 24 * 60 * 60 * 1000;
-const VOICE_MAX_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
+// One day short of what the policy promises (7 / 30 days): the purge runs
+// once a day, so a file never outlives the promise.
+const VOICE_KEEP_MS = 6 * 24 * 60 * 60 * 1000;
+const VOICE_MAX_KEEP_MS = 29 * 24 * 60 * 60 * 1000;
 
 /**
  * Daily (purge-slips cron): delete voice files 7 days after the request

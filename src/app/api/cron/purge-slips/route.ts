@@ -46,6 +46,12 @@ export async function GET(req: Request) {
   if (!authorized(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // Fans' voice messages ("ฝากเสียง") first: 7 days after they finished, 30
+  // at most (a slip-side failure below must not hold this back).
+  const voices = await purgeOldVoices(new Date(), BATCH).catch((err) => {
+    console.error("[purge-voices] failed:", err);
+    return 0;
+  });
   const { decided, any } = slipCutoffs(new Date());
   const hasSlip = [{ slipKey: { not: null } }, { slipUrl: { not: null } }];
   const select = { id: true, slipKey: true, slipUrl: true } as const;
@@ -97,9 +103,6 @@ export async function GET(req: Request) {
       data: { slipKey: null, slipUrl: null, slipPurgedAt: new Date() },
     });
   }
-
-  // Fans' voice messages ("ฝากเสียง"): 7 days after they finished, 30 at most.
-  const voices = await purgeOldVoices(new Date(), BATCH);
 
   return NextResponse.json({
     tips: tipIds.length,
