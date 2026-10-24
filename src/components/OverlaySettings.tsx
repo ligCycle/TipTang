@@ -1547,24 +1547,9 @@ export function OverlaySettings({
                   </p>
                 </div>
 
-                {/* URL + copy + preview */}
+                {/* The link is on the hub's "เชื่อม OBS" card (the bars link); a preview stays here. */}
                 <div>
-                  <p className="mb-1 text-sm font-medium text-brand-900/70">
-                    {t("obsTimerUrlLabel")}
-                  </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      readOnly
-                      value={timerUrl}
-                      onFocus={(e) => e.currentTarget.select()}
-                      className="input flex-1 text-xs"
-                    />
-                    <button
-                      onClick={() => copy(timerUrl, "timer")}
-                      className="btn-secondary shrink-0 px-4 py-2 text-sm"
-                    >
-                      {copied === "timer" ? t("copied") : t("copyLink")}
-                    </button>
                     <a
                       href={timerUrl}
                       target="_blank"
@@ -1666,19 +1651,16 @@ export function OverlaySettings({
   const body =
     view === "alerts" ? (
       <div className="space-y-3">
-        {/* This feature's own OBS link — open until OBS has connected once. */}
-        <SettingsSection index={1} title={tHub("secObs")} defaultOpen={!config.lastSeenAt}>
-          {obsBlock}
-        </SettingsSection>
-        <SettingsSection index={2} title={tHub("secLook")} defaultOpen>
+        {/* The OBS link itself is on the hub's "เชื่อม OBS" card (the OBS bar above links there). */}
+        <SettingsSection index={1} title={tHub("secLook")} defaultOpen>
           {lookBlock}
         </SettingsSection>
-        <SettingsSection index={3} title={tHub("secMedia")}>
+        <SettingsSection index={2} title={tHub("secMedia")}>
           <ActiveSetSummary config={config} />
         </SettingsSection>
-        <SettingsSection index={4} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
+        <SettingsSection index={3} title={tHub("secTts")}>{ttsBlock}</SettingsSection>
         {tiersSlot && (
-          <SettingsSection index={5} title={tHub("secTiers")}>{tiersSlot(config, load)}</SettingsSection>
+          <SettingsSection index={4} title={tHub("secTiers")}>{tiersSlot(config, load)}</SettingsSection>
         )}
         {errorBlock}
       </div>

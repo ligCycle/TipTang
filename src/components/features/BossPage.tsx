@@ -8,7 +8,6 @@ import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
 import { AutoSaveInput, fetchLibrary, type LibFile } from "@/components/features/LibraryBits";
-import { loadHub, type HubState } from "@/components/features/FeatureHub";
 import { SpinTodo } from "@/components/features/SpinTodo";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { MAX_BOSS_HP, MAX_BOSS_NAME, MAX_BOSS_REWARD, MAX_BOSSES, MIN_BOSS_HP } from "@/lib/boss";
@@ -54,10 +53,8 @@ export function BossPage() {
   const tc = useTranslations("common");
   const locale = useLocale();
   const [data, setData] = useState<BossState | null>(null);
-  const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
   const [picking, setPicking] = useState<string | null>(null);
@@ -67,7 +64,6 @@ export function BossPage() {
 
   useEffect(() => {
     json("/api/boss").then((r) => r.data && setData(r.data));
-    loadHub().then(setHub);
     // Keep the connection badge and the run's progress fresh without touching edits.
     const id = setInterval(
       () =>
@@ -136,16 +132,6 @@ export function BossPage() {
     if (ok) setDraft({ name: "", hp: "", reward: "" });
   }
 
-  async function copy(url: string) {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(url);
-      setTimeout(() => setCopied(null), 1500);
-    } catch {
-      // ignore
-    }
-  }
-
   async function testOnObs() {
     setTest(null);
     const res = await fetch("/api/boss/test", { method: "POST" }).catch(() => null);
@@ -153,21 +139,9 @@ export function BossPage() {
   }
 
   if (!data) return null;
-  const obsUrl = hub ? `${hub.overlayBase}/boss?key=${hub.overlayKey}` : null;
-  const todoUrl = hub ? `${hub.overlayBase}/todo?key=${hub.overlayKey}` : null;
   const current = data.current ? data.bosses.find((b) => b.id === data.current?.id) : undefined;
   const time = (iso: string) =>
     new Date(iso).toLocaleString(locale === "th" ? "th-TH" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  const linkButton = (url: string) => (
-    <button
-      type="button"
-      onClick={() => copy(url)}
-      className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
-    >
-      <Icon name="link" className="h-3.5 w-3.5" />
-      {copied === url ? tHub("copied") : tHub("copyObs")}
-    </button>
-  );
 
   return (
     <FeatureSettingsLayout
@@ -178,15 +152,10 @@ export function BossPage() {
           <Switch checked={data.enabled} onChange={toggle} label={tHub("f_boss")} disabled={toggling} />
         </span>
       }
+      obs={{ feature: "boss", onTest: testOnObs, testState: test }}
     >
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="text-sm text-brand-900/65">{t("onlyWhenLinkOpen")}</p>
-      <p className="flex flex-wrap items-center gap-2 text-sm">
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${data.live ? "bg-emerald-100 text-emerald-700" : "bg-brand-900/10 text-brand-900/60"}`}>
-          <span className={`h-2 w-2 rounded-full ${data.live ? "bg-emerald-500" : "bg-brand-900/30"}`} />
-          {data.live ? t("linkLive") : t("linkOff")}
-        </span>
-      </p>
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
       <section className="rounded-2xl border border-brand-200 p-4">
@@ -366,19 +335,6 @@ export function BossPage() {
 
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
         <h2 className="font-bold text-brand-900">③ {t("obsAndColor")}</h2>
-        {obsUrl && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {linkButton(obsUrl)}
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "600×320" })}</span>
-          </p>
-        )}
-        {todoUrl && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="text-sm font-semibold text-brand-900">{t("todoLink")}</span>
-            {linkButton(todoUrl)}
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "400×420" })}</span>
-          </p>
-        )}
         <div className="rounded-xl bg-brand-50 p-3">
           <ColorField
             value={data.color}
@@ -391,16 +347,6 @@ export function BossPage() {
             onSave={(hex) => void run("/api/boss", "PATCH", { color: hex })}
             onReset={() => void run("/api/boss", "PATCH", { color: null })}
           />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={testOnObs} className="btn-primary px-4 py-2 text-sm">
-            {t("testOnObs")}
-          </button>
-          {test && (
-            <span className={`text-xs ${test === "sent" ? "text-emerald-700" : "text-red-600"}`}>
-              {test === "sent" ? t("testSent") : t("saveFailed")}
-            </span>
-          )}
         </div>
       </section>
 

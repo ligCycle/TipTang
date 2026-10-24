@@ -7,7 +7,6 @@ import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
 import { AutoSaveInput } from "@/components/features/LibraryBits";
-import { loadHub, type HubState } from "@/components/features/FeatureHub";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { MEDIA_MAX_SEC_CHOICES } from "@/lib/media";
 import type { MediaListRow } from "@/lib/media-queue";
@@ -59,9 +58,7 @@ export function MediaPage() {
   const tHub = useTranslations("featureHub");
   const tc = useTranslations("common");
   const [data, setData] = useState<MediaState | null>(null);
-  const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState(false);
-  const [copied, setCopied] = useState(false);
   // Which auto-approve warning is open (each card has its own consent).
   const [warnOpen, setWarnOpen] = useState<"clip" | "voice" | null>(null);
   // Voice message the creator is listening to.
@@ -93,7 +90,6 @@ export function MediaPage() {
 
   useEffect(() => {
     fetchMedia().then((d) => d && setData(d));
-    loadHub().then(setHub);
     // The queue moves on its own (fans tip, clips end): refresh it, never the settings being edited.
     const id = setInterval(
       () => fetchMedia().then((d) => d && setData((cur) => (cur ? { ...cur, queue: d.queue, live: d.live } : d))),
@@ -166,19 +162,7 @@ export function MediaPage() {
   }
 
   if (!data) return null;
-  const obsUrl = hub ? `${hub.overlayBase}/media?key=${hub.overlayKey}` : null;
   const q = data.queue;
-
-  async function copy() {
-    if (!obsUrl) return;
-    try {
-      await navigator.clipboard.writeText(obsUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // ignore
-    }
-  }
 
   const btn = "rounded-full border px-2.5 py-1 text-xs font-semibold disabled:opacity-50";
   const row = (r: MediaListRow, actions: React.ReactNode) => (
@@ -239,15 +223,14 @@ export function MediaPage() {
           <Switch checked={data.enabled} onChange={(next) => void save({ enabled: next })} label={tHub("f_media")} />
         </span>
       }
+      obs={{
+        feature: "media",
+        onTest: () => void testOnObs("clip"),
+        testState: test?.kind === "clip" ? (test.ok ? "sent" : "failed") : null,
+      }}
     >
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
-      <p className="flex flex-wrap items-center gap-2 text-sm">
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${data.live ? "bg-emerald-100 text-emerald-700" : "bg-brand-900/10 text-brand-900/60"}`}>
-          <span className={`h-2 w-2 rounded-full ${data.live ? "bg-emerald-500" : "bg-brand-900/30"}`} />
-          {data.live ? t("linkLive") : t("linkOff")}
-        </span>
-        {data.paused && <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t("pausedNote")}</span>}
-      </p>
+      {data.paused && <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t("pausedNote")}</p>}
       {error && <p className="text-sm font-medium text-red-600">{t("saveFailed")}</p>}
 
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
@@ -404,19 +387,6 @@ export function MediaPage() {
 
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
         <h2 className="font-bold text-brand-900">③ {t("obsAndColor")}</h2>
-        {obsUrl && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button
-              type="button"
-              onClick={copy}
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
-            >
-              <Icon name="link" className="h-3.5 w-3.5" />
-              {copied ? tHub("copied") : tHub("copyObs")}
-            </button>
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "640×480" })}</span>
-          </p>
-        )}
         <p className="text-xs text-brand-900/55">{t("obsAudioHint")}</p>
         <div className="rounded-xl bg-brand-50 p-3">
           <ColorField
@@ -431,16 +401,9 @@ export function MediaPage() {
             onReset={() => void save({ color: null })}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => testOnObs("clip")} className="btn-primary px-4 py-2 text-sm">
-            {t("testOnObs")}
-          </button>
-          {test?.kind === "clip" && (
-            <span className={`text-xs ${test.ok ? "text-emerald-700" : "text-red-600"}`}>
-              {test.ok ? (data.enabled && !data.paused ? t("testSent") : t("testWaits")) : t("saveFailed")}
-            </span>
-          )}
-        </div>
+        {test?.kind === "clip" && test.ok && !(data.enabled && !data.paused) && (
+          <p className="text-xs text-amber-700 dark:text-amber-300">{t("testWaits")}</p>
+        )}
       </section>
 
       <section id="voice" className="scroll-mt-20 space-y-4 rounded-2xl border border-brand-200 p-4">

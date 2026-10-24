@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Icon } from "@/components/Icon";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
-import { loadHub, type HubState } from "@/components/features/FeatureHub";
 import { barShare, DEFAULT_SIDES, MAX_SIDE_NAME, PK_DURATIONS, remainingSec } from "@/lib/pk";
 import type { PkFeed } from "@/lib/pk-server";
 
@@ -54,11 +52,9 @@ export function PkPage() {
   const tHub = useTranslations("featureHub");
   const locale = useLocale();
   const [data, setData] = useState<PkState | null>(null);
-  const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ ...DEFAULT_SIDES, durationSec: 300 as number });
-  const [copied, setCopied] = useState(false);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
   // Creator vs creator: who to invite and for how long.
   const [invite, setInvite] = useState({ username: "", durationSec: 300 as number });
@@ -74,7 +70,6 @@ export function PkPage() {
 
   useEffect(() => {
     fetchPk().then(apply);
-    loadHub().then(setHub);
     const id = setInterval(() => fetchPk().then(apply), REFRESH_MS);
     const tick = setInterval(() => setNow(Date.now()), 500);
     return () => {
@@ -148,21 +143,15 @@ export function PkPage() {
   }
 
   if (!data) return null;
-  const obsUrl = hub ? `${hub.overlayBase}/pk?key=${hub.overlayKey}` : null;
   const m = data.current;
   const left = m ? remainingSec(new Date(m.endsAt), new Date(now + skew)) : 0;
   const fmt = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString(locale === "th" ? "th-TH" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" }) : "";
 
-  async function copy() {
-    if (!obsUrl) return;
-    try {
-      await navigator.clipboard.writeText(obsUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // ignore
-    }
+  async function testOnObs() {
+    setTest(null);
+    const res = await fetch("/api/pk/test", { method: "POST" }).catch(() => null);
+    setTest(res?.ok ? "sent" : "failed");
   }
 
   return (
@@ -174,6 +163,7 @@ export function PkPage() {
           <Switch checked={data.enabled} onChange={toggle} label={tHub("f_pk")} disabled={busy} />
         </span>
       }
+      obs={{ feature: "pk", onTest: testOnObs, testState: test }}
     >
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="text-xs text-brand-900/55">{t("graceNote", { min: Math.round((m?.graceSec || data.graceSec) / 60) })}</p>
@@ -181,7 +171,7 @@ export function PkPage() {
 
       {m && m.kind === "solo" ? (
         <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">{m.phase === "ended" ? t("result") : t("live")}</h2>
+          <h2 className="font-bold text-brand-900">① {m.phase === "ended" ? t("result") : t("live")}</h2>
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-bold" style={{ color: m.colorA }}>{m.nameA}</p>
@@ -207,7 +197,7 @@ export function PkPage() {
         </section>
       ) : m && m.kind === "duo" ? (
         <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">{m.phase === "ended" ? t("result") : t("duoLive")}</h2>
+          <h2 className="font-bold text-brand-900">① {m.phase === "ended" ? t("result") : t("duoLive")}</h2>
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-bold" style={{ color: m.colorA }}>{m.nameA}</p>
@@ -239,7 +229,7 @@ export function PkPage() {
         </section>
       ) : (
         <section className="space-y-4 rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">{t("newMatch")}</h2>
+          <h2 className="font-bold text-brand-900">① {t("newMatch")}</h2>
           {(["A", "B"] as const).map((side) => (
             <div key={side} className="flex flex-wrap items-center gap-2">
               <input
@@ -284,7 +274,7 @@ export function PkPage() {
 
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-bold text-brand-900">{t("duoTitle")}</h2>
+          <h2 className="font-bold text-brand-900">② {t("duoTitle")}</h2>
           <span className="flex items-center gap-2 text-xs font-semibold text-brand-900/70">
             {t("invitesOff")}
             <Switch
@@ -360,36 +350,9 @@ export function PkPage() {
         )}
       </section>
 
-      <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
-        <h2 className="font-bold text-brand-900">{t("obsLink")}</h2>
-        {obsUrl && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100">
-              <Icon name="link" className="h-3.5 w-3.5" />
-              {copied ? tHub("copied") : tHub("copyObs")}
-            </button>
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "800×220" })}</span>
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={async () => {
-              setTest(null);
-              const res = await fetch("/api/pk/test", { method: "POST" }).catch(() => null);
-              setTest(res?.ok ? "sent" : "failed");
-            }}
-            className="btn-primary px-4 py-2 text-sm"
-          >
-            {t("testOnObs")}
-          </button>
-          {test && <span className={`text-xs ${test === "sent" ? "text-emerald-700 dark:text-emerald-300" : "text-red-600 dark:text-red-400"}`}>{test === "sent" ? t("testSent") : t("saveFailed")}</span>}
-        </div>
-      </section>
-
       {data.history.length > 0 && (
         <section className="space-y-2 rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">{t("history")}</h2>
+          <h2 className="font-bold text-brand-900">③ {t("history")}</h2>
           <ul className="space-y-1.5 text-sm">
             {data.history.map((h) => (
               <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-200 px-3 py-2">

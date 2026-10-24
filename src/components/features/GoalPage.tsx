@@ -8,7 +8,6 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
 import { AutoSaveInput, fetchLibrary, uploadFile, useUploadError, type LibFile } from "@/components/features/LibraryBits";
-import { loadHub, type HubState } from "@/components/features/FeatureHub";
 import { GoalCard, GoalView } from "@/components/overlay/GoalView";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import {
@@ -75,13 +74,11 @@ export function GoalPage() {
   const tHub = useTranslations("featureHub");
   const uploadError = useUploadError();
   const [s, setS] = useState<Settings | null>(null);
-  const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [deleting, setDeleting] = useState<Item | null>(null);
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [images, setImages] = useState<LibFile[] | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
@@ -90,7 +87,6 @@ export function GoalPage() {
 
   useEffect(() => {
     json("/api/goal").then((d) => d && setS(d));
-    loadHub().then(setHub);
   }, []);
 
   /** Run edits one at a time and take the server's answer as the new state. */
@@ -180,7 +176,6 @@ export function GoalPage() {
     return t("deleteMoves", { name: item.name, amount: item.raised.toLocaleString(), targets: names });
   }
 
-  const obsUrl = hub ? `${hub.overlayBase}/goal?key=${hub.overlayKey}` : null;
   const seg = (on: boolean) =>
     `px-3.5 py-1.5 text-sm font-semibold ${on ? "bg-brand-600 text-white" : "text-brand-800 hover:bg-brand-100"}`;
   const sample: GoalFeed = {
@@ -201,6 +196,7 @@ export function GoalPage() {
           <Switch checked={s.enabled} onChange={toggle} label={tHub("f_goal")} disabled={toggling} />
         </span>
       }
+      obs={{ feature: "goal" }}
     >
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
@@ -364,17 +360,6 @@ export function GoalPage() {
 
           <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
             <h2 className="font-bold text-brand-900">④ {t("obsAndColor")}</h2>
-            {obsUrl && (
-              <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <button type="button"
-                  onClick={async () => { try { await navigator.clipboard.writeText(obsUrl); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ } }}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100">
-                  <Icon name="link" className="h-3.5 w-3.5" />
-                  {copied ? tHub("copied") : tHub("copyObs")}
-                </button>
-                <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "700×300" })}</span>
-              </p>
-            )}
             <div className="rounded-xl bg-brand-50 p-3">
               <ColorField value={s.color} fallback={s.alertColor ?? DEFAULT_COLOR} presets={PRESET_COLORS}
                 label={t("color")} codeLabel={t("colorCode")} resetLabel={t("colorReset")} defaultLabel={t("colorDefault")}

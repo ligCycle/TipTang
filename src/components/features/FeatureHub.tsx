@@ -49,17 +49,11 @@ export async function loadHub(): Promise<HubState | null> {
   };
 }
 
-/** A feature's own OBS browser-source link. */
-export function obsUrl(hub: HubState, f: FeatureDef): string {
-  return `${hub.overlayBase}${f.obsPath}?key=${hub.overlayKey}`;
-}
-
 const MAX_SUGGESTED = 3;
 
 /**
- * The "ลูกเล่น" hub: OBS connection status on top, then the features that
- * are on (each with its own OBS link), up to three worth trying, and the full
- * list folded away.
+ * The "ลูกเล่น" hub: the "เชื่อม OBS" card on top (the two links), then the
+ * features that are on, up to three worth trying, and the full list folded away.
  */
 export function FeatureHub() {
   const t = useTranslations("featureHub");
@@ -131,7 +125,6 @@ export function FeatureHub() {
       key={f.id}
       feature={f}
       enabled={hub.flags[f.flag]}
-      obsUrl={f.obsPath === null ? null : obsUrl(hub, f)}
       busy={busy === f.id}
       onToggle={(next) => toggle(f, next)}
     />
@@ -141,7 +134,12 @@ export function FeatureHub() {
     <div className="space-y-6">
       {/* One-time chooser on the first visit (shows the OBS step first if never connected). */}
       {!hub.featuresOnboardedAt && <FirstVisitPopup hub={hub} onDone={setHub} />}
-      <ObsLinkCard lastSeenAt={hub.lastSeenAt} />
+      <ObsLinkCard
+        overlayBase={hub.overlayBase}
+        overlayKey={hub.overlayKey}
+        flags={hub.flags}
+        onKey={(key) => setHub((h) => (h ? { ...h, overlayKey: key } : h))}
+      />
       <SetSwitcher showManage />
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 

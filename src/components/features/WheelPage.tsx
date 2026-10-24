@@ -121,6 +121,7 @@ export function WheelPage() {
           <Switch checked={data.wheelEnabled} onChange={toggle} label={tHub("f_wheel")} disabled={toggling} />
         </span>
       }
+      obs={{ feature: "wheel" }}
     >
       <p className="text-sm text-brand-900/65">{t("pageDesc")}</p>
       {!data.wheelEnabled && (
@@ -172,7 +173,6 @@ export function WheelPage() {
         </>
       )}
 
-      <ObsLinks hub={hub} />
       <SpinTodo />
 
       {rulesOpen && (
@@ -481,50 +481,5 @@ function WheelEditor({
         onCancel={() => setDeleting(false)}
       />
     </div>
-  );
-}
-
-/** The two OBS links: the wheel (spins on stream) and the to-do list. */
-function ObsLinks({ hub }: { hub: HubState | null }) {
-  const t = useTranslations("wheel");
-  const tHub = useTranslations("featureHub");
-  const [copied, setCopied] = useState<string | null>(null);
-  if (!hub) return null;
-  const links = [
-    { id: "wheel", label: t("obsWheel"), size: "600×600", url: `${hub.overlayBase}/wheel?key=${hub.overlayKey}` },
-    { id: "todo", label: t("obsTodo"), size: "400×420", url: `${hub.overlayBase}/todo?key=${hub.overlayKey}` },
-  ];
-
-  async function copy(id: string, url: string) {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(id);
-      setTimeout(() => setCopied(null), 1500);
-    } catch {
-      // ignore
-    }
-  }
-
-  return (
-    <section className="rounded-2xl border border-brand-200 p-4">
-      <h2 className="font-bold text-brand-900">{t("obsTitle")}</h2>
-      <p className="mt-1 text-sm text-brand-900/65">{t("obsLine")}</p>
-      <ul className="mt-3 space-y-2">
-        {links.map((l) => (
-          <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="min-w-32 text-sm font-semibold text-brand-900">{l.label}</span>
-            <button
-              type="button"
-              onClick={() => copy(l.id, l.url)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
-            >
-              <Icon name="link" className="h-3.5 w-3.5" />
-              {copied === l.id ? tHub("copied") : tHub("copyObs")}
-            </button>
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: l.size })}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }

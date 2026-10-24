@@ -8,7 +8,6 @@ import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
 import { AutoSaveInput } from "@/components/features/LibraryBits";
-import { loadHub, type HubState } from "@/components/features/FeatureHub";
 import { SpinTodo } from "@/components/features/SpinTodo";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import {
@@ -43,7 +42,8 @@ async function fetchCombo(): Promise<ComboSettings | null> {
 
 /**
  * "คอมโบทิป" settings: on/off, difficulty (or the creator's own baht per
- * level), the level table with rewards, the OBS link, colour and a test.
+ * level), the level table with rewards, and the colour; the OBS bar under the
+ * title carries the link status and the test.
  * Everything saves by itself; edits apply to the next combo.
  */
 export function ComboPage() {
@@ -51,11 +51,8 @@ export function ComboPage() {
   const tHub = useTranslations("featureHub");
   const locale = useLocale();
   const [data, setData] = useState<ComboSettings | null>(null);
-  const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState(false);
   const [toggling, setToggling] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [copiedTodo, setCopiedTodo] = useState(false);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
   // Saves replace the table, so they run one at a time on the newest copy.
   const latest = useRef<ComboSettings | null>(null);
@@ -69,7 +66,6 @@ export function ComboPage() {
 
   useEffect(() => {
     fetchCombo().then(apply);
-    loadHub().then(setHub);
     // Keep the connection / running-combo status fresh without touching edits.
     const id = setInterval(
       () =>
@@ -123,27 +119,12 @@ export function ComboPage() {
 
   if (!data) return null;
   const custom = data.difficulty === "custom";
-  const obsUrl = hub ? `${hub.overlayBase}/combo?key=${hub.overlayKey}` : null;
   // In custom mode every row must carry its baht; fill gaps from the shown sizes.
   const rowsWith = (change: (rows: LevelRow[]) => LevelRow[]) => (cur: ComboSettings) => ({
     rows: change(
       cur.difficulty === "custom" ? cur.rows.map((r, j) => ({ ...r, amount: r.amount ?? cur.sizes[j] ?? 100 })) : cur.rows,
     ),
   });
-
-  const todoUrl = hub ? `${hub.overlayBase}/todo?key=${hub.overlayKey}` : null;
-  async function copy(url: string | null = obsUrl) {
-    if (!url) return;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(url === obsUrl);
-      setCopiedTodo(url === todoUrl);
-      setTimeout(() => setCopiedTodo(false), 1500);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // ignore
-    }
-  }
 
   async function testOnObs() {
     setTest(null);
@@ -160,14 +141,11 @@ export function ComboPage() {
           <Switch checked={data.enabled} onChange={toggle} label={tHub("f_combo")} disabled={toggling} />
         </span>
       }
+      obs={{ feature: "combo", onTest: testOnObs, testState: test }}
     >
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="text-sm text-brand-900/65">{t("onlyWhenLinkOpen")}</p>
       <p className="flex flex-wrap items-center gap-2 text-sm">
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${data.live ? "bg-emerald-100 text-emerald-700" : "bg-brand-900/10 text-brand-900/60"}`}>
-          <span className={`h-2 w-2 rounded-full ${data.live ? "bg-emerald-500" : "bg-brand-900/30"}`} />
-          {data.live ? t("linkLive") : t("linkOff")}
-        </span>
         {data.current && (
           <span className="text-xs font-semibold text-brand-700">
             {t("running", { level: data.current.level, progress: data.current.progress, size: data.current.size })}
@@ -281,33 +259,6 @@ export function ComboPage() {
 
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
         <h2 className="font-bold text-brand-900">③ {t("obsAndColor")}</h2>
-        {obsUrl && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button
-              type="button"
-              onClick={() => copy(obsUrl)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
-            >
-              <Icon name="link" className="h-3.5 w-3.5" />
-              {copied ? tHub("copied") : tHub("copyObs")}
-            </button>
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "600×220" })}</span>
-          </p>
-        )}
-        {todoUrl && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="text-sm font-semibold text-brand-900">{t("todoLink")}</span>
-            <button
-              type="button"
-              onClick={() => copy(todoUrl)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100"
-            >
-              <Icon name="link" className="h-3.5 w-3.5" />
-              {copiedTodo ? tHub("copied") : tHub("copyObs")}
-            </button>
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "400×420" })}</span>
-          </p>
-        )}
         <div className="rounded-xl bg-brand-50 p-3">
           <ColorField
             value={data.color}
@@ -320,16 +271,6 @@ export function ComboPage() {
             onSave={(hex) => void save(() => ({ color: hex }))}
             onReset={() => void save(() => ({ color: null }))}
           />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={testOnObs} className="btn-primary px-4 py-2 text-sm">
-            {t("testOnObs")}
-          </button>
-          {test && (
-            <span className={`text-xs ${test === "sent" ? "text-emerald-700" : "text-red-600"}`}>
-              {test === "sent" ? t("testSent") : t("saveFailed")}
-            </span>
-          )}
         </div>
       </section>
 

@@ -9,7 +9,6 @@ import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
 import { AutoSaveInput, fetchLibrary, type LibFile } from "@/components/features/LibraryBits";
-import { loadHub, type HubState } from "@/components/features/FeatureHub";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { DEFAULT_ODDS, MAX_PRIZE_TEXT, MAX_PRIZES, MAX_PRIZES_PER_RARITY, RARITIES, rebalance, type Odds, type Rarity } from "@/lib/gacha";
 
@@ -59,7 +58,6 @@ export function GachaPage() {
   const tc = useTranslations("common");
   const locale = useLocale();
   const [data, setData] = useState<GachaState | null>(null);
-  const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState<string | null>(null);
   // From the hub: switched on before the rules were accepted (?rules=1).
   const searchParams = useSearchParams();
@@ -69,14 +67,12 @@ export function GachaPage() {
   const [newText, setNewText] = useState<Record<Rarity, string>>({ common: "", rare: "", epic: "" });
   const [picking, setPicking] = useState<string | null>(null);
   const [images, setImages] = useState<LibFile[] | null>(null);
-  const [copied, setCopied] = useState(false);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
   const oddsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
     json("/api/gacha").then((r) => r.data && setData(r.data));
-    loadHub().then(setHub);
     return () => {
       if (oddsTimer.current) clearTimeout(oddsTimer.current);
     };
@@ -128,20 +124,14 @@ export function GachaPage() {
 
   if (!data) return null;
   const odds = draft ?? data.odds;
-  const obsUrl = hub ? `${hub.overlayBase}/gacha?key=${hub.overlayKey}` : null;
   const byRarity = (r: Rarity) => data.prizes.filter((p) => p.rarity === r);
   const zeroWithPrizes = RARITIES.filter((r) => odds[r] === 0 && byRarity(r).length > 0);
   const total = data.prizes.length;
 
-  async function copy() {
-    if (!obsUrl) return;
-    try {
-      await navigator.clipboard.writeText(obsUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // ignore
-    }
+  async function testOnObs() {
+    setTest(null);
+    const res = await fetch("/api/gacha/test", { method: "POST" }).catch(() => null);
+    setTest(res?.ok ? "sent" : "failed");
   }
 
   function move(r: Rarity, index: number, dir: -1 | 1) {
@@ -169,6 +159,7 @@ export function GachaPage() {
           />
         </span>
       }
+      obs={{ feature: "gacha", onTest: testOnObs, testState: test }}
     >
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">{t("noMoney")}</p>
@@ -350,15 +341,6 @@ export function GachaPage() {
 
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
         <h2 className="font-bold text-brand-900">④ {t("obsAndColor")}</h2>
-        {obsUrl && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100">
-              <Icon name="link" className="h-3.5 w-3.5" />
-              {copied ? tHub("copied") : tHub("copyObs")}
-            </button>
-            <span className="text-xs text-brand-900/50">{tHub("obsSizeOf", { size: "500×500" })}</span>
-          </p>
-        )}
         <div className="rounded-xl bg-brand-50 p-3">
           <ColorField
             value={data.color}
@@ -371,20 +353,6 @@ export function GachaPage() {
             onSave={(hex) => void run("/api/gacha", "PATCH", { color: hex })}
             onReset={() => void run("/api/gacha", "PATCH", { color: null })}
           />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={async () => {
-              setTest(null);
-              const res = await fetch("/api/gacha/test", { method: "POST" }).catch(() => null);
-              setTest(res?.ok ? "sent" : "failed");
-            }}
-            className="btn-primary px-4 py-2 text-sm"
-          >
-            {t("testOnObs")}
-          </button>
-          {test && <span className={`text-xs ${test === "sent" ? "text-emerald-700" : "text-red-600"}`}>{test === "sent" ? t("testSent") : t("saveFailed")}</span>}
         </div>
       </section>
 

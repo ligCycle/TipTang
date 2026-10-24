@@ -9,16 +9,26 @@ import { Switch } from "@/components/features/FeatureCard";
 import { AlertTiersSection } from "@/components/features/AlertTiersSection";
 import { GoalPage } from "@/components/features/GoalPage";
 import type { AlertTier } from "@/lib/alert-tiers";
+import { ObsBar } from "@/components/features/ObsBar";
+import type { FeatureId } from "@/lib/feature-registry";
 
-/** Header shared by every feature settings page: back to the hub, title, switch. */
+/** The OBS bar under the title: which link, its status, and the page's test. */
+export type ObsBarProps = { feature: FeatureId; onTest?: () => void; testState?: "sent" | "failed" | null };
+
+/**
+ * Header shared by every feature settings page: back to the hub, title,
+ * switch, then the OBS bar — the same order on every page.
+ */
 export function FeatureSettingsLayout({
   title,
   enabled,
   toggleKind,
   headerExtra,
+  obs,
   children,
 }: {
   title: string;
+  obs?: ObsBarProps;
   /** With a toggle kind, the header carries the feature's on/off switch. */
   enabled?: boolean;
   toggleKind?: "alertsToggle";
@@ -66,6 +76,7 @@ export function FeatureSettingsLayout({
         )}
         {headerExtra}
       </div>
+      {obs && <ObsBar {...obs} />}
       {children}
     </div>
   );
@@ -76,7 +87,7 @@ export function AlertsFeature({ alertsEnabled }: { alertsEnabled: boolean }) {
   // Saved tiers, shared between the tiers editor and the preview.
   const [tiers, setTiers] = useState<AlertTier[]>([]);
   return (
-    <FeatureSettingsLayout title={t("f_alerts")} enabled={alertsEnabled} toggleKind="alertsToggle">
+    <FeatureSettingsLayout title={t("f_alerts")} enabled={alertsEnabled} toggleKind="alertsToggle" obs={{ feature: "alerts" }}>
       <OverlaySettings
         view="alerts"
         aside={(config) => <AlertPreview config={config} tiers={tiers} />}
@@ -94,7 +105,7 @@ export function GoalFeature() {
 export function SubathonFeature() {
   const t = useTranslations("featureHub");
   return (
-    <FeatureSettingsLayout title={t("f_subathon")}>
+    <FeatureSettingsLayout title={t("f_subathon")} obs={{ feature: "subathon" }}>
       <OverlaySettings view="subathon" />
     </FeatureSettingsLayout>
   );
