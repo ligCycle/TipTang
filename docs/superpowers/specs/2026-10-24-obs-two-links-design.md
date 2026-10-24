@@ -118,3 +118,55 @@ Stored in `src/lib/feature-registry.ts` as a new field: `stage: ("main" | "bars"
 ## Out of scope
 
 A single combined feed for the main link: it mounts up to 5 polling clients. Noted as a later optimisation.
+
+## Builder-check rulings (opus, 2026-10-24). These override the sections above.
+
+- **C1. Media pause keeps server timing honest.**
+  - Server:
+    - `MediaRequest` gets `pausedMs` (`Int`, default 0) and `pausedAt` (`DateTime?`).
+    - The client reports `paused`/`resumed`.
+    - `overdue` and `elapsedSec` subtract the paused time.
+    - The feed takes `hold=1` (the stage is busy), and then never promotes a new request.
+  - Client:
+    - The watchdog and the voice timer are suspended while paused.
+    - `pauseVideo` is added; the voice bar uses `animation-play-state`.
+    - Media is hidden with `visibility` and never unmounted.
+- **C2. Embedding.**
+  - The clients get an `embedded` prop (fill the box, `display:none` when idle).
+  - Boss gets `mode: "card" | "banners" | "both"` (own link = both).
+  - `useStage()` returns `{ free, acquire(kind), release() }`. With no provider, the stage is always free.
+  - Alerts and their Confetti stay outside FitBox.
+- **C3. Claim only when the stage is free.**
+  - Wheel and gacha fetch (which is the claim) only when idle and the stage is free.
+  - Boss banners mode polls `claim=0` unless the stage is free and no banner is showing.
+  - With `claim=0`, the boss test feed's kill/chain are stripped too.
+- **C4. The own link wins (no double play).**
+  - New `User.wheelSeenAt`, `gachaSeenAt` and `bossLinkSeenAt`, touched only by the per-feature link.
+  - Main-link clients send `via=main`. They don't touch those fields or `mediaSeenAt`; `bossSeenAt` is still touched (live-only damage).
+  - When the feature's own link was seen within `LIVE_MS`, its feed returns idle to `via=main`, and the stage leaves the card out.
+- **C5. `?test=1` on the main link:** alerts only, no stage poll, nothing claimed.
+- **C6. Key strip (YouTube `forigin`).**
+  - The key is stripped just before `new YT.Player` and restored with `replaceState` on `onReady`.
+  - Verify the iframe `src` carries no key.
+- **C7. Alert turn length.** An alert releases the stage at the later of `durationSec` and TTS end (or error), capped at 30 s.
+- **C8. Order.**
+  - In the stage queue, alerts come before other popups.
+  - A non-alert popup waits 3.5 s after it is claimed before taking its turn, so the tip's own alert shows first.
+- **C9. Bars layout.**
+  - PK becomes `w-full max-w-[800px]`.
+  - The bars column is scaled to fit (FitBox by width and height).
+  - Size hint is 800×600.
+- **C10. Tests and cards that are off.**
+  - The bars page mounts every bar client (they hide themselves).
+  - On the main page, the stage poll runs every 5 s, and counts a card as on when a test is pending.
+- **C11. ObsBar polling.** `GET /api/overlay/status` is extended with the seen times; nothing is fetched from setup in a loop.
+- **C12. Copy and leftovers.**
+  - Update `obsRotateConfirm` (every link), `obsGuideStep4` (size) and the guide page lines that say one link per feature.
+  - Remove the goal and timer copy rows (keep the preview iframes).
+  - Delete `view="all"` and the `obsBlock` once they're unused.
+  - Soundpick and voice have no page of their own, so no ObsBar for them.
+- **C13. CSP: no change needed.**
+  - `/overlay/:path*` already gets the overlay CSP with YouTube.
+- **C14. Load.**
+  - On the main link, the boss client polls every 4 s.
+  - A combined feed stays a later optimisation.
