@@ -123,10 +123,10 @@ test("drawFromBox uses the box the fan saw: an empty rare tier never comes out",
 });
 
 test("looksLikeMoney catches money and money-like prizes only", () => {
-  for (const t of ["เงิน 100 บาท", "โอนให้ 50฿", "บัตรเติมเงิน", "TrueMoney 20", "gift card", "Giftcard", "คูปองส่วนลด", "500 thb", "100บ."]) {
+  for (const t of ["เงิน 100 บาท", "โอนให้ 50฿", "บัตรเติมเงิน", "TrueMoney 20", "gift card", "Giftcard", "500 thb", "100บ.", "100 บ", "เติมเกม 100", "promptpay 20", "เงินสด", "robux"]) {
     assert.ok(looksLikeMoney(t), t);
   }
-  for (const t of ["ร้องเพลง 1 เพลง", "เต้น", "ชื่อในคลิป", "เล่นเกม 10 นาที"]) {
+  for (const t of ["ร้องเพลง 1 เพลง", "เต้น", "ชื่อในคลิป", "เล่นเกม 10 นาที", "สีเงิน", "คูปองขอเพลง", "โอนอ่อน", "บาทหลวง", "ทำท่า 3 บท"]) {
     assert.ok(!looksLikeMoney(t), t);
   }
 });
@@ -138,4 +138,9 @@ test("isGachaBox accepts a stored box and rejects junk", () => {
   assert.ok(!isGachaBox({ odds: BOX.odds }));
   assert.ok(!isGachaBox({ odds: { common: 1 }, prizes: [] }));
   assert.ok(!isGachaBox({ odds: BOX.odds, prizes: [{ id: "x", rarity: "mythic", text: "a", imageUrl: null, noAction: false }] }));
+});
+
+test("isGachaBox requires whole, non-negative odds", () => {
+  assert.ok(!isGachaBox({ ...BOX, odds: { common: 70.5, rare: 25, epic: 4.5 } }));
+  assert.ok(!isGachaBox({ ...BOX, odds: { common: -1, rare: 96, epic: 5 } }));
 });

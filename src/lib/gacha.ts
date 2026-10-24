@@ -144,7 +144,7 @@ export function isGachaBox(v: unknown): v is GachaBox {
   const b = v as { odds?: unknown; prizes?: unknown };
   if (!b.odds || typeof b.odds !== "object") return false;
   const o = b.odds as Record<string, unknown>;
-  if (!RARITIES.every((r) => typeof o[r] === "number")) return false;
+  if (!RARITIES.every((r) => typeof o[r] === "number" && Number.isInteger(o[r]) && (o[r] as number) >= 0)) return false;
   return (
     Array.isArray(b.prizes) &&
     b.prizes.every((p) => {
@@ -165,7 +165,8 @@ export function isGachaBox(v: unknown): v is GachaBox {
  * Prizes must not be money or worth money (a paid random draw for money looks
  * like a lottery under Thai law). A soft check on the creator's text.
  */
-const MONEY = /฿|บาท|\d+\s*(บ\.|thb)|เงิน|โอน|ทรูมันนี่|truemoney|บัตรเติม|gift ?card|voucher|คูปอง/i;
+const MONEY =
+  /฿|\$|\d[\d,]*\s*(บาท|บ\.?(?![ก-๙])|thb|baht)|เงินสด|เงินรางวัล|โอนเงิน|พร้อมเพย์|promptpay|ทรูมันนี่|truemoney|บัตรเติม|เติมเกม|robux|gift[ -]?card|voucher|\bcash\b/i;
 export function looksLikeMoney(text: string): boolean {
   return MONEY.test(text);
 }

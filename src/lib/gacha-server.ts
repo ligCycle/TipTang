@@ -16,6 +16,7 @@ import {
 } from "@/lib/gacha";
 import { LATE_PLAY_MS } from "@/lib/wheel";
 import { readGachaTest, TEST_NAME } from "@/lib/overlay-test";
+import { lockCreator } from "@/lib/combo-server";
 
 type Tx = Prisma.TransactionClient;
 
@@ -78,12 +79,23 @@ function toBoxPrize(p: { id: string; rarity: Rarity; text: string; imageUrl: str
  * (K1) and something can come out. Null = the pull doesn't stand.
  */
 export async function gachaSnapshot(userId: string, seenVersion: number): Promise<{ box: GachaBox; price: number } | null> {
+  // One read: the version and the prizes come from the same moment, so a
+  // creator edit can't slip a box the fan never saw past the check.
   const u = await prisma.user.findUnique({
     where: { id: userId },
-    select: { gachaEnabled: true, gachaPrice: true, gachaCommon: true, gachaRare: true, gachaEpic: true, gachaVersion: true },
+    select: {
+      gachaEnabled: true,
+      gachaPrice: true,
+      gachaCommon: true,
+      gachaRare: true,
+      gachaEpic: true,
+      gachaVersion: true,
+      gachaPrizes: { where: { deletedAt: null }, orderBy: [{ position: "asc" }, { createdAt: "asc" }], select: PRIZE_SELECT },
+    },
   });
   if (!u?.gachaEnabled || u.gachaVersion !== seenVersion) return null;
-  const box: GachaBox = { odds: oddsOf(u), prizes: (await livePrizes(prisma, userId)).map(toBoxPrize) };
+  const prizes = u.gachaPrizes.filter((p) => isRarity(p.rarity)) as (Omit<(typeof u.gachaPrizes)[number], "rarity"> & { rarity: Rarity })[];
+  const box: GachaBox = { odds: oddsOf(u), prizes: prizes.map(toBoxPrize) };
   const odds = boxOdds(box);
   if (RARITIES.every((r) => odds[r] === 0)) return null;
   return { box, price: u.gachaPrice };
@@ -110,6 +122,9 @@ export async function gachaStartTx(tx: Tx, tipId: string, now: Date): Promise<Ga
   if (!isGachaBox(tip.gachaBox)) return "none";
   const hit = drawFromBox(tip.gachaBox, (n) => randomInt(0, n));
   if (!hit) return "none";
+  // The pull's key to User takes a share lock on that row; take the creator
+  // lock first so two confirms can't deadlock with the pipeline's lock.
+  await lockCreator(tx, tip.creatorId);
   await tx.gachaPull.create({
     data: {
       userId: tip.creatorId,

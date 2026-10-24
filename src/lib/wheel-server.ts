@@ -1,6 +1,7 @@
 import "server-only";
 import { randomInt } from "node:crypto";
 import { gachaTodoRows } from "@/lib/gacha-server";
+import { lockCreator } from "@/lib/combo-server";
 import { isRarity } from "@/lib/gacha";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -107,6 +108,9 @@ export async function startSpinTx(tx: Tx, tipId: string, now: Date): Promise<Spi
   const seg = drawSegment(wheelSegments(w), () => randomInt(0, 1_000_000) / 1_000_000);
   if (!seg) return "empty";
   const task = w.tasks.find((t) => t.id === seg.taskId)!;
+  // Creator lock before the insert (its key to User share-locks that row):
+  // keeps two parallel confirms from deadlocking (order Tip → Wheel → User).
+  await lockCreator(tx, tip.creatorId);
   await tx.spin.create({
     data: {
       userId: tip.creatorId,
