@@ -44,7 +44,20 @@ const SPARKS = [
  * asks when idle (waiting pulls stay on the server) — on the main link, only
  * when the stage is free, then it waits for its turn.
  */
-export function GachaOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
+export function GachaOverlayClient({
+  username,
+  apiKey,
+  onBusy,
+}: {
+  username: string;
+  apiKey: string;
+  /** Main link: true from a claim until it has played (kept mounted meanwhile, I-1). */
+  onBusy?: (busy: boolean) => void;
+}) {
+  const onBusyRef = useRef(onBusy);
+  useEffect(() => {
+    onBusyRef.current = onBusy;
+  }, [onBusy]);
   const [current, setCurrent] = useState<OverlayPull | null>(null);
   const [open, setOpen] = useState(false);
   // The creator's colour (gacha → alert → brand): capsule base and the fan line.
@@ -76,11 +89,13 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
           return;
         }
         seen.current.add(pull.id);
+        onBusyRef.current?.(true);
         // The tip's own alert goes first, then wait for the turn (C8).
         if (stageRef.current.embedded) await wait(POPUP_DELAY_MS);
         await stageRef.current.acquire("popup");
+        // Unmounted while waiting: hand the turn straight on (C-1).
+        if (!active) return stageRef.current.release();
         holding = true;
-        if (!active) return;
         setOpen(false);
         setCurrent(pull);
         timers.push(setTimeout(() => setOpen(true), OPEN_AT_MS));
@@ -91,6 +106,7 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
             busy.current = false;
             holding = false;
             stageRef.current.release();
+            onBusyRef.current?.(false);
           }, OPEN_AT_MS + SHOW_MS),
         );
       } catch {

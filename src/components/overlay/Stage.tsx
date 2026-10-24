@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 
 /**
  * The main OBS link plays every popup on one stage (spec
@@ -40,11 +40,16 @@ export function useStage(): StageApi {
 
 /** A non-alert popup waits this long after its claim, so the tip's own alert goes first (C8). */
 export const POPUP_DELAY_MS = 3500;
+/** "Free again" is reported only after this gap, so media doesn't flicker between queued alerts. */
+const FREE_AFTER_MS = 1000;
 
 class StageStore {
   private holder: TurnKind | null = null;
   private waiting: { kind: TurnKind; go: () => void }[] = [];
   private listeners = new Set<() => void>();
+  private freeTimer: ReturnType<typeof setTimeout> | null = null;
+  /** OBS tells a browser source when it is (not) in the program output. */
+  onAir = true;
   busy = false;
 
   subscribe = (fn: () => void) => {
@@ -55,12 +60,26 @@ class StageStore {
 
   private changed() {
     const busy = this.holder !== null || this.waiting.length > 0;
+    if (this.freeTimer) {
+      clearTimeout(this.freeTimer);
+      this.freeTimer = null;
+    }
     if (busy === this.busy) return;
-    this.busy = busy;
+    if (!busy) {
+      this.freeTimer = setTimeout(() => {
+        this.freeTimer = null;
+        this.busy = false;
+        for (const fn of this.listeners) fn();
+      }, FREE_AFTER_MS);
+      return;
+    }
+    this.busy = true;
     for (const fn of this.listeners) fn();
   }
 
-  canClaim = () => this.holder === null && this.waiting.length === 0;
+  // A copy of the main link in a scene that isn't on air (or several copies)
+  // must not take spins, pulls or kills the stream would never show (I-4).
+  canClaim = () => this.onAir && this.holder === null && this.waiting.length === 0;
 
   acquire = (kind: TurnKind) =>
     new Promise<void>((go) => {
@@ -88,6 +107,13 @@ class StageStore {
 
 export function StageProvider({ children }: { children: ReactNode }) {
   const [s] = useState(() => new StageStore());
+  useEffect(() => {
+    const onActive = (e: Event) => {
+      s.onAir = Boolean((e as CustomEvent<{ active?: boolean }>).detail?.active);
+    };
+    window.addEventListener("obsSourceActiveChanged", onActive);
+    return () => window.removeEventListener("obsSourceActiveChanged", onActive);
+  }, [s]);
   const busy = useSyncExternalStore(s.subscribe, s.getBusy, () => false);
   const api = useMemo<StageApi>(
     () => ({ embedded: true, busy, canClaim: s.canClaim, acquire: s.acquire, release: s.release }),

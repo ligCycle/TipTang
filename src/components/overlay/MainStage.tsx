@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ComponentProps } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentProps } from "react";
 import { OverlayClient } from "@/components/OverlayClient";
 import { MediaOverlayClient } from "@/components/overlay/MediaOverlayClient";
 import { WheelOverlayClient } from "@/components/overlay/WheelOverlayClient";
@@ -29,6 +29,15 @@ export function MainStage({
 }) {
   const { username, apiKey, test } = alerts;
   const [cards, setCards] = useState(NONE);
+  // A client that claimed something stays mounted until it has played it,
+  // even if its card goes off or its own link appears meanwhile (I-1).
+  const [busy, setBusy] = useState<Partial<Record<MainCard, boolean>>>({});
+  const busyFor = useCallback(
+    (k: MainCard) => (b: boolean) => setBusy((cur) => (Boolean(cur[k]) === b ? cur : { ...cur, [k]: b })),
+    [],
+  );
+  const [onWheel, onGacha, onBoss] = useMemo(() => [busyFor("wheel"), busyFor("gacha"), busyFor("boss")], [busyFor]);
+  const show = (k: MainCard) => cards[k] || Boolean(busy[k]);
 
   useEffect(() => {
     if (test || !apiKey) return;
@@ -64,19 +73,19 @@ export function MainStage({
           <MediaOverlayClient username={username} apiKey={apiKey} via="main" />
         </FitBox>
       )}
-      {cards.wheel && (
+      {show("wheel") && (
         <FitBox w={600} h={600} z={20}>
-          <WheelOverlayClient username={username} apiKey={apiKey} />
+          <WheelOverlayClient username={username} apiKey={apiKey} onBusy={onWheel} />
         </FitBox>
       )}
-      {cards.gacha && (
+      {show("gacha") && (
         <FitBox w={500} h={500} z={20}>
-          <GachaOverlayClient username={username} apiKey={apiKey} />
+          <GachaOverlayClient username={username} apiKey={apiKey} onBusy={onGacha} />
         </FitBox>
       )}
-      {cards.boss && (
+      {show("boss") && (
         <FitBox w={600} h={260} z={20}>
-          <BossOverlayClient username={username} apiKey={apiKey} color={bossColor} via="main" />
+          <BossOverlayClient username={username} apiKey={apiKey} color={bossColor} via="main" onBusy={onBoss} />
         </FitBox>
       )}
       <OverlayClient {...alerts} />

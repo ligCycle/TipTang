@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import type { BossChain, BossFeed, BossKillView } from "@/lib/boss";
-import { useStage } from "@/components/overlay/Stage";
+import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
 
 const POLL_MS = 2000;
 const BANNER_MS = 5000;
@@ -32,12 +32,19 @@ export function BossOverlayClient({
   apiKey,
   color,
   via = null,
+  onBusy,
 }: {
   username: string;
   apiKey: string;
   color: string | null;
   via?: "main" | "bars" | null;
+  /** Main link: true while banners are claimed but not all played (kept mounted meanwhile, I-1). */
+  onBusy?: (busy: boolean) => void;
 }) {
+  const onBusyRef = useRef(onBusy);
+  useEffect(() => {
+    onBusyRef.current = onBusy;
+  }, [onBusy]);
   const stage = useStage();
   const stageRef = useRef(stage);
   useEffect(() => {
@@ -65,13 +72,18 @@ export function BossOverlayClient({
       if (!b || !active) {
         showing.current = false;
         setBanner(null);
+        onBusyRef.current?.(false);
         return;
       }
       showing.current = true;
-      // On the main link every banner is a turn of its own.
+      onBusyRef.current?.(true);
+      // On the main link every banner is a turn of its own, after the
+      // killing tip's alert has had its chance to go first (C8).
+      if (stageRef.current.embedded) await new Promise<void>((r) => timers.push(setTimeout(r, POPUP_DELAY_MS)));
       await stageRef.current.acquire("popup");
+      // Unmounted while waiting: hand the turn straight on (C-1).
+      if (!active) return stageRef.current.release();
       holding = true;
-      if (!active) return;
       setBanner(b);
       timers.push(setTimeout(() => void nextBanner(), BANNER_MS));
     }

@@ -85,7 +85,7 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
   const stage = useStage();
   const busyRef = useRef(stage.busy);
   // Pause / resume of whatever is loaded (set by the load effect below).
-  const control = useRef<{ pause(): void; resume(): void } | null>(null);
+  const control = useRef<{ pause(): void; resume(): void; dispose(): void } | null>(null);
   const [needsClick, setNeedsClick] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const player = useRef<YTPlayer | null>(null);
@@ -101,14 +101,13 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
   }, [needsClick]);
 
   const url = `/api/overlay/${username}/media?key=${encodeURIComponent(apiKey)}`;
-  const hasCurrent = useRef(false);
 
   useEffect(() => {
     let active = true;
     async function poll() {
       try {
         // hold=1: the stage is busy, so nothing new may start (its clock would run).
-        const q = via === "main" ? `&via=main${busyRef.current && !hasCurrent.current ? "&hold=1" : ""}` : "";
+        const q = via === "main" ? `&via=main${busyRef.current ? "&hold=1" : ""}` : "";
         const res = await fetch(url + q, { cache: "no-store" });
         if (res.ok && active) setFeed((await res.json()) as MediaFeed);
       } catch {
@@ -124,9 +123,6 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
   }, [url, via]);
 
   const current = feed?.current ?? null;
-  useEffect(() => {
-    hasCurrent.current = current !== null;
-  }, [current]);
   // A popup took the stage: pause; it's free again: resume.
   useEffect(() => {
     busyRef.current = stage.busy;
@@ -155,7 +151,9 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
     player.current?.destroy();
     player.current = null;
     stopAudio(audio);
+    control.current?.dispose();
     control.current = null;
+    restoreKey();
     setVoiceStart(null);
     loadedId.current = current?.id ?? null;
     setNeedsClick(false);
@@ -163,8 +161,17 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
 
     const clip = current;
     const maxSec = clip.maxSec;
-    const report = (event: "started" | "ended" | "error" | "paused" | "resumed") =>
-      fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: clip.id, event }) }).catch(() => {});
+    // One after another, so a quick pause/resume can't arrive the wrong way round (I-2).
+    let chain: Promise<unknown> = Promise.resolve();
+    const report = (event: "started" | "ended" | "error" | "paused" | "resumed", keepalive = false) =>
+      (chain = chain.then(() =>
+        fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: clip.id, event }),
+          keepalive,
+        }).catch(() => {}),
+      ));
     let started = false;
     let retried = false;
     let sourceBroken = false;
@@ -238,6 +245,10 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
           else armWatchdog();
           void el.play().catch(() => {});
         },
+        // Gone while paused (skipped, OBS closed): never leave the pause open (I-2).
+        dispose() {
+          if (paused) void report("resumed", true);
+        },
       };
       armWatchdog();
       const begin = () => {
@@ -299,6 +310,10 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
         if (!started) armWatchdog();
         if (ready.current) player.current?.playVideo();
       },
+      // Gone while paused (skipped, OBS closed): never leave the pause open (I-2).
+      dispose() {
+        if (paused) void report("resumed", true);
+      },
     };
     if (busyRef.current) control.current.pause();
 
@@ -317,11 +332,10 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
       // the overlay key out of it while the player is made, and put it back
       // once it's ready, so a refresh of this link still works (C6). The key
       // stays in memory for the feed calls.
-      const query = window.location.search;
-      if (query) window.history.replaceState(null, "", window.location.pathname);
-      const restoreKey = () => {
-        if (query && !window.location.search) window.history.replaceState(null, "", window.location.pathname + query);
-      };
+      if (pageQuery === null) pageQuery = window.location.search;
+      if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
+      // Back on ready, on an error, or after 10 s whatever happens (I-3).
+      timers.current.push(setTimeout(restoreKey, 10_000));
       player.current = new YT.Player(el, {
         host: "https://www.youtube-nocookie.com",
         videoId: clip.videoId ?? "",
@@ -362,6 +376,7 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
             }
           },
           onError: (e) => {
+            restoreKey();
             if (CLIP_ERRORS.has(e.data)) {
               void report("error");
             } else if (!retried) {
@@ -381,6 +396,8 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
       for (const t of timers.current) clearTimeout(t);
       player.current?.destroy();
       stopAudio(audio);
+      control.current?.dispose();
+      restoreKey();
     },
     [],
   );
@@ -455,6 +472,12 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
       )}
     </div>
   );
+}
+
+/** The page's own query (the overlay key), kept for putting back after the player is made. */
+let pageQuery: string | null = null;
+function restoreKey() {
+  if (pageQuery && !window.location.search) window.history.replaceState(null, "", window.location.pathname + pageQuery);
 }
 
 function stopAudio(ref: { current: HTMLAudioElement | null }) {

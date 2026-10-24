@@ -190,9 +190,11 @@ const cardOn = (s: MediaSettings, kind: MediaKind) => (kind === "voice" ? s.voic
 const kindsOn = (s: MediaSettings): MediaKind[] =>
   (["clip", "voice"] as const).filter((k) => cardOn(s, k));
 const limitOf = (s: MediaSettings, kind: MediaKind) => (kind === "voice" ? VOICE_MAX_SEC : s.mediaMaxSec);
+/** A pause still open after this long counts no further (a lost "resumed" can't stop the clock for good, I-2). */
+const MAX_OPEN_PAUSE_MS = 120_000;
 /** Time a request sat paused behind popups on the main link, including a pause still running (C1). */
 const pausedOf = (r: { pausedMs: number; pausedAt: Date | null }, now: Date) =>
-  r.pausedMs + (r.pausedAt ? Math.max(0, now.getTime() - r.pausedAt.getTime()) : 0);
+  r.pausedMs + (r.pausedAt ? Math.min(MAX_OPEN_PAUSE_MS, Math.max(0, now.getTime() - r.pausedAt.getTime())) : 0);
 const isOverdue = (r: Row, s: MediaSettings, now: Date) =>
   overdue(r.startedAt ?? r.promotedAt, limitOf(s, kindOf(r)), now, 60, pausedOf(r, now));
 
@@ -374,9 +376,14 @@ export async function mediaQueueReport(
         });
       }
     } else if (event === "started") {
+      // Pauses before it started don't apply to time measured from now on.
       await tx.mediaRequest.updateMany({
         where: { id, userId, status: "PLAYING", startedAt: null },
-        data: { startedAt: now },
+        data: { startedAt: now, pausedMs: 0 },
+      });
+      await tx.mediaRequest.updateMany({
+        where: { id, userId, status: "PLAYING", startedAt: now, pausedAt: { not: null } },
+        data: { pausedAt: now },
       });
     } else {
       await tx.mediaRequest.updateMany({

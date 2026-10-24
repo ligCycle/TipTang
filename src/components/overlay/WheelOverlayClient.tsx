@@ -18,7 +18,20 @@ const RESULT_MS = 5000;
  * On the main link it also waits for the stage to be free before it asks,
  * then for its turn (src/components/overlay/Stage.tsx).
  */
-export function WheelOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
+export function WheelOverlayClient({
+  username,
+  apiKey,
+  onBusy,
+}: {
+  username: string;
+  apiKey: string;
+  /** Main link: true from a claim until it has played (kept mounted meanwhile, I-1). */
+  onBusy?: (busy: boolean) => void;
+}) {
+  const onBusyRef = useRef(onBusy);
+  useEffect(() => {
+    onBusyRef.current = onBusy;
+  }, [onBusy]);
   const [current, setCurrent] = useState<OverlaySpin | null>(null);
   const [showResult, setShowResult] = useState(false);
   const seen = useRef(new Set<string>());
@@ -47,6 +60,7 @@ export function WheelOverlayClient({ username, apiKey }: { username: string; api
           holding = false;
           stageRef.current.release();
         }
+        onBusyRef.current?.(false);
         if (active) void poll();
         return;
       }
@@ -74,11 +88,13 @@ export function WheelOverlayClient({ username, apiKey }: { username: string; api
         if (!active || !spin || seen.current.has(spin.id)) return;
         seen.current.add(spin.id);
         playing.current = true;
+        onBusyRef.current?.(true);
         // The tip's own alert goes first, then wait for the turn (C8).
         if (stageRef.current.embedded) await wait(POPUP_DELAY_MS);
         await stageRef.current.acquire("popup");
+        // Unmounted while waiting: hand the turn straight on (C-1).
+        if (!active) return stageRef.current.release();
         holding = true;
-        if (!active) return;
         queue.current.push(spin);
         playNext();
       } catch {
