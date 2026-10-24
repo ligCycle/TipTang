@@ -97,6 +97,8 @@ export async function mediaQueueConfirmTx(tx: Tx, tipId: string, now: Date): Pro
       queuedAt: now,
       position: await lastPosition(tx, req.userId),
       promotedAt: null,
+      pausedMs: 0,
+      pausedAt: null,
       endedAt: null,
     },
   });
@@ -156,6 +158,8 @@ const ROW_SELECT = {
   tipId: true,
   promotedAt: true,
   startedAt: true,
+  pausedMs: true,
+  pausedAt: true,
   queuedAt: true,
   endedAt: true,
   tip: { select: { supporterName: true, amount: true } },
@@ -186,6 +190,11 @@ const cardOn = (s: MediaSettings, kind: MediaKind) => (kind === "voice" ? s.voic
 const kindsOn = (s: MediaSettings): MediaKind[] =>
   (["clip", "voice"] as const).filter((k) => cardOn(s, k));
 const limitOf = (s: MediaSettings, kind: MediaKind) => (kind === "voice" ? VOICE_MAX_SEC : s.mediaMaxSec);
+/** Time a request sat paused behind popups on the main link, including a pause still running (C1). */
+const pausedOf = (r: { pausedMs: number; pausedAt: Date | null }, now: Date) =>
+  r.pausedMs + (r.pausedAt ? Math.max(0, now.getTime() - r.pausedAt.getTime()) : 0);
+const isOverdue = (r: Row, s: MediaSettings, now: Date) =>
+  overdue(r.startedAt ?? r.promotedAt, limitOf(s, kindOf(r)), now, 60, pausedOf(r, now));
 
 async function voiceUrl(r: Row, now: Date): Promise<string | null> {
   if (r.tipId === null) return VOICE_TEST_URL;
@@ -213,7 +222,7 @@ async function toCurrent(r: Row, s: MediaSettings, now: Date): Promise<MediaCurr
     maxSec: limitOf(s, kind),
     fan: r.tip?.supporterName ?? "",
     amount: r.tip ? Number(r.tip.amount) : 0,
-    elapsedSec: elapsedSec(r.startedAt, now),
+    elapsedSec: elapsedSec(r.startedAt, now, pausedOf(r, now)),
     test: r.tipId === null,
   };
 }
@@ -230,6 +239,7 @@ export async function mediaQueueCurrent(
   userId: string,
   now: Date,
   settings?: MediaSettings | null,
+  opts: { hold?: boolean } = {},
 ): Promise<MediaFeed | null> {
   const s = settings ?? (await prisma.user.findUnique({ where: { id: userId }, select: MEDIA_SETTINGS_SELECT }));
   if (!s) return null;
@@ -248,11 +258,12 @@ export async function mediaQueueCurrent(
     select: ROW_SELECT,
   });
   const only = playing.length === 1 ? playing[0] : null;
-  if (only && cardOn(s, kindOf(only)) && !overdue(only.startedAt ?? only.promotedAt, limitOf(s, kindOf(only)), now)) {
+  if (only && cardOn(s, kindOf(only)) && !isOverdue(only, s, now)) {
     return { ...base, current: await toCurrent(only, s, now) };
   }
   if (playing.length === 0) {
-    if (on.length === 0 || s.mediaPaused) return { ...base, current: null };
+    // hold = the main link's stage is busy: nothing new starts (its clock would run).
+    if (on.length === 0 || s.mediaPaused || opts.hold) return { ...base, current: null };
     const waiting = await prisma.mediaRequest.findFirst({
       where: { userId, status: "APPROVED", kind: { in: on } },
       select: { id: true },
@@ -276,22 +287,22 @@ export async function mediaQueueCurrent(
         // Its card went off mid-play: back to the top, from the start.
         await tx.mediaRequest.update({
           where: { id: r.id },
-          data: { status: "APPROVED", promotedAt: null, startedAt: null, position: await firstPosition(tx, userId) },
+          data: { status: "APPROVED", promotedAt: null, startedAt: null, pausedMs: 0, pausedAt: null, position: await firstPosition(tx, userId) },
         });
-      } else if (keep || overdue(r.startedAt ?? r.promotedAt, limitOf(fresh, kind), now)) {
+      } else if (keep || isOverdue(r, fresh, now)) {
         await tx.mediaRequest.update({ where: { id: r.id }, data: { status: "PLAYED", endedAt: now } });
       } else keep = r;
     }
     if (keep) return { row: keep, s: fresh };
     const freshOn = kindsOn(fresh);
-    if (fresh.mediaPaused || freshOn.length === 0) return null;
+    if (fresh.mediaPaused || freshOn.length === 0 || opts.hold) return null;
     const next = await tx.mediaRequest.findFirst({
       where: { userId, status: "APPROVED", kind: { in: freshOn } },
       orderBy: [{ position: "asc" }, { queuedAt: "asc" }],
       select: ROW_SELECT,
     });
     if (!next) return null;
-    await tx.mediaRequest.update({ where: { id: next.id }, data: { status: "PLAYING", promotedAt: now, startedAt: null } });
+    await tx.mediaRequest.update({ where: { id: next.id }, data: { status: "PLAYING", promotedAt: now, startedAt: null, pausedMs: 0, pausedAt: null } });
     return { row: { ...next, startedAt: null }, s: fresh };
   }, TIP_TX);
   return { ...base, current: picked ? await toCurrent(picked.row, picked.s, now) : null };
@@ -309,7 +320,7 @@ export async function requeuePlayingTx(tx: Tx, userId: string, kind?: MediaKind)
   for (const r of rows) {
     await tx.mediaRequest.update({
       where: { id: r.id },
-      data: { status: "APPROVED", promotedAt: null, startedAt: null, position: await firstPosition(tx, userId) },
+      data: { status: "APPROVED", promotedAt: null, startedAt: null, pausedMs: 0, pausedAt: null, position: await firstPosition(tx, userId) },
     });
   }
 }
@@ -332,16 +343,37 @@ export async function setVoiceEnabled(userId: string, enabled: boolean): Promise
   }, TIP_TX);
 }
 
+export type MediaEvent = "started" | "ended" | "error" | "paused" | "resumed";
+export const isMediaEvent = (v: unknown): v is MediaEvent =>
+  v === "started" || v === "ended" || v === "error" || v === "paused" || v === "resumed";
+
 /** The OBS link reports on the request it was given (only the playing one counts). */
 export async function mediaQueueReport(
   userId: string,
   id: string,
-  event: "started" | "ended" | "error",
+  event: MediaEvent,
   now: Date,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await lockCreator(tx, userId);
-    if (event === "started") {
+    if (event === "paused") {
+      // The main link paused it for a popup; that time doesn't count (C1).
+      await tx.mediaRequest.updateMany({
+        where: { id, userId, status: "PLAYING", pausedAt: null },
+        data: { pausedAt: now },
+      });
+    } else if (event === "resumed") {
+      const r = await tx.mediaRequest.findFirst({
+        where: { id, userId, status: "PLAYING", pausedAt: { not: null } },
+        select: { pausedAt: true },
+      });
+      if (r?.pausedAt) {
+        await tx.mediaRequest.update({
+          where: { id },
+          data: { pausedMs: { increment: Math.max(0, now.getTime() - r.pausedAt.getTime()) }, pausedAt: null },
+        });
+      }
+    } else if (event === "started") {
       await tx.mediaRequest.updateMany({
         where: { id, userId, status: "PLAYING", startedAt: null },
         data: { startedAt: now },

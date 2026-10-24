@@ -237,9 +237,18 @@ const KILL_SELECT = {
  * current boss, plus the next kill to play (claimed once across sources) or,
  * when more than CHAIN_AT are waiting, one summary of all of them (C9).
  */
-export async function bossFeed(userId: string, now: Date, opts: { testOnly?: boolean } = {}): Promise<BossFeed> {
+export async function bossFeed(
+  userId: string,
+  now: Date,
+  opts: { testOnly?: boolean; claim?: boolean } = {},
+): Promise<BossFeed> {
+  const claim = opts.claim ?? true;
   const test = await readBossTest(userId, now.getTime());
-  if (test) return bossTestFeed(test, now.getTime());
+  if (test) {
+    const f = bossTestFeed(test, now.getTime());
+    // A source that doesn't claim never plays banners, the test's included (C3).
+    return claim || f.phase !== "live" ? f : { ...f, kill: null, chain: null };
+  }
   if (opts.testOnly) return { phase: "off" };
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -251,14 +260,14 @@ export async function bossFeed(userId: string, now: Date, opts: { testOnly?: boo
   if (idx < 0) return { phase: "off" };
   const d = defs[idx];
 
-  const claim = await claimKills(userId, now);
+  const claimed = claim ? await claimKills(userId, now) : { kill: null, chain: null, pending: 0 };
   return {
     phase: "live",
     run: user.bossRun,
     life: user.bossLife,
     bossDefId: d.id,
     boss: { id: d.id, name: d.name, imageUrl: d.imageUrl, hp: d.hp, damage: user.bossDamage, index: idx + 1, total: defs.length },
-    ...claim,
+    ...claimed,
   };
 }
 

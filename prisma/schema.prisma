@@ -247,6 +247,9 @@ model MediaRequest {
   // Handed to the overlay; startedAt = the video actually began.
   promotedAt    DateTime?
   startedAt     DateTime?
+  // Time paused behind popups on the main link (doesn't count toward the limit).
+  pausedMs      Int         @default(0)
+  pausedAt      DateTime?
   endedAt       DateTime?
   createdAt     DateTime    @default(now())
 
@@ -606,6 +609,13 @@ model User {
   // Last poll of the boss OBS link: damage only counts while it's open.
   bossSeenAt           DateTime?
   bossColor            String?
+  // Two OBS links (src/lib/obs-stage.ts): last poll of the main and bars links,
+  // and of the per-feature popup links (a live one keeps its feature, C4).
+  mainSeenAt           DateTime?
+  barsSeenAt           DateTime?
+  wheelSeenAt          DateTime?
+  gachaSeenAt          DateTime?
+  bossLinkSeenAt       DateTime?
   bossDefs             BossDef[]
   bossHits             BossHit[]
   bossKills            BossKill[]

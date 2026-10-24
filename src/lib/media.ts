@@ -113,15 +113,16 @@ export function cleanMediaTitle(v: unknown): string {
 /**
  * A clip still marked "playing" well past its maximum length: the OBS source
  * was closed or lost mid-clip. Counts as played so the queue moves on.
- * `since` = when the video actually started (or was handed out, if it never did).
+ * `since` = when the video actually started (or was handed out, if it never did);
+ * `pausedMs` = time it sat paused behind a popup on the main link.
  */
-export function overdue(since: Date | null, maxSec: number, now: Date, slackSec = 60): boolean {
-  return since !== null && now.getTime() - since.getTime() > (maxSec + slackSec) * 1000;
+export function overdue(since: Date | null, maxSec: number, now: Date, slackSec = 60, pausedMs = 0): boolean {
+  return since !== null && now.getTime() - since.getTime() - pausedMs > (maxSec + slackSec) * 1000;
 }
 
-/** Whole seconds since the clip started (0 before it has). */
-export function elapsedSec(since: Date | null, now: Date): number {
-  return since ? Math.max(0, Math.floor((now.getTime() - since.getTime()) / 1000)) : 0;
+/** Whole seconds the clip has played (0 before it has); time paused for a popup doesn't count. */
+export function elapsedSec(since: Date | null, now: Date, pausedMs = 0): number {
+  return since ? Math.max(0, Math.floor((now.getTime() - since.getTime() - pausedMs) / 1000)) : 0;
 }
 
 export type ExtraKind = "media" | "gacha" | "wheel" | "sound";

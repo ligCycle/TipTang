@@ -26,19 +26,25 @@ export type FeatureDef = {
   obsPath: "" | "/goal" | "/timer" | "/wheel" | "/combo" | "/media" | "/gacha" | "/pk" | "/boss" | null;
   /** Suggested browser-source size (width×height). */
   obsSize: string;
+  /**
+   * Where it shows with the two OBS links (src/lib/obs-stage.ts): "main" =
+   * popups on the main (alerts) link, "bars" = the bars link. The own link
+   * above stays for creators who place it separately ("ขั้นสูง").
+   */
+  stage: ("main" | "bars")[];
 };
 
 export const FEATURES: FeatureDef[] = [
-  { id: "alerts", icon: "bell", flag: "alertsEnabled", href: "/dashboard/features/alerts", fanPage: false, toggleKind: "alertsToggle", obsPath: "", obsSize: "800×300" },
-  { id: "goal", icon: "target", flag: "goalOverlayEnabled", href: "/dashboard/features/goal", fanPage: false, toggleKind: "goalToggle", obsPath: "/goal", obsSize: "700×300" },
-  { id: "subathon", icon: "clock", flag: "timerEnabled", href: "/dashboard/features/subathon", fanPage: false, toggleKind: "timerToggle", obsPath: "/timer", obsSize: "400×260" },
-  { id: "soundpick", icon: "volume", flag: "soundPickEnabled", href: "/dashboard/library", fanPage: true, toggleKind: "soundPickToggle", obsPath: null, obsSize: "" },
-  { id: "gacha", icon: "gift", flag: "gachaEnabled", href: "/dashboard/features/gacha", fanPage: true, toggleKind: "gachaToggle", obsPath: "/gacha", obsSize: "500×500" },
-  { id: "pk", icon: "trophy", flag: "pkEnabled", href: "/dashboard/features/pk", fanPage: true, toggleKind: "pkToggle", obsPath: "/pk", obsSize: "800×220" },
-  { id: "wheel", icon: "wheel", flag: "wheelEnabled", href: "/dashboard/features/wheel", fanPage: true, toggleKind: "wheelToggle", obsPath: "/wheel", obsSize: "600×600" },
-  { id: "boss", icon: "shield", flag: "bossEnabled", href: "/dashboard/features/boss", fanPage: false, toggleKind: "bossToggle", obsPath: "/boss", obsSize: "600×320" },
-  { id: "combo", icon: "zap", flag: "comboEnabled", href: "/dashboard/features/combo", fanPage: false, toggleKind: "comboToggle", obsPath: "/combo", obsSize: "600×220" },
-  { id: "media", icon: "music", flag: "mediaEnabled", href: "/dashboard/features/media", fanPage: true, toggleKind: "mediaToggle", obsPath: "/media", obsSize: "640×480" },
+  { id: "alerts", icon: "bell", flag: "alertsEnabled", href: "/dashboard/features/alerts", fanPage: false, toggleKind: "alertsToggle", obsPath: "", obsSize: "800×300", stage: ["main"] },
+  { id: "goal", icon: "target", flag: "goalOverlayEnabled", href: "/dashboard/features/goal", fanPage: false, toggleKind: "goalToggle", obsPath: "/goal", obsSize: "700×300", stage: ["bars"] },
+  { id: "subathon", icon: "clock", flag: "timerEnabled", href: "/dashboard/features/subathon", fanPage: false, toggleKind: "timerToggle", obsPath: "/timer", obsSize: "400×260", stage: ["bars"] },
+  { id: "soundpick", icon: "volume", flag: "soundPickEnabled", href: "/dashboard/library", fanPage: true, toggleKind: "soundPickToggle", obsPath: null, obsSize: "", stage: ["main"] },
+  { id: "gacha", icon: "gift", flag: "gachaEnabled", href: "/dashboard/features/gacha", fanPage: true, toggleKind: "gachaToggle", obsPath: "/gacha", obsSize: "500×500", stage: ["main"] },
+  { id: "pk", icon: "trophy", flag: "pkEnabled", href: "/dashboard/features/pk", fanPage: true, toggleKind: "pkToggle", obsPath: "/pk", obsSize: "800×220", stage: ["bars"] },
+  { id: "wheel", icon: "wheel", flag: "wheelEnabled", href: "/dashboard/features/wheel", fanPage: true, toggleKind: "wheelToggle", obsPath: "/wheel", obsSize: "600×600", stage: ["main"] },
+  { id: "boss", icon: "shield", flag: "bossEnabled", href: "/dashboard/features/boss", fanPage: false, toggleKind: "bossToggle", obsPath: "/boss", obsSize: "600×320", stage: ["bars", "main"] },
+  { id: "combo", icon: "zap", flag: "comboEnabled", href: "/dashboard/features/combo", fanPage: false, toggleKind: "comboToggle", obsPath: "/combo", obsSize: "600×220", stage: ["bars"] },
+  { id: "media", icon: "music", flag: "mediaEnabled", href: "/dashboard/features/media", fanPage: true, toggleKind: "mediaToggle", obsPath: "/media", obsSize: "640×480", stage: ["main"] },
   // Plays through the clip link (one queue, one OBS source).
-  { id: "voice", icon: "mic", flag: "voiceEnabled", href: "/dashboard/features/media#voice", fanPage: true, toggleKind: "voiceToggle", obsPath: null, obsSize: "" },
+  { id: "voice", icon: "mic", flag: "voiceEnabled", href: "/dashboard/features/media#voice", fanPage: true, toggleKind: "voiceToggle", obsPath: null, obsSize: "", stage: ["main"] },
 ];

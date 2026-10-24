@@ -182,3 +182,12 @@ test("mediaExtrasDrop: gacha drops after media and before the wheel", () => {
   assert.deepEqual(mediaExtrasDrop(29, 1, prices), ["media", "gacha", "wheel"]);
   assert.deepEqual(mediaExtrasDrop(25, 1, { sound: null, wheel: 20, gacha: 30, media: null }), ["gacha"]);
 });
+
+test("C1: paused time doesn't count toward the limit or the seek", () => {
+  const start = new Date("2026-10-24T10:00:00Z");
+  const now = new Date("2026-10-24T10:02:00Z");
+  assert.equal(overdue(start, 30, now), true);
+  assert.equal(overdue(start, 30, now, 60, 60_000), false);
+  assert.equal(elapsedSec(start, now, 45_000), 75);
+  assert.equal(elapsedSec(start, now, 500_000), 0);
+});
