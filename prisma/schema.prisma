@@ -226,29 +226,29 @@ enum MediaStatus {
 // A fan's clip request ("ขอคลิป/เพลง"): one per tip. Test rows ("ทดสอบบนจอ")
 // have no tip. Only the YouTube ID, title and start are kept — never the URL.
 model MediaRequest {
-  id         String      @id @default(cuid())
-  userId     String
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tipId      String?     @unique
-  tip        Tip?        @relation(fields: [tipId], references: [id], onDelete: Cascade)
-  kind       String      @default("clip")
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipId         String?     @unique
+  tip           Tip?        @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  kind          String      @default("clip")
   // A clip's YouTube ID; null for a voice message.
-  videoId    String?
-  title      String
+  videoId       String?
+  title         String
   // Voice message: private object key (cleared when the file is purged).
   audioKey      String?
   durationSec   Int?
   audioPurgedAt DateTime?
-  startSec   Int         @default(0)
-  status     MediaStatus @default(HELD)
+  startSec      Int         @default(0)
+  status        MediaStatus @default(HELD)
   // Queue order (lower plays first).
-  position   Int         @default(0)
-  queuedAt   DateTime?
+  position      Int         @default(0)
+  queuedAt      DateTime?
   // Handed to the overlay; startedAt = the video actually began.
-  promotedAt DateTime?
-  startedAt  DateTime?
-  endedAt    DateTime?
-  createdAt  DateTime    @default(now())
+  promotedAt    DateTime?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime    @default(now())
 
   @@index([userId, status, position])
   @@index([kind, audioPurgedAt])
@@ -543,59 +543,72 @@ model User {
   // When the creator ticked the first-enable rules checklist.
   wheelRulesAcceptedAt DateTime?
   // Feature hub card "คอมโบทิป" (src/lib/combo.ts).
-  comboEnabled       Boolean   @default(false)
+  comboEnabled         Boolean                  @default(false)
   // "easy" | "medium" | "hard" | "custom"
-  comboDifficulty    String    @default("medium")
+  comboDifficulty      String                   @default("medium")
   // LevelRow[]; null = DEFAULT_ROWS.
-  comboRows          Json?
+  comboRows            Json?
   // Combo overlay colour; null = alertColor, then brand pink.
-  comboColor         String?
+  comboColor           String?
   // Last poll of the combo OBS link: tips only count while it's open.
-  comboOverlaySeenAt DateTime?
-  comboCooldownUntil DateTime?
-  combos             Combo[]
-  comboRewards       ComboReward[]
-  wishItems          WishItem[]
+  comboOverlaySeenAt   DateTime?
+  comboCooldownUntil   DateTime?
+  combos               Combo[]
+  comboRewards         ComboReward[]
+  wishItems            WishItem[]
   // Feature hub card "ขอคลิป/เพลง" (src/lib/media.ts, src/lib/media-queue.ts).
-  mediaEnabled     Boolean        @default(false)
-  mediaMinAmount   Int            @default(50)
-  mediaMaxSec      Int            @default(180)
-  mediaAutoApprove Boolean        @default(false)
+  mediaEnabled         Boolean                  @default(false)
+  mediaMinAmount       Int                      @default(50)
+  mediaMaxSec          Int                      @default(180)
+  mediaAutoApprove     Boolean                  @default(false)
   // When the creator confirmed the auto-approve copyright warning.
-  mediaAutoAckAt   DateTime?
-  mediaVolume      Int            @default(70)
+  mediaAutoAckAt       DateTime?
+  mediaVolume          Int                      @default(70)
   // Queue on hold: the clip playing finishes, nothing new starts.
-  mediaPaused      Boolean        @default(false)
+  mediaPaused          Boolean                  @default(false)
   // Last poll of the media OBS link ("เชื่อมต่อแล้ว" badge).
-  mediaSeenAt      DateTime?
+  mediaSeenAt          DateTime?
   // Media card colour; null = alertColor, then brand pink.
-  mediaColor       String?
-  mediaRequests    MediaRequest[]
+  mediaColor           String?
+  mediaRequests        MediaRequest[]
   // Feature hub card "ฝากเสียง" (same queue and OBS link as clips).
-  voiceEnabled     Boolean        @default(false)
-  voiceMinAmount   Int            @default(30)
-  voiceAutoApprove Boolean        @default(false)
+  voiceEnabled         Boolean                  @default(false)
+  voiceMinAmount       Int                      @default(30)
+  voiceAutoApprove     Boolean                  @default(false)
   // When the creator confirmed the voice auto-approve warning.
-  voiceAutoAckAt   DateTime?
+  voiceAutoAckAt       DateTime?
   // Feature hub card "กาชา" (src/lib/gacha.ts): odds per rarity sum to 100;
   // gachaVersion goes up on every odds/prize change (the fan's view is checked).
-  gachaEnabled         Boolean       @default(false)
-  gachaPrice           Int           @default(50)
-  gachaCommon          Int           @default(70)
-  gachaRare            Int           @default(25)
-  gachaEpic            Int           @default(5)
-  gachaVersion         Int           @default(0)
+  gachaEnabled         Boolean                  @default(false)
+  gachaPrice           Int                      @default(50)
+  gachaCommon          Int                      @default(70)
+  gachaRare            Int                      @default(25)
+  gachaEpic            Int                      @default(5)
+  gachaVersion         Int                      @default(0)
   gachaColor           String?
   // The gacha's own rules checklist (not the wheel's: its odds aren't equal).
   gachaRulesAcceptedAt DateTime?
   gachaPrizes          GachaPrize[]
   gachaPulls           GachaPull[]
   // Feature hub card "PK" (src/lib/pk.ts): matches are started from its page.
-  pkEnabled            Boolean       @default(false)
+  pkEnabled            Boolean                  @default(false)
   // Creator vs creator: refuse invitations from other creators.
-  pkInvitesOff         Boolean       @default(false)
-  pkOwned              PkMatch[]     @relation("PkOwner")
-  pkOpposed            PkMatch[]     @relation("PkOpponent")
+  pkInvitesOff         Boolean                  @default(false)
+  pkOwned              PkMatch[]                @relation("PkOwner")
+  pkOpposed            PkMatch[]                @relation("PkOpponent")
+  // Feature hub card "ตีบอส" (src/lib/boss.ts). A run goes up on reset;
+  // bossLife = bosses defeated in this run; bossDefId = the current boss.
+  bossEnabled          Boolean                  @default(false)
+  bossRun              Int                      @default(0)
+  bossLife             Int                      @default(0)
+  bossDamage           Int                      @default(0)
+  bossDefId            String?
+  // Last poll of the boss OBS link: damage only counts while it's open.
+  bossSeenAt           DateTime?
+  bossColor            String?
+  bossDefs             BossDef[]
+  bossHits             BossHit[]
+  bossKills            BossKill[]
   shopItems            ShopItem[]
   shopOrders           ShopOrder[]
 }
@@ -627,6 +640,7 @@ model EmailVerificationToken {
 
 model Tip {
   id              String        @id @default(cuid())
+  bossHits        BossHit[]
   creatorId       String
   creator         User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   supporterName   String
@@ -653,7 +667,7 @@ model Tip {
   spinWheelId     String?
   spin            Spin?
   // Confirmed while the combo link was open and the card on (counts for combos).
-  comboEligible   Boolean   @default(false)
+  comboEligible   Boolean       @default(false)
   comboTip        ComboTip?
   // Goal item the fan chose (no FK: the item may be deleted later).
   wishItemId      String?
@@ -769,4 +783,64 @@ model PkMatch {
 
   @@index([ownerId, status])
   @@index([opponentId, status])
+}
+
+// Boss raid ("ตีบอส", spec docs/superpowers/specs/2026-10-24-boss-design.md).
+// The creator's list; soft-deleted so a run's pointer can find the next one.
+model BossDef {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  hp        Int
+  reward    String    @default("")
+  imageUrl  String?
+  position  Int
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, deletedAt])
+}
+
+// Damage one tip dealt to one boss life. counted=false once the tip is
+// rejected (hits on the current life are deleted then; earlier ones stay).
+model BossHit {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipId     String
+  tip       Tip      @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  run       Int
+  life      Int
+  amount    Int
+  fan       String
+  counted   Boolean  @default(true)
+  createdAt DateTime
+
+  @@index([userId, run, life])
+  @@index([tipId])
+}
+
+// A defeated boss (snapshots). The OBS link claims it once (playedAt); a
+// reward makes it a to-do item (doneAt).
+model BossKill {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  run       Int
+  life      Int
+  bossName  String
+  hp        Int
+  reward    String
+  imageUrl  String?
+  killer    String
+  topFan    String
+  topAmount Int
+  killedAt  DateTime
+  playedAt  DateTime?
+  doneAt    DateTime?
+
+  @@unique([userId, run, life])
+  @@index([userId, playedAt])
+  @@index([userId, doneAt])
 }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Redis } from "@upstash/redis";
+import type { BossTest } from "@/lib/boss";
 
 /**
  * "Test on OBS": a sample alert the creator fires from the dashboard. It lives
@@ -218,6 +219,47 @@ export async function readPkTest(userId: string, now: number = Date.now()): Prom
   if (!hit) return null;
   if (hit.expiresAt <= now) {
     pkStore.delete(pkKeyFor(userId));
+    return null;
+  }
+  return hit.value;
+}
+
+/**
+ * "ทดสอบบอสบนจอ OBS": a scripted fight on the boss link (src/lib/boss.ts
+ * bossTestFeed). Only the start time and the boss shown are stored.
+ */
+export const BOSS_TEST_MS = 15_000;
+
+const bossKeyFor = (userId: string) => `tiptang/bosstest/${userId}`;
+const bossMemory = g as unknown as { __tiptangBossTests?: Map<string, { value: BossTest; expiresAt: number }> };
+const bossStore = (bossMemory.__tiptangBossTests ??= new Map());
+
+export async function pushBossTest(
+  userId: string,
+  boss: Pick<BossTest, "name" | "hp" | "imageUrl">,
+  now: number = Date.now(),
+): Promise<BossTest> {
+  const value: BossTest = { id: `test_${randomUUID()}`, startedAt: now, ...boss };
+  if (redis) {
+    await redis.set(bossKeyFor(userId), value, { px: BOSS_TEST_MS });
+  } else {
+    bossStore.set(bossKeyFor(userId), { value, expiresAt: now + BOSS_TEST_MS });
+  }
+  return value;
+}
+
+export async function readBossTest(userId: string, now: number = Date.now()): Promise<BossTest | null> {
+  if (redis) {
+    try {
+      return (await redis.get<BossTest>(bossKeyFor(userId))) ?? null;
+    } catch {
+      return null;
+    }
+  }
+  const hit = bossStore.get(bossKeyFor(userId));
+  if (!hit) return null;
+  if (hit.expiresAt <= now) {
+    bossStore.delete(bossKeyFor(userId));
     return null;
   }
   return hit.value;

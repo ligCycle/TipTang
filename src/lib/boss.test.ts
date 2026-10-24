@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyDamage, undoDamage, bossAt, topDamage, cleanBossName, cleanBossHp, MAX_BOSSES, MAX_KILLS_PER_TIP, ANON_FAN, fanName } from "./boss.ts";
+import { applyDamage, undoDamage, bossAt, topDamage, cleanBossName, cleanBossHp, MAX_BOSSES, MAX_KILLS_PER_TIP, ANON_FAN, fanName, bossTestFeed } from "./boss.ts";
 
 const HPS = [100, 200, 300];
 
@@ -101,4 +101,24 @@ test("C7: ties go to the earliest fan; an empty name shows as the generic suppor
   assert.deepEqual(topDamage([{ fan: "  ", amount: 80 }, { fan: "B", amount: 50 }]), { fan: ANON_FAN, amount: 80 });
   assert.equal(fanName(""), ANON_FAN);
   assert.equal(fanName(" Mali "), "Mali");
+});
+
+test("the OBS test: damage ticks up, one kill at 7.5 s, then the boss respawns", () => {
+  const t = { id: "test_1", startedAt: 1000, name: "บอส", hp: 500, imageUrl: null };
+  const a = bossTestFeed(t, 1000);
+  assert.equal(a.phase, "live");
+  if (a.phase !== "live") return;
+  assert.equal(a.boss.damage, 0);
+  assert.equal(a.kill, null);
+  const b = bossTestFeed(t, 1000 + 3100);
+  if (b.phase !== "live") return;
+  assert.equal(b.boss.damage, 200);
+  assert.equal(b.life, 0);
+  const c = bossTestFeed(t, 1000 + 7600);
+  if (c.phase !== "live") return;
+  assert.equal(c.kill?.id, "test_1");
+  assert.equal(c.kill?.bossName, "บอส");
+  assert.equal(c.life, 1);
+  assert.equal(c.boss.damage, 0);
+  assert.equal(c.test, true);
 });

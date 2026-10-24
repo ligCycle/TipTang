@@ -11,6 +11,7 @@ import { cleanName, MAX_NAME } from "@/lib/alert-sets";
 import { getActiveSetId, touchSet } from "@/lib/alert-sets-server";
 import { setMediaEnabled, setVoiceEnabled } from "@/lib/media-queue";
 import { setPkEnabled } from "@/lib/pk-server";
+import { setBossEnabled } from "@/lib/boss-server";
 import {
   uploadImage,
   deleteFile,
@@ -357,6 +358,13 @@ export async function POST(req: Request) {
   if (kind === "pkToggle") {
     const enabled = form?.get("enabled") === "1";
     await setPkEnabled(session.user.id, enabled, new Date());
+    return NextResponse.json({ ok: true, enabled });
+  }
+
+  // Feature hub card "ตีบอส". Off keeps the run where it is; kills not played yet are dropped.
+  if (kind === "bossToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await setBossEnabled(session.user.id, enabled, new Date());
     return NextResponse.json({ ok: true, enabled });
   }
 

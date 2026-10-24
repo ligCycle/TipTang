@@ -32,6 +32,20 @@ export async function PATCH(req: Request) {
     if (r.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
     return NextResponse.json({ ok: true });
   }
+  // Boss rewards (src/lib/boss-server.ts) too.
+  if (body.kind === "boss") {
+    const r = await prisma.bossKill.updateMany({
+      where: {
+        id: body.id,
+        userId: user.id,
+        reward: { not: "" },
+        ...(body.done ? {} : { doneAt: { gte: new Date(Date.now() - DONE_KEEP_MS) } }),
+      },
+      data: { doneAt: body.done ? new Date() : null },
+    });
+    if (r.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  }
   // Gacha prizes (src/lib/gacha-server.ts) share the list too.
   if (body.kind === "gacha") {
     const r = await prisma.gachaPull.updateMany({

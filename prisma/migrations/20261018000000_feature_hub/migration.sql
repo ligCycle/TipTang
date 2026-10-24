@@ -373,3 +373,70 @@ ALTER TABLE "PkMatch" ADD CONSTRAINT "PkMatch_ownerId_fkey" FOREIGN KEY ("ownerI
 ALTER TABLE "PkMatch" ADD CONSTRAINT "PkMatch_opponentId_fkey" FOREIGN KEY ("opponentId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 ALTER TABLE "PkMatch" ENABLE ROW LEVEL SECURITY;
+
+-- Boss raid (project 10)
+ALTER TABLE "User" ADD COLUMN "bossEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "bossRun" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN "bossLife" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN "bossDamage" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN "bossDefId" TEXT;
+ALTER TABLE "User" ADD COLUMN "bossSeenAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN "bossColor" TEXT;
+
+CREATE TABLE "BossDef" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "hp" INTEGER NOT NULL,
+    "reward" TEXT NOT NULL DEFAULT '',
+    "imageUrl" TEXT,
+    "position" INTEGER NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "BossDef_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "BossDef_userId_deletedAt_idx" ON "BossDef"("userId", "deletedAt");
+ALTER TABLE "BossDef" ADD CONSTRAINT "BossDef_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "BossHit" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tipId" TEXT NOT NULL,
+    "run" INTEGER NOT NULL,
+    "life" INTEGER NOT NULL,
+    "amount" INTEGER NOT NULL,
+    "fan" TEXT NOT NULL,
+    "counted" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "BossHit_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "BossHit_userId_run_life_idx" ON "BossHit"("userId", "run", "life");
+CREATE INDEX "BossHit_tipId_idx" ON "BossHit"("tipId");
+ALTER TABLE "BossHit" ADD CONSTRAINT "BossHit_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "BossHit" ADD CONSTRAINT "BossHit_tipId_fkey" FOREIGN KEY ("tipId") REFERENCES "Tip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "BossKill" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "run" INTEGER NOT NULL,
+    "life" INTEGER NOT NULL,
+    "bossName" TEXT NOT NULL,
+    "hp" INTEGER NOT NULL,
+    "reward" TEXT NOT NULL,
+    "imageUrl" TEXT,
+    "killer" TEXT NOT NULL,
+    "topFan" TEXT NOT NULL,
+    "topAmount" INTEGER NOT NULL,
+    "killedAt" TIMESTAMP(3) NOT NULL,
+    "playedAt" TIMESTAMP(3),
+    "doneAt" TIMESTAMP(3),
+    CONSTRAINT "BossKill_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "BossKill_userId_run_life_key" ON "BossKill"("userId", "run", "life");
+CREATE INDEX "BossKill_userId_playedAt_idx" ON "BossKill"("userId", "playedAt");
+CREATE INDEX "BossKill_userId_doneAt_idx" ON "BossKill"("userId", "doneAt");
+ALTER TABLE "BossKill" ADD CONSTRAINT "BossKill_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "BossDef" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "BossHit" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "BossKill" ENABLE ROW LEVEL SECURITY;

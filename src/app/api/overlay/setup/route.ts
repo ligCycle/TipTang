@@ -52,6 +52,7 @@ export async function POST() {
       voiceEnabled: true,
       gachaEnabled: true,
       pkEnabled: true,
+      bossEnabled: true,
       featuresOnboardedAt: true,
     },
   });
@@ -116,6 +117,7 @@ export async function POST() {
     voiceEnabled: user.voiceEnabled,
     gachaEnabled: user.gachaEnabled,
     pkEnabled: user.pkEnabled,
+    bossEnabled: user.bossEnabled,
     activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,

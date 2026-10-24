@@ -42,6 +42,7 @@ export async function loadHub(): Promise<HubState | null> {
       voiceEnabled: Boolean(d.voiceEnabled),
       gachaEnabled: Boolean(d.gachaEnabled),
       pkEnabled: Boolean(d.pkEnabled),
+      bossEnabled: Boolean(d.bossEnabled),
     },
     featuresOnboardedAt: d.featuresOnboardedAt ?? null,
     wheelRulesAccepted: Boolean(d.wheelRulesAccepted),

@@ -20,6 +20,8 @@ export type FeatureFlags = {
   gachaEnabled: boolean;
   /** PK matches (not part of any preset). */
   pkEnabled: boolean;
+  /** Boss raid (not part of any preset). */
+  bossEnabled: boolean;
 };
 
 export const PRESETS = {

@@ -1,6 +1,7 @@
 import "server-only";
 import { randomInt } from "node:crypto";
 import { gachaTodoRows } from "@/lib/gacha-server";
+import { bossTodoRows } from "@/lib/boss-server";
 import { lockCreator } from "@/lib/combo-server";
 import { isRarity } from "@/lib/gacha";
 import type { Prisma } from "@prisma/client";
@@ -167,9 +168,13 @@ export const DONE_KEEP_MS = 30 * 24 * 3_600_000;
  */
 export type TodoItem = {
   id: string;
-  kind: "wheel" | "combo" | "gacha";
+  kind: "wheel" | "combo" | "gacha" | "boss";
   /** Gacha prizes: their rarity (for the chip). */
   rarity?: "common" | "rare" | "epic" | null;
+  /** Boss rewards: the boss, and who dealt the most damage (fan = who finished it). */
+  bossName?: string;
+  topFan?: string;
+  topAmount?: number;
   taskText: string;
   fan: string;
   amount: number | null;
@@ -205,7 +210,21 @@ export async function todoItems(userId: string, status: "open" | "done", take = 
     },
   });
   const pulls = await gachaTodoRows(userId, status, take, new Date(Date.now() - DONE_KEEP_MS));
+  const kills = await bossTodoRows(userId, status, take, new Date(Date.now() - DONE_KEEP_MS));
   const items: TodoItem[] = [
+    ...kills.map((k) => ({
+      id: k.id,
+      kind: "boss" as const,
+      bossName: k.bossName,
+      topFan: k.topFan,
+      topAmount: k.topAmount,
+      taskText: k.reward,
+      fan: k.killer,
+      amount: null,
+      level: null,
+      confirmedAt: k.killedAt.toISOString(),
+      doneAt: k.doneAt?.toISOString() ?? null,
+    })),
     ...pulls.map((r) => ({
       id: r.id,
       kind: "gacha" as const,

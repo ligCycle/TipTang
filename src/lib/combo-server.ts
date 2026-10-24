@@ -30,7 +30,7 @@ type Tx = Prisma.TransactionClient;
 const TYPICAL_DAYS_MS = 30 * 24 * 3_600_000;
 
 /** Whole baht for combo maths (tip amounts are Decimal(10,2); new tips are whole baht). */
-function baht(amount: unknown): number {
+export function baht(amount: unknown): number {
   const n = Math.round(Number(amount));
   return Number.isFinite(n) && n > 0 ? n : 0;
 }

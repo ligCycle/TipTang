@@ -984,7 +984,9 @@
     "f_gacha": "Gacha",
     "d_gacha": "Fans pull a capsule from 3 prize rarities with their tip — odds shown before they pay, revealed on stream.",
     "f_pk": "PK",
-    "d_pk": "Two sides race for tips against the clock — fans pick a side when they tip; the stream shows the bar and the winner."
+    "d_pk": "Two sides race for tips against the clock — fans pick a side when they tip; the stream shows the bar and the winner.",
+    "f_boss": "Boss raid",
+    "d_boss": "Tips deal damage, 1 baht = 1 HP. Each boss defeated unlocks its reward, then the next one appears. Counts only while the OBS link is open."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

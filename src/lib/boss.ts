@@ -100,3 +100,67 @@ export function cleanBossReward(v: unknown): string | null {
   const s = typeof v === "string" ? v.trim() : null;
   return s !== null && s.length <= MAX_BOSS_REWARD ? s : null;
 }
+
+/** The boss card the OBS link shows. `index` is 1-based in the live list. */
+export type BossView = { id: string; name: string; imageUrl: string | null; hp: number; damage: number; index: number; total: number };
+/** One defeated boss for the banner. */
+export type BossKillView = {
+  id: string;
+  bossName: string;
+  hp: number;
+  reward: string;
+  imageUrl: string | null;
+  killer: string;
+  topFan: string;
+  topAmount: number;
+};
+/** More than CHAIN_AT kills waiting at once play as one summary card (R4). */
+export const CHAIN_AT = 3;
+export type BossChain = { id: string; count: number; lastKiller: string };
+export type BossFeed =
+  | { phase: "off" }
+  | {
+      phase: "live";
+      run: number;
+      life: number;
+      bossDefId: string;
+      boss: BossView;
+      kill: BossKillView | null;
+      chain: BossChain | null;
+      /** Kills still waiting after this one (the next poll claims them). */
+      pending: number;
+      test?: boolean;
+    };
+
+export type BossTest = { id: string; startedAt: number; name: string; hp: number; imageUrl: string | null };
+export const TEST_KILL_MS = 7_500;
+const TEST_TICK_MS = 1_500;
+
+/** The scripted OBS test: a fifth of the HP every 1.5 s, the kill at 7.5 s, then a fresh boss. */
+export function bossTestFeed(t: BossTest, now: number): BossFeed {
+  const elapsed = Math.max(0, now - t.startedAt);
+  const killed = elapsed >= TEST_KILL_MS;
+  const damage = killed ? 0 : Math.min(t.hp - 1, Math.round((t.hp * Math.floor(elapsed / TEST_TICK_MS)) / 5));
+  return {
+    phase: "live",
+    run: -1,
+    life: killed ? 1 : 0,
+    bossDefId: "test",
+    boss: { id: "test", name: t.name, imageUrl: t.imageUrl, hp: t.hp, damage, index: 1, total: 1 },
+    kill: killed
+      ? {
+          id: t.id,
+          bossName: t.name,
+          hp: t.hp,
+          reward: "รางวัลตัวอย่าง",
+          imageUrl: t.imageUrl,
+          killer: "ผู้สนับสนุนตัวอย่าง",
+          topFan: "ผู้สนับสนุนตัวอย่าง",
+          topAmount: t.hp,
+        }
+      : null,
+    chain: null,
+    pending: 0,
+    test: true,
+  };
+}

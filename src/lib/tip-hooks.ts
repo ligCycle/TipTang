@@ -5,6 +5,7 @@ import { comboConfirmTx, comboRejectTx, lockCreator } from "@/lib/combo-server";
 import { wishConfirmTx, wishRejectTx } from "@/lib/goal-server";
 import { mediaQueueConfirmTx, mediaQueueRejectTx } from "@/lib/media-queue";
 import { cancelGachaTx } from "@/lib/gacha-server";
+import { bossConfirmTx, bossRejectTx } from "@/lib/boss-server";
 
 type Tx = Prisma.TransactionClient;
 
@@ -29,6 +30,7 @@ export async function onTipConfirmedTx(tx: Tx, tipId: string, now: Date): Promis
   await comboConfirmTx(tx, tipId, now, { locked: true });
   await wishConfirmTx(tx, tipId);
   await mediaQueueConfirmTx(tx, tipId, now);
+  await bossConfirmTx(tx, tipId, now);
 }
 
 /** A CONFIRMED tip was rejected: undo every feature's effect, in the same lock order. */
@@ -39,6 +41,7 @@ export async function onTipRejectedTx(tx: Tx, tipId: string, now: Date): Promise
   if (!tip) return;
   await lockCreator(tx, tip.creatorId);
   await comboRejectTx(tx, tipId, now, { locked: true });
+  await bossRejectTx(tx, tipId);
   await wishRejectTx(tx, tipId);
   await mediaQueueRejectTx(tx, tipId, now);
 }
