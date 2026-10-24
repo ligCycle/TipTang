@@ -10,7 +10,19 @@ import { ObsSetupHint } from "@/components/overlay/ObsSetupHint";
 
 /** The poll only marks the link "connected"; every bar is always mounted (C10). */
 const STAGE_POLL_MS = 20_000;
-const WIDTH = 800;
+/** Every bar is drawn this wide, so the stack reads as one neat column. */
+const WIDTH = 576;
+/*
+ * Inside the bars link each bar fills the column: their own outer padding is
+ * dropped (the column gap spaces them), width caps are lifted and the timer
+ * card stretches like the others. The per-feature links keep their own look.
+ */
+const BARS_CSS = `
+.tt-bars > * { width: 100%; padding: 0 !important; margin: 0 !important; }
+.tt-bars [class*="max-w-"] { max-width: none !important; }
+.tt-bars .inline-block { display: block; }
+.tt-bars .mx-auto { margin-left: 0; margin-right: 0; }
+`;
 
 function subscribeResize(fn: () => void) {
   window.addEventListener("resize", fn);
@@ -21,7 +33,7 @@ const windowSize = () => `${window.innerWidth}x${window.innerHeight}`;
 /**
  * The bars OBS link: goal, timer, combo, PK and boss stacked top to bottom.
  * Each hides itself when there's nothing to show (card off, no combo or
- * match running, empty boss list). The column is scaled down to fit the
+ * match running, empty boss list). The column is scaled to fill the
  * creator's source by width and height (C9).
  */
 export function BarsStage({
@@ -54,13 +66,14 @@ export function BarsStage({
     return () => clearInterval(id);
   }, [username, apiKey]);
 
-  const scale = vw > 0 && vh > 0 ? Math.min(1, vw / WIDTH, height > 0 ? vh / height : 1) : 1;
+  // Fill the source’s width (up to 2×), unless the stack would then be taller than the source.
+  const scale = vw > 0 && vh > 0 ? Math.min(2, vw / WIDTH, height > 0 ? vh / height : 2) : 1;
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
       <ObsSetupHint label="ลิงก์แถบ" place="bottom" />
       <div
         ref={column}
-        className="absolute left-1/2 top-0 flex flex-col gap-2"
+        className="tt-bars absolute left-1/2 top-2 flex flex-col gap-3"
         style={{ width: WIDTH, transform: `translateX(-50%) scale(${scale})`, transformOrigin: "top center" }}
       >
         <GoalOverlayClient username={username} apiKey={apiKey} color={colors.goal} />
@@ -69,6 +82,7 @@ export function BarsStage({
         <PkOverlayClient username={username} apiKey={apiKey} />
         <BossOverlayClient username={username} apiKey={apiKey} color={colors.boss} via="bars" />
       </div>
+      <style>{BARS_CSS}</style>
     </div>
   );
 }
