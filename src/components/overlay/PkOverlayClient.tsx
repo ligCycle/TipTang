@@ -88,6 +88,9 @@ export function PkOverlayClient({ username, apiKey }: { username: string; apiKey
           <div className="h-full transition-[width] duration-700 ease-out" style={{ width: `${share}%`, background: match.colorA }} />
           <div className="h-full flex-1" style={{ background: match.colorB }} />
         </div>
+        {match.kind === "duo" && match.phase !== "ended" && (
+          <p className="mt-2 text-center text-xs font-semibold text-white/70">นับจากทิปที่แต่ละฝั่งยืนยัน</p>
+        )}
         {match.phase === "ended" && (
           <p className="mt-3 text-center text-2xl font-extrabold" style={{ color: winnerName ? (match.winner === "A" ? match.colorA : match.colorB) : "#ffffff" }}>
             {winnerName ? `${winnerName} ชนะ!` : "เสมอ!"}

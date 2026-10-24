@@ -23,7 +23,15 @@ type HistoryRow = {
   endedAt: string | null;
   winner: "A" | "B" | "draw" | null;
 };
-type PkState = { enabled: boolean; graceSec: number; current: PkFeed | null; history: HistoryRow[] };
+type Invite = { id: string; name: string; durationSec: number; createdAt: string };
+type PkState = {
+  enabled: boolean;
+  graceSec: number;
+  current: PkFeed | null;
+  history: HistoryRow[];
+  invitesOff: boolean;
+  invites: { incoming: Invite[]; outgoing: Invite[] };
+};
 
 const REFRESH_MS = 3000;
 
@@ -52,6 +60,8 @@ export function PkPage() {
   const [form, setForm] = useState({ ...DEFAULT_SIDES, durationSec: 300 as number });
   const [copied, setCopied] = useState(false);
   const [test, setTest] = useState<"sent" | "failed" | null>(null);
+  // Creator vs creator: who to invite and for how long.
+  const [invite, setInvite] = useState({ username: "", durationSec: 300 as number });
   const [now, setNow] = useState(() => Date.now());
   // Server clock minus this browser's, recorded when each refresh arrives.
   const [skew, setSkew] = useState(0);
@@ -98,6 +108,30 @@ export function PkPage() {
     const d = await fetchPk();
     if (d) setData(d);
     setBusy(false);
+  }
+
+  async function call(url: string, method: string, body: unknown, errorFor: (code?: string) => string) {
+    setBusy(true);
+    setError(null);
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(() => null);
+    if (!res?.ok) {
+      const d = res ? await res.json().catch(() => null) : null;
+      setError(errorFor(d?.error));
+    }
+    apply(await fetchPk());
+    setBusy(false);
+    return Boolean(res?.ok);
+  }
+
+  async function sendInvite() {
+    const ok = await call("/api/pk/invite", "POST", invite, (code) =>
+      code === "busy" ? t("tooManyInvites") : code === "off" ? t("turnOnFirst") : code === "rate_limited" ? t("slowDown") : t("cantInvite"),
+    );
+    if (ok) setInvite((v) => ({ ...v, username: "" }));
   }
 
   async function endNow() {
@@ -165,9 +199,41 @@ export function PkPage() {
             <div className="h-full transition-[width] duration-700" style={{ width: `${barShare(m.totalA, m.totalB)}%`, background: m.colorA }} />
             <div className="h-full flex-1" style={{ background: m.colorB }} />
           </div>
-          {m.phase === "live" && (
+          {m.phase === "live" && m.kind === "solo" && (
             <button type="button" onClick={endNow} disabled={busy} className="btn-secondary px-4 py-2 text-sm">
               {t("endNow")}
+            </button>
+          )}
+        </section>
+      ) : m && m.kind === "duo" ? (
+        <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
+          <h2 className="font-bold text-brand-900">{m.phase === "ended" ? t("result") : t("duoLive")}</h2>
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-bold" style={{ color: m.colorA }}>{m.nameA}</p>
+              <p className="text-2xl font-extrabold tabular-nums text-brand-900">฿{m.totalA.toLocaleString()}</p>
+            </div>
+            <p className="shrink-0 text-center text-sm font-semibold text-brand-900/70">
+              {m.phase === "live" ? clock(left) : m.phase === "grace" ? t("graceNow") : m.winner === "draw" ? t("draw") : t("wins", { name: m.winner === "A" ? m.nameA : m.nameB })}
+            </p>
+            <div className="min-w-0 text-right">
+              <p className="truncate font-bold" style={{ color: m.colorB }}>{m.nameB}</p>
+              <p className="text-2xl font-extrabold tabular-nums text-brand-900">฿{m.totalB.toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="flex h-4 overflow-hidden rounded-full bg-brand-100">
+            <div className="h-full transition-[width] duration-700" style={{ width: `${barShare(m.totalA, m.totalB)}%`, background: m.colorA }} />
+            <div className="h-full flex-1" style={{ background: m.colorB }} />
+          </div>
+          <p className="text-xs text-brand-900/55">{t("duoCounting")}</p>
+          {m.phase !== "ended" && (
+            <button
+              type="button"
+              onClick={() => void call(`/api/pk/${m.id}`, "PATCH", { action: "cancel" }, () => t("saveFailed"))}
+              disabled={busy}
+              className="btn-secondary px-4 py-2 text-sm"
+            >
+              {t("cancelMatch")}
             </button>
           )}
         </section>
@@ -215,6 +281,84 @@ export function PkPage() {
           {!data.enabled && <p className="text-xs text-brand-900/55">{t("turnOnFirst")}</p>}
         </section>
       )}
+
+      <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-bold text-brand-900">{t("duoTitle")}</h2>
+          <span className="flex items-center gap-2 text-xs font-semibold text-brand-900/70">
+            {t("invitesOff")}
+            <Switch
+              checked={data.invitesOff}
+              onChange={(next) => void call("/api/pk", "PATCH", { invitesOff: next }, () => t("saveFailed"))}
+              label={t("invitesOff")}
+              disabled={busy}
+            />
+          </span>
+        </div>
+        <p className="text-xs text-brand-900/55">{t("duoHow")}</p>
+        {data.invites.incoming.length > 0 && (
+          <ul className="space-y-1.5">
+            {data.invites.incoming.map((i) => (
+              <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-brand-400 bg-brand-50 px-3 py-2 text-sm">
+                <span className="font-semibold text-brand-900">{t("invitedBy", { name: i.name, min: i.durationSec / 60 })}</span>
+                <span className="flex gap-1.5">
+                  <button type="button" disabled={busy || !!m} onClick={() => void call(`/api/pk/${i.id}`, "PATCH", { action: "accept" }, (c) => (c === "busy" ? t("busy") : c === "off" ? t("turnOnFirst") : t("inviteGone")))} className="btn-primary px-3 py-1 text-xs">
+                    {t("accept")}
+                  </button>
+                  <button type="button" disabled={busy} onClick={() => void call(`/api/pk/${i.id}`, "PATCH", { action: "decline" }, () => t("inviteGone"))} className="btn-secondary px-3 py-1 text-xs">
+                    {t("decline")}
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {data.invites.outgoing.length > 0 && (
+          <ul className="space-y-1.5">
+            {data.invites.outgoing.map((i) => (
+              <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-200 px-3 py-2 text-sm">
+                <span className="text-brand-900/80">{t("waitingFor", { name: i.name, min: i.durationSec / 60 })}</span>
+                <button type="button" disabled={busy} onClick={() => void call(`/api/pk/${i.id}`, "PATCH", { action: "cancel" }, () => t("saveFailed"))} className="text-xs font-semibold text-brand-700 hover:underline">
+                  {t("withdraw")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!m && (
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (invite.username.trim()) void sendInvite();
+            }}
+          >
+            <input
+              value={invite.username}
+              onChange={(e) => setInvite((v) => ({ ...v, username: e.target.value }))}
+              placeholder={t("inviteUsername")}
+              aria-label={t("inviteUsername")}
+              className="input min-w-0 flex-1"
+              maxLength={40}
+            />
+            <select
+              value={invite.durationSec}
+              onChange={(e) => setInvite((v) => ({ ...v, durationSec: Number(e.target.value) }))}
+              aria-label={t("duration")}
+              className="input w-28!"
+            >
+              {PK_DURATIONS.map((d) => (
+                <option key={d} value={d}>
+                  {t("minutes", { n: d / 60 })}
+                </option>
+              ))}
+            </select>
+            <button type="submit" disabled={busy || !data.enabled} className="btn-primary px-4 py-2 text-sm">
+              {t("invite")}
+            </button>
+          </form>
+        )}
+      </section>
 
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
         <h2 className="font-bold text-brand-900">{t("obsLink")}</h2>
