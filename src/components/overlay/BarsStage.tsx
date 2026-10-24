@@ -6,6 +6,7 @@ import { TimerOverlayClient } from "@/components/TimerOverlayClient";
 import { ComboOverlayClient } from "@/components/overlay/ComboOverlayClient";
 import { PkOverlayClient } from "@/components/overlay/PkOverlayClient";
 import { BossOverlayClient } from "@/components/overlay/BossOverlayClient";
+import { ObsSetupHint } from "@/components/overlay/ObsSetupHint";
 
 /** The poll only marks the link "connected"; every bar is always mounted (C10). */
 const STAGE_POLL_MS = 20_000;
@@ -56,6 +57,7 @@ export function BarsStage({
   const scale = vw > 0 && vh > 0 ? Math.min(1, vw / WIDTH, height > 0 ? vh / height : 1) : 1;
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      <ObsSetupHint label="ลิงก์แถบ" place="bottom" />
       <div
         ref={column}
         className="absolute left-1/2 top-0 flex flex-col gap-2"

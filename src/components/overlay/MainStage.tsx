@@ -6,7 +6,8 @@ import { MediaOverlayClient } from "@/components/overlay/MediaOverlayClient";
 import { WheelOverlayClient } from "@/components/overlay/WheelOverlayClient";
 import { GachaOverlayClient } from "@/components/overlay/GachaOverlayClient";
 import { BossOverlayClient } from "@/components/overlay/BossOverlayClient";
-import { FitBox, StageProvider } from "@/components/overlay/Stage";
+import { FitBox, StageProvider, useStage } from "@/components/overlay/Stage";
+import { ObsSetupHint } from "@/components/overlay/ObsSetupHint";
 import type { MainCard } from "@/lib/obs-stage";
 
 const STAGE_POLL_MS = 5000;
@@ -68,6 +69,7 @@ export function MainStage({
 
   return (
     <StageProvider>
+      <MainHint />
       {cards.media && (
         <FitBox w={640} h={480} z={5}>
           <MediaOverlayClient username={username} apiKey={apiKey} via="main" />
@@ -91,4 +93,10 @@ export function MainStage({
       <OverlayClient {...alerts} />
     </StageProvider>
   );
+}
+
+/** "TipTang ลิงก์หลัก · เชื่อมต่อแล้ว" while setting up; hidden whenever a popup plays. */
+function MainHint() {
+  const stage = useStage();
+  return <ObsSetupHint label="ลิงก์หลัก" hidden={stage.busy} />;
 }
