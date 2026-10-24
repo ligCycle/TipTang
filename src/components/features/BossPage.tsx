@@ -7,6 +7,8 @@ import { Icon } from "@/components/Icon";
 import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
+import { FeaturePreviewLayout } from "@/components/features/PreviewPanel";
+import { BossPreview } from "@/components/features/FeaturePreviews";
 import { AutoSaveInput, fetchLibrary, type LibFile } from "@/components/features/LibraryBits";
 import { SpinTodo } from "@/components/features/SpinTodo";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
@@ -154,6 +156,7 @@ export function BossPage() {
       }
       obs={{ feature: "boss", onTest: testOnObs, testState: test }}
     >
+      <FeaturePreviewLayout preview={<BossPreview boss={current ?? null} damage={data.current?.damage ?? 0} index={data.current?.index ?? 1} total={data.bosses.length} color={data.color ?? data.alertColor} />}>
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="text-sm text-brand-900/65">{t("onlyWhenLinkOpen")}</p>
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
@@ -376,6 +379,7 @@ export function BossPage() {
           </div>
         </div>
       )}
+      </FeaturePreviewLayout>
     </FeatureSettingsLayout>
   );
 }

@@ -84,6 +84,25 @@ export function ComboOverlayClient({ username, apiKey, color }: { username: stri
     };
   }, [username, apiKey]);
 
+  if (feed.phase === "idle") return null;
+  if (feed.phase === "summary" && Date.parse(feed.until) <= now) return null;
+  return <ComboView feed={feed} now={now} celebrate={celebrate} color={color} />;
+}
+
+type Celebration = { key: string; level: number; text: string | null };
+
+/** The combo card for a running combo or its summary (the OBS link and the settings preview). */
+export function ComboView({
+  feed,
+  now,
+  celebrate,
+  color,
+}: {
+  feed: Exclude<ComboFeed, { phase: "idle" }>;
+  now: number;
+  celebrate: Celebration | null;
+  color: string | null;
+}) {
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   const card = {
     borderColor: base,
@@ -91,9 +110,6 @@ export function ComboOverlayClient({ username, apiKey, color }: { username: stri
     background: "rgba(18, 12, 22, 0.9)",
   };
   const badge = { backgroundImage: `linear-gradient(135deg, ${base}, ${shade(base, -0.25)})` };
-
-  if (feed.phase === "idle") return null;
-  if (feed.phase === "summary" && Date.parse(feed.until) <= now) return null;
 
   return (
     <div className="p-3">

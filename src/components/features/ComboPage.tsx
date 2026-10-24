@@ -7,6 +7,8 @@ import { Icon } from "@/components/Icon";
 import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
+import { FeaturePreviewLayout } from "@/components/features/PreviewPanel";
+import { ComboPreview } from "@/components/features/FeaturePreviews";
 import { AutoSaveInput } from "@/components/features/LibraryBits";
 import { SpinTodo } from "@/components/features/SpinTodo";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
@@ -143,6 +145,7 @@ export function ComboPage() {
       }
       obs={{ feature: "combo", onTest: testOnObs, testState: test }}
     >
+      <FeaturePreviewLayout preview={<ComboPreview rows={data.rows} sizes={data.sizes} color={data.color ?? data.alertColor} />}>
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="text-sm text-brand-900/65">{t("onlyWhenLinkOpen")}</p>
       <p className="flex flex-wrap items-center gap-2 text-sm">
@@ -276,6 +279,7 @@ export function ComboPage() {
 
       {/* Rewards reached land here (shared with the wheel's results). */}
       <SpinTodo />
+      </FeaturePreviewLayout>
     </FeatureSettingsLayout>
   );
 }

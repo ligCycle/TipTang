@@ -1577,17 +1577,6 @@ export function OverlaySettings({
                     </span>
                     <Switch checked={tShowRates} onChange={setTShowRates} label={tHub("timerShowRates")} />
                   </div>
-                  <p className="mb-1.5 text-xs font-medium text-brand-900/50">
-                    {tHub("timerPreview")}
-                  </p>
-                  <div className="overflow-hidden rounded-xl bg-neutral-800 ring-1 ring-black/20">
-                    <iframe
-                      key={`${timerUrl}#${timerRefresh}`}
-                      src={timerUrl}
-                      title="timer preview"
-                      className="h-[260px] w-full border-0"
-                    />
-                  </div>
                 </div>
               </div>
             )}
@@ -1648,6 +1637,22 @@ export function OverlaySettings({
     );
   }
 
+  // Subathon's left column: the real clock overlay, as OBS shows it.
+  const timerPreview = (
+    <div className="space-y-3">
+      <p className="text-sm font-bold text-brand-900">{tHub("previewTitle")}</p>
+      <div className="overflow-hidden rounded-2xl bg-[#0b1220] p-3">
+        <iframe
+          key={`${timerUrl}#${timerRefresh}`}
+          src={timerUrl}
+          title="timer preview"
+          className="h-[260px] w-full border-0"
+        />
+      </div>
+      <p className="text-xs text-brand-900/55">{tHub("timerPreview")}</p>
+    </div>
+  );
+
   const body =
     view === "alerts" ? (
       <div className="space-y-3">
@@ -1676,9 +1681,10 @@ export function OverlaySettings({
       </div>
     );
 
-  return aside ? (
+  const left = aside ? aside(config) : view === "subathon" ? timerPreview : null;
+  return left ? (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
-      <div className="lg:sticky lg:top-4">{aside(config)}</div>
+      <div className="lg:sticky lg:top-4">{left}</div>
       {body}
     </div>
   ) : (

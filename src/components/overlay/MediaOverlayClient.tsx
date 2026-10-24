@@ -449,27 +449,35 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
           </button>
         )}
       </div>
-      {current && (
-        <div
-          className="mt-3 rounded-2xl border-2 bg-[#120c16]/90 px-5 py-3 text-white shadow-2xl"
-          style={{ borderColor: color }}
-        >
-          <p className="text-base font-semibold" style={{ color }}>
-            {current.test
-              ? "ทดสอบ"
-              : current.kind === "voice"
-                ? `ฝากเสียงจาก ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`
-                : `ขอโดย ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`}
-          </p>
-          <p className="truncate text-xl font-extrabold leading-tight">
-            {current.kind === "voice"
-              ? current.test
-                ? "ทดสอบเสียง"
-                : "ฝากเสียง"
-              : current.title || (current.test ? "คลิปทดสอบ" : "คลิป YouTube")}
-          </p>
-        </div>
-      )}
+      {current && <MediaInfoCard current={current} color={color} />}
+    </div>
+  );
+}
+
+/** "ขอโดย <fan> · ฿N" under a clip or voice message (the OBS link and the settings preview). */
+export function MediaInfoCard({
+  current,
+  color,
+}: {
+  current: { test: boolean; kind: "clip" | "voice"; fan: string; amount: number; title: string | null };
+  color: string;
+}) {
+  return (
+    <div className="mt-3 rounded-2xl border-2 bg-[#120c16]/90 px-5 py-3 text-white shadow-2xl" style={{ borderColor: color }}>
+      <p className="text-base font-semibold" style={{ color }}>
+        {current.test
+          ? "ทดสอบ"
+          : current.kind === "voice"
+            ? `ฝากเสียงจาก ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`
+            : `ขอโดย ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`}
+      </p>
+      <p className="truncate text-xl font-extrabold leading-tight">
+        {current.kind === "voice"
+          ? current.test
+            ? "ทดสอบเสียง"
+            : "ฝากเสียง"
+          : current.title || (current.test ? "คลิปทดสอบ" : "คลิป YouTube")}
+      </p>
     </div>
   );
 }

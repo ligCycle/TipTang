@@ -7,6 +7,7 @@ import { ColorField } from "@/components/ColorField";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
+import { FeaturePreviewLayout } from "@/components/features/PreviewPanel";
 import { AutoSaveInput, fetchLibrary, uploadFile, useUploadError, type LibFile } from "@/components/features/LibraryBits";
 import { GoalCard, GoalView } from "@/components/overlay/GoalView";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
@@ -200,8 +201,17 @@ export function GoalPage() {
     >
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-        <div className="space-y-4">
+      <FeaturePreviewLayout
+        preview={
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-brand-900">{t("preview")}</p>
+            <div className="flex min-h-40 items-center justify-center rounded-2xl bg-[#0b1220] p-4">
+              <GoalView goal={asFeed(s)} color={s.color ?? s.alertColor} />
+            </div>
+            <p className="text-xs text-brand-900/55">{t("previewHint")}</p>
+          </div>
+        }
+      >
           <section className="rounded-2xl border border-brand-200 p-4">
             <h2 className="font-bold text-brand-900">① {t("type")}</h2>
             <div className="mt-2 inline-flex overflow-hidden rounded-full border border-brand-300" role="radiogroup" aria-label={t("type")}>
@@ -367,16 +377,7 @@ export function GoalPage() {
                 onReset={() => void run(async () => ((await assetForm({ kind: "goalColor", remove: "1" })) ? json("/api/goal") : null))} />
             </div>
           </section>
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-sm font-bold text-brand-900">{t("preview")}</p>
-          <div className="flex min-h-40 items-center justify-center rounded-2xl bg-[#0b1220] p-4">
-            <GoalView goal={asFeed(s)} color={s.color ?? s.alertColor} />
-          </div>
-          <p className="text-xs text-brand-900/55">{t("previewHint")}</p>
-        </div>
-      </div>
+      </FeaturePreviewLayout>
 
       <ConfirmDialog open={resetOpen} message={t("newRoundConfirm")} confirmLabel={t("newRound")} busy={busy}
         onConfirm={async () => { setBusy(true); await run(async () => ((await assetForm({ kind: "goalReset" })) ? json("/api/goal") : null)); setBusy(false); setResetOpen(false); }}

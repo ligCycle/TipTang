@@ -294,7 +294,7 @@ function WheelEditor({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           {active ? (
@@ -451,7 +451,8 @@ function WheelEditor({
         {error && <p className="text-sm font-medium text-red-600">{t("saveFailed")}</p>}
       </div>
 
-      <div className="space-y-3">
+      {/* Preview first and kept in view, like every feature page (src/components/features/PreviewPanel.tsx). */}
+      <div className="order-first space-y-3 lg:sticky lg:top-4">
         <p className="text-sm font-bold text-brand-900">{t("previewTitle")}</p>
         <div className="flex items-center justify-center rounded-2xl bg-[#0b1220] p-4">
           <WheelPreview tasks={wheel.tasks} slots={slots} removed={wheel.removed} className="w-full max-w-72" />

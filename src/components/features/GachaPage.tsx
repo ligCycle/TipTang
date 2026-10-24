@@ -8,6 +8,8 @@ import { Icon } from "@/components/Icon";
 import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
+import { FeaturePreviewLayout } from "@/components/features/PreviewPanel";
+import { GachaPreview } from "@/components/features/FeaturePreviews";
 import { AutoSaveInput, fetchLibrary, type LibFile } from "@/components/features/LibraryBits";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { DEFAULT_ODDS, MAX_PRIZE_TEXT, MAX_PRIZES, MAX_PRIZES_PER_RARITY, RARITIES, rebalance, type Odds, type Rarity } from "@/lib/gacha";
@@ -161,6 +163,7 @@ export function GachaPage() {
       }
       obs={{ feature: "gacha", onTest: testOnObs, testState: test }}
     >
+      <FeaturePreviewLayout preview={<GachaPreview prizes={data.prizes} color={data.color ?? data.alertColor} />}>
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">{t("noMoney")}</p>
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
@@ -385,6 +388,7 @@ export function GachaPage() {
           </div>
         </Modal>
       )}
+      </FeaturePreviewLayout>
     </FeatureSettingsLayout>
   );
 }

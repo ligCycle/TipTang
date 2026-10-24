@@ -6,6 +6,8 @@ import { Icon } from "@/components/Icon";
 import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
+import { FeaturePreviewLayout } from "@/components/features/PreviewPanel";
+import { MediaPreview } from "@/components/features/FeaturePreviews";
 import { AutoSaveInput } from "@/components/features/LibraryBits";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { MEDIA_MAX_SEC_CHOICES } from "@/lib/media";
@@ -229,6 +231,7 @@ export function MediaPage() {
         testState: test?.kind === "clip" ? (test.ok ? "sent" : "failed") : null,
       }}
     >
+      <FeaturePreviewLayout preview={<MediaPreview color={data.color ?? data.alertColor} />}>
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       {data.paused && <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t("pausedNote")}</p>}
       {error && <p className="text-sm font-medium text-red-600">{t("saveFailed")}</p>}
@@ -491,6 +494,7 @@ export function MediaPage() {
           </div>
         </Modal>
       )}
+      </FeaturePreviewLayout>
     </FeatureSettingsLayout>
   );
 }

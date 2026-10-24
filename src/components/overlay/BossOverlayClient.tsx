@@ -10,7 +10,8 @@ const BANNER_MS = 5000;
 const HIT_MS = 900;
 
 type Live = Extract<BossFeed, { phase: "live" }>;
-type Banner = { key: string; kill: BossKillView } | { key: string; chain: BossChain };
+export type BossBanner = { key: string; kill: BossKillView } | { key: string; chain: BossChain };
+type Banner = BossBanner;
 
 function shade(hex: string, amount: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -138,17 +139,30 @@ export function BossOverlayClient({
     };
   }, [username, apiKey, via]);
 
+  if (!banner && feed.phase !== "live") return null;
+  // The main link only plays the banners; the card lives on the bars link.
+  if (via === "main" && !banner) return null;
+  return <BossView banner={banner} feed={feed} color={color} hit={hit} />;
+}
+
+/** The boss card, or a kill / chain banner in its place (the OBS link and the settings preview). */
+export function BossView({
+  banner,
+  feed,
+  color,
+  hit,
+}: {
+  banner: BossBanner | null;
+  feed: BossFeed;
+  color: string | null;
+  hit: { key: number; amount: number } | null;
+}) {
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   const card = {
     borderColor: base,
     boxShadow: `0 0 28px ${base}88`,
     background: "rgba(18, 12, 22, 0.9)",
   };
-
-  if (!banner && feed.phase !== "live") return null;
-  // The main link only plays the banners; the card lives on the bars link.
-  if (via === "main" && !banner) return null;
-
   return (
     <div className="p-3">
       <div className="mx-auto w-full max-w-[576px] rounded-2xl border-2 px-4 py-3 text-white" style={card}>
@@ -198,7 +212,8 @@ export function BossOverlayClient({
   );
 }
 
-function BossCard({ feed, base, hit }: { feed: Live; base: string; hit: { key: number; amount: number } | null }) {
+/** The boss card (the OBS link and the settings preview). */
+export function BossCard({ feed, base, hit }: { feed: Live; base: string; hit: { key: number; amount: number } | null }) {
   const { boss } = feed;
   const left = Math.max(0, boss.hp - boss.damage);
   const pct = Math.min(100, (left / Math.max(1, boss.hp)) * 100);

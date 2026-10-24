@@ -124,12 +124,28 @@ export function GachaOverlayClient({
   }, [username, apiKey]);
 
   if (!current) return null;
+  return <GachaReveal pull={current} open={open} color={color} embedded={stage.embedded} />;
+}
+
+/** The capsule drop and the prize card (the OBS link and the settings preview). */
+export function GachaReveal({
+  pull: current,
+  open,
+  color,
+  embedded,
+}: {
+  pull: Pick<OverlayPull, "id" | "rarity" | "fan" | "prizeText" | "imageUrl">;
+  open: boolean;
+  color: string;
+  /** Fill the given box instead of the screen (main link, preview). */
+  embedded: boolean;
+}) {
   const r = RARITY[current.rarity] ?? RARITY.common;
 
   return (
     <div
       className={
-        stage.embedded
+        embedded
           ? "relative flex h-full w-full items-center justify-center overflow-hidden"
           : "relative mx-auto flex h-screen max-h-[500px] w-screen max-w-[500px] items-center justify-center overflow-hidden"
       }

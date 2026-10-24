@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
+import { FeaturePreviewLayout } from "@/components/features/PreviewPanel";
+import { PkPreview } from "@/components/features/FeaturePreviews";
 import { barShare, DEFAULT_SIDES, MAX_SIDE_NAME, PK_DURATIONS, remainingSec } from "@/lib/pk";
 import type { PkFeed } from "@/lib/pk-server";
 
@@ -165,6 +167,7 @@ export function PkPage() {
       }
       obs={{ feature: "pk", onTest: testOnObs, testState: test }}
     >
+      <FeaturePreviewLayout preview={<PkPreview match={m} now={now + skew} />}>
       <p className="text-sm text-brand-900/65">{t("howItWorks")}</p>
       <p className="text-xs text-brand-900/55">{t("graceNote", { min: Math.round((m?.graceSec || data.graceSec) / 60) })}</p>
       {error && <p className="text-sm font-medium text-red-600 dark:text-red-400">{error}</p>}
@@ -369,6 +372,7 @@ export function PkPage() {
           </ul>
         </section>
       )}
+      </FeaturePreviewLayout>
     </FeatureSettingsLayout>
   );
 }

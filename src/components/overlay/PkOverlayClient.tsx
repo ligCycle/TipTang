@@ -54,8 +54,16 @@ export function PkOverlayClient({ username, apiKey }: { username: string; apiKey
   }, [username, apiKey]);
 
   if (!match) return null;
-  const share = barShare(match.totalA, match.totalB);
   const left = remainingSec(new Date(match.endsAt), new Date(serverNow || new Date(match.serverNow).getTime()));
+  return <PkView match={match} left={left} />;
+}
+
+/** What the PK bar needs (the OBS link's feed, or a sample on the settings page). */
+export type PkViewMatch = Pick<PkFeed, "kind" | "phase" | "nameA" | "nameB" | "colorA" | "colorB" | "totalA" | "totalB" | "winner">;
+
+/** The PK bar: names, totals, countdown, split bar, winner (the OBS link and the settings preview). */
+export function PkView({ match, left }: { match: PkViewMatch; left: number }) {
+  const share = barShare(match.totalA, match.totalB);
   const winnerName = match.winner === "A" ? match.nameA : match.winner === "B" ? match.nameB : null;
 
   return (
