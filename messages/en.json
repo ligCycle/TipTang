@@ -1027,7 +1027,8 @@
     "pvBossKill": "Boss defeated",
     "placeSeparately": "Place apart:",
     "placeSeparatelyHint": "Copy a bar's own link into OBS as another source; that bar leaves the bars link by itself, so it never shows twice.",
-    "copyOwnLink": "Copy the {name} link"
+    "copyOwnLink": "Copy the {name} link",
+    "placeSeparatelyHintMain": "Copy a feature's own link into OBS as another source; it stops playing on the main link, so it never shows twice. Tip alerts always stay on the main link."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

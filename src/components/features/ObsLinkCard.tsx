@@ -112,13 +112,14 @@ export function ObsLinkCard({
     </li>
   );
 
-  // Bars that are on, each with its own link: placed apart, it leaves the bars link by itself.
-  const ownBars = FEATURES.filter((f) => f.stage.includes("bars") && f.obsPath && flags[f.flag]);
-  const separate =
-    ownBars.length > 0 ? (
+  // Features that are on and have a link of their own: placed apart, each
+  // leaves its shared link by itself (main: wheel, gacha, clips; bars: the
+  // bars). The boss is listed with the bars (its own link shows card and banners).
+  const separateRow = (features: typeof FEATURES, hint: string) =>
+    features.length > 0 ? (
       <div className="flex flex-wrap items-center gap-1.5 border-t border-brand-100 pt-2 text-xs text-brand-900/70">
         <span className="font-semibold">{t("placeSeparately")}</span>
-        {ownBars.map((f) => {
+        {features.map((f) => {
           const url = link(f.obsPath ?? "");
           return (
             <span key={f.id} className="inline-flex items-center gap-1">
@@ -136,9 +137,17 @@ export function ObsLinkCard({
             </span>
           );
         })}
-        <span className="w-full text-brand-900/55">{t("placeSeparatelyHint")}</span>
+        <span className="w-full text-brand-900/55">{hint}</span>
       </div>
     ) : null;
+  // The clip link also plays voice messages: offer it when either card is on.
+  const on = (f: (typeof FEATURES)[number]) =>
+    Boolean(f.obsPath) && (flags[f.flag] || (f.id === "media" && flags.voiceEnabled));
+  const separate = separateRow(FEATURES.filter((f) => f.stage.includes("bars") && on(f)), t("placeSeparatelyHint"));
+  const separateMain = separateRow(
+    FEATURES.filter((f) => f.stage.includes("main") && !f.stage.includes("bars") && on(f)),
+    t("placeSeparatelyHintMain"),
+  );
 
   return (
     <section id="obs" className="scroll-mt-4 rounded-2xl border-2 border-brand-400 p-4">
@@ -155,7 +164,7 @@ export function ObsLinkCard({
       </div>
 
       <ul className="mt-3 space-y-2">
-        {row(t("linkMain"), t("linkMainWhat"), names("main"), link(""), t("sizeMain"), times ? [times.mainSeenAt] : null, times?.lastSeenAt ?? null)}
+        {row(t("linkMain"), t("linkMainWhat"), names("main"), link(""), t("sizeMain"), times ? [times.mainSeenAt] : null, times?.lastSeenAt ?? null, separateMain)}
         {row(t("linkBars"), t("linkBarsWhat"), names("bars"), link("/bars"), t("sizeBars"), times ? [times.barsSeenAt] : null, null, separate)}
         {row(t("linkTodo"), t("linkTodoWhat"), null, link("/todo"), t("sizeTodo"), null)}
       </ul>
