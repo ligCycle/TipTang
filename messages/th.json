@@ -1359,7 +1359,7 @@
     "decline": "ปฏิเสธ",
     "waitingFor": "รอ {name} ตอบรับ ({min} นาที)",
     "withdraw": "ถอนคำเชิญ",
-    "inviteUsername": "ชื่อผู้ใช้ของครีเอเตอร์ เช่น @username",
+    "inviteUsername": "ชื่อผู้ใช้ TipTang ของอีกฝ่าย เช่น somchai",
     "invite": "เชิญ",
     "cantInvite": "เชิญครีเอเตอร์คนนี้ไม่ได้ตอนนี้",
     "tooManyInvites": "มีคำเชิญที่รอตอบรับครบ 3 รายการแล้ว",

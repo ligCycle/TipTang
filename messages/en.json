@@ -1359,7 +1359,7 @@
     "decline": "Decline",
     "waitingFor": "Waiting for {name} ({min} min)",
     "withdraw": "Withdraw",
-    "inviteUsername": "Creator's username, e.g. @username",
+    "inviteUsername": "Their TipTang username, e.g. somchai",
     "invite": "Invite",
     "cantInvite": "You can't invite this creator right now.",
     "tooManyInvites": "You already have 3 invitations waiting.",
