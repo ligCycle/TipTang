@@ -756,7 +756,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: 30 September 2026",
+    "lastUpdated": "Last updated: 24 October 2026",
     "intro": "TipTang (data controller — contact support@tiptang.com) cares about your privacy. This policy explains how we collect, use and protect your data under Thailand's Personal Data Protection Act (PDPA).",
     "s1Title": "Data we collect",
     "s1Body": "• Account info: email, password (stored hashed — never the plain password), display name, bio, profile/cover images, social links\n• If you sign in with Google: the email, name and profile picture Google provides to us (we never see your Google password)\n• The creator's PromptPay ID (sensitive — stored securely server-side, never exposed to donors or the public)\n• Donation info: supporter name/message, amount, transfer-slip image, transaction reference\n• Reviews you post on the home page: the name you give, rating and comment\n• Technical info: IP address (for rate-limiting and security, not stored permanently), a cookie that keeps you signed in, and anonymous page-view statistics via Vercel Analytics\n• If a supporter uses \"voice messages\": the audio file recorded in the browser (up to 30 seconds) is stored privately, can only be played by the creator whose page it was sent to and through that creator's OBS link, is used only to play it on stream, and is deleted within 7 days after it plays, is skipped or rejected (30 days after sending at most) — or straight away when the creator removes it from the queue, deletes the tip or deletes their account.",
@@ -775,7 +775,7 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "lastUpdated": "Last updated: 16 September 2026",
+    "lastUpdated": "Last updated: 24 October 2026",
     "intro": "Please read these terms before using TipTang. By signing up or using the service, you agree to them.",
     "s1Title": "Our service",
     "s1Body": "TipTang is a free tool that helps creators receive PromptPay donations and show on-stream alerts (overlays). TipTang is not an intermediary that holds or transfers funds — donations go directly from the supporter to the creator's bank/PromptPay account. Transfer slips are used only to confirm transactions.",
