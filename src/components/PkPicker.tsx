@@ -31,7 +31,11 @@ export function PkPicker({ username, value, onChange }: { username: string; valu
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // One poll at a time (a tab coming back mid-fetch must not start a second loop).
+    let inFlight = false;
     async function poll() {
+      if (inFlight) return;
+      inFlight = true;
       let live = false;
       if (document.visibilityState === "visible") {
         try {
@@ -52,7 +56,11 @@ export function PkPicker({ username, value, onChange }: { username: string; valu
           // try again later
         }
       }
-      if (active) timer = setTimeout(poll, live ? LIVE_MS : IDLE_MS);
+      inFlight = false;
+      if (active) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(poll, live ? LIVE_MS : IDLE_MS);
+      }
     }
     void poll();
     const tick = setInterval(() => setNow(Date.now() + skew.current), 1000);
@@ -73,6 +81,8 @@ export function PkPicker({ username, value, onChange }: { username: string; valu
 
   if (!match) return null;
   const left = remainingSec(new Date(match.endsAt), new Date(now || new Date(match.serverNow).getTime()));
+  // Time is up (or the feed went quiet): nothing to choose any more.
+  if (left <= 0) return null;
   const share = barShare(match.totalA, match.totalB);
   const side = (s: PkSide) => {
     const selected = value?.matchId === match.id && value.side === s;
