@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  pausedTotal,
   parseYouTube,
   parseStart,
   cleanMediaTitle,
@@ -190,4 +191,12 @@ test("C1: paused time doesn't count toward the limit or the seek", () => {
   assert.equal(overdue(start, 30, now, 60, 60_000), false);
   assert.equal(elapsedSec(start, now, 45_000), 75);
   assert.equal(elapsedSec(start, now, 500_000), 0);
+});
+
+test("final review I1: an open pause counts in full while the main link still holds it, capped otherwise", () => {
+  const now = new Date("2026-10-24T10:10:00Z");
+  const at = new Date("2026-10-24T10:06:00Z"); // paused 4 min ago
+  assert.equal(pausedTotal(5_000, at, now, true), 5_000 + 240_000);
+  assert.equal(pausedTotal(5_000, at, now, false), 5_000 + 120_000);
+  assert.equal(pausedTotal(5_000, null, now, false), 5_000);
 });

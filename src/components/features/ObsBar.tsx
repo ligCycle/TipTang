@@ -5,19 +5,19 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { relativeTime } from "@/lib/format";
 import { FEATURES, type FeatureId } from "@/lib/feature-registry";
+import { linkStatus, type LinkStatus } from "@/lib/obs-status";
 
-/** Within this long of a poll a link counts as open right now (the server's LIVE_MS). */
-const LIVE_MS = 120_000;
 const POLL_MS = 15_000;
 
 export type ObsTimes = {
+  /** The alerts link before the main link existed: counts as "placed" (final review I2). */
+  lastSeenAt: string | null;
   mainSeenAt: string | null;
   barsSeenAt: string | null;
   comboSeenAt: string | null;
   mediaSeenAt: string | null;
   bossSeenAt: string | null;
 };
-export type LinkStatus = { state: "live" | "seen" | "never"; at: Date | null };
 
 /** When the two links (and the features' own links) were last loaded; re-read every 15 s. */
 export function useObsTimes(): ObsTimes | null {
@@ -43,15 +43,6 @@ export function useObsTimes(): ObsTimes | null {
   return times;
 }
 
-/** The newest of several "last loaded" times: open now, loaded before, or never. */
-export function statusOf(times: (string | null | undefined)[], now: number): LinkStatus {
-  const at = times
-    .map((t) => (t ? new Date(t) : null))
-    .filter((d): d is Date => d !== null && !Number.isNaN(d.getTime()))
-    .sort((a, b) => b.getTime() - a.getTime())[0];
-  if (!at) return { state: "never", at: null };
-  return { state: now - at.getTime() <= LIVE_MS ? "live" : "seen", at };
-}
 
 /** Which "last loaded" times count for a feature: its link(s), plus its own link where it has one (S7). */
 export function timesFor(id: FeatureId, t: ObsTimes): (string | null)[] {
@@ -112,7 +103,7 @@ export function ObsBar({
   }, []);
   const f = FEATURES.find((x) => x.id === feature);
   if (!f) return null;
-  const status = times ? statusOf(timesFor(feature, times), now) : null;
+  const status = times ? linkStatus(timesFor(feature, times), now, f.stage.includes("main") ? times.lastSeenAt : null) : null;
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-brand-200 bg-brand-50/60 px-4 py-2.5 text-sm">
       <span className="flex flex-wrap items-center gap-1.5">

@@ -120,6 +120,20 @@ export function overdue(since: Date | null, maxSec: number, now: Date, slackSec 
   return since !== null && now.getTime() - since.getTime() - pausedMs > (maxSec + slackSec) * 1000;
 }
 
+/** A pause still open counts at most this long, unless the main link is still holding it (I-2, final I1). */
+export const MAX_OPEN_PAUSE_MS = 120_000;
+
+/**
+ * Total paused time of a request. An open pause counts in full while the main
+ * link keeps polling with its stage busy (a long raid of alerts); otherwise
+ * at most MAX_OPEN_PAUSE_MS, so a lost "resumed" can't stop the clock for good.
+ */
+export function pausedTotal(pausedMs: number, pausedAt: Date | null, now: Date, holding: boolean): number {
+  if (!pausedAt) return pausedMs;
+  const open = Math.max(0, now.getTime() - pausedAt.getTime());
+  return pausedMs + (holding ? open : Math.min(MAX_OPEN_PAUSE_MS, open));
+}
+
 /** Whole seconds the clip has played (0 before it has); time paused for a popup doesn't count. */
 export function elapsedSec(since: Date | null, now: Date, pausedMs = 0): number {
   return since ? Math.max(0, Math.floor((now.getTime() - since.getTime() - pausedMs) / 1000)) : 0;

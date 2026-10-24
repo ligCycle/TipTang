@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { lockCreator } from "@/lib/combo-server";
 import { TIP_TX } from "@/lib/tip-hooks";
-import { elapsedSec, overdue, TEST_VIDEO_ID, VOICE_MAX_SEC } from "@/lib/media";
+import { elapsedSec, overdue, pausedTotal, TEST_VIDEO_ID, VOICE_MAX_SEC } from "@/lib/media";
 import { deleteVoices, signedSlipUrl } from "@/lib/storage";
 
 type Tx = Prisma.TransactionClient;
@@ -190,13 +190,11 @@ const cardOn = (s: MediaSettings, kind: MediaKind) => (kind === "voice" ? s.voic
 const kindsOn = (s: MediaSettings): MediaKind[] =>
   (["clip", "voice"] as const).filter((k) => cardOn(s, k));
 const limitOf = (s: MediaSettings, kind: MediaKind) => (kind === "voice" ? VOICE_MAX_SEC : s.mediaMaxSec);
-/** A pause still open after this long counts no further (a lost "resumed" can't stop the clock for good, I-2). */
-const MAX_OPEN_PAUSE_MS = 120_000;
 /** Time a request sat paused behind popups on the main link, including a pause still running (C1). */
-const pausedOf = (r: { pausedMs: number; pausedAt: Date | null }, now: Date) =>
-  r.pausedMs + (r.pausedAt ? Math.min(MAX_OPEN_PAUSE_MS, Math.max(0, now.getTime() - r.pausedAt.getTime())) : 0);
-const isOverdue = (r: Row, s: MediaSettings, now: Date) =>
-  overdue(r.startedAt ?? r.promotedAt, limitOf(s, kindOf(r)), now, 60, pausedOf(r, now));
+const pausedOf = (r: { pausedMs: number; pausedAt: Date | null }, now: Date, holding: boolean) =>
+  pausedTotal(r.pausedMs, r.pausedAt, now, holding);
+const isOverdue = (r: Row, s: MediaSettings, now: Date, holding: boolean) =>
+  overdue(r.startedAt ?? r.promotedAt, limitOf(s, kindOf(r)), now, 60, pausedOf(r, now, holding));
 
 async function voiceUrl(r: Row, now: Date): Promise<string | null> {
   if (r.tipId === null) return VOICE_TEST_URL;
@@ -211,7 +209,7 @@ async function voiceUrl(r: Row, now: Date): Promise<string | null> {
   return url;
 }
 
-async function toCurrent(r: Row, s: MediaSettings, now: Date): Promise<MediaCurrent> {
+async function toCurrent(r: Row, s: MediaSettings, now: Date, holding = false): Promise<MediaCurrent> {
   const kind = kindOf(r);
   return {
     id: r.id,
@@ -224,7 +222,7 @@ async function toCurrent(r: Row, s: MediaSettings, now: Date): Promise<MediaCurr
     maxSec: limitOf(s, kind),
     fan: r.tip?.supporterName ?? "",
     amount: r.tip ? Number(r.tip.amount) : 0,
-    elapsedSec: elapsedSec(r.startedAt, now, pausedOf(r, now)),
+    elapsedSec: elapsedSec(r.startedAt, now, pausedOf(r, now, holding)),
     test: r.tipId === null,
   };
 }
@@ -260,8 +258,9 @@ export async function mediaQueueCurrent(
     select: ROW_SELECT,
   });
   const only = playing.length === 1 ? playing[0] : null;
-  if (only && cardOn(s, kindOf(only)) && !isOverdue(only, s, now)) {
-    return { ...base, current: await toCurrent(only, s, now) };
+  const holding = Boolean(opts.hold);
+  if (only && cardOn(s, kindOf(only)) && !isOverdue(only, s, now, holding)) {
+    return { ...base, current: await toCurrent(only, s, now, holding) };
   }
   if (playing.length === 0) {
     // hold = the main link's stage is busy: nothing new starts (its clock would run).
@@ -291,7 +290,7 @@ export async function mediaQueueCurrent(
           where: { id: r.id },
           data: { status: "APPROVED", promotedAt: null, startedAt: null, pausedMs: 0, pausedAt: null, position: await firstPosition(tx, userId) },
         });
-      } else if (keep || isOverdue(r, fresh, now)) {
+      } else if (keep || isOverdue(r, fresh, now, holding)) {
         await tx.mediaRequest.update({ where: { id: r.id }, data: { status: "PLAYED", endedAt: now } });
       } else keep = r;
     }
@@ -307,7 +306,7 @@ export async function mediaQueueCurrent(
     await tx.mediaRequest.update({ where: { id: next.id }, data: { status: "PLAYING", promotedAt: now, startedAt: null, pausedMs: 0, pausedAt: null } });
     return { row: { ...next, startedAt: null }, s: fresh };
   }, TIP_TX);
-  return { ...base, current: picked ? await toCurrent(picked.row, picked.s, now) : null };
+  return { ...base, current: picked ? await toCurrent(picked.row, picked.s, now, holding) : null };
 }
 
 /**

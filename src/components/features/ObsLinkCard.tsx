@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import { FEATURES } from "@/lib/feature-registry";
 import type { FeatureFlags } from "@/lib/feature-presets";
-import { StatusBadge, statusOf, useObsTimes } from "@/components/features/ObsBar";
+import { StatusBadge, useObsTimes } from "@/components/features/ObsBar";
+import { linkStatus } from "@/lib/obs-status";
 
 /**
  * "เชื่อม OBS" at the top of the hub — the one place the OBS links are
@@ -89,12 +90,13 @@ export function ObsLinkCard({
     url: string,
     size: string,
     seen: (string | null)[] | null,
+    placedBefore: string | null = null,
   ) => (
     <li className="space-y-1.5 rounded-xl border border-brand-200 bg-white/60 p-3 dark:bg-transparent">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-bold text-brand-900">{title}</span>
         <span className="text-xs text-brand-900/60">{what}</span>
-        {seen && times && <StatusBadge status={statusOf(seen, now)} />}
+        {seen && times && <StatusBadge status={linkStatus(seen, now, placedBefore)} />}
       </div>
       {on && (
         <p className="text-xs text-brand-900/70">
@@ -118,11 +120,12 @@ export function ObsLinkCard({
           <h2 className="font-bold text-brand-900">{t("obsTitle")}</h2>
           <p className="text-sm text-brand-900/65">{t("obsLine")}</p>
           <p className="text-xs text-brand-900/50">{t("obsSize")}</p>
+          <p className="mt-1 text-xs font-medium text-amber-800 dark:text-amber-300">{t("oldLinksNote")}</p>
         </div>
       </div>
 
       <ul className="mt-3 space-y-2">
-        {row(t("linkMain"), t("linkMainWhat"), names("main"), link(""), t("sizeMain"), times ? [times.mainSeenAt] : null)}
+        {row(t("linkMain"), t("linkMainWhat"), names("main"), link(""), t("sizeMain"), times ? [times.mainSeenAt] : null, times?.lastSeenAt ?? null)}
         {row(t("linkBars"), t("linkBarsWhat"), names("bars"), link("/bars"), t("sizeBars"), times ? [times.barsSeenAt] : null)}
         {row(t("linkTodo"), t("linkTodoWhat"), null, link("/todo"), t("sizeTodo"), null)}
       </ul>
@@ -165,7 +168,7 @@ export function ObsLinkCard({
         <div className="space-y-2 px-3 pb-3">
           <p className="text-xs text-brand-900/65">{t("advancedHint")}</p>
           <ul className="space-y-1.5">
-            {FEATURES.filter((f) => f.obsPath !== null).map((f) => (
+            {FEATURES.filter((f) => f.obsPath !== null && f.obsPath !== "").map((f) => (
               <li key={f.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                 <span className="min-w-28 font-semibold text-brand-900">{t(`f_${f.id}`)}</span>
                 {copyButton(link(f.obsPath ?? ""), t("copyObs"))}
