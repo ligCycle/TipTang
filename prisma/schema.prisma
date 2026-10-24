@@ -577,6 +577,19 @@ model User {
   voiceAutoApprove Boolean        @default(false)
   // When the creator confirmed the voice auto-approve warning.
   voiceAutoAckAt   DateTime?
+  // Feature hub card "กาชา" (src/lib/gacha.ts): odds per rarity sum to 100;
+  // gachaVersion goes up on every odds/prize change (the fan's view is checked).
+  gachaEnabled         Boolean       @default(false)
+  gachaPrice           Int           @default(50)
+  gachaCommon          Int           @default(70)
+  gachaRare            Int           @default(25)
+  gachaEpic            Int           @default(5)
+  gachaVersion         Int           @default(0)
+  gachaColor           String?
+  // The gacha's own rules checklist (not the wheel's: its odds aren't equal).
+  gachaRulesAcceptedAt DateTime?
+  gachaPrizes          GachaPrize[]
+  gachaPulls           GachaPull[]
   shopItems            ShopItem[]
   shopOrders           ShopOrder[]
 }
@@ -640,6 +653,10 @@ model Tip {
   wishItemId      String?
   wishAllocs      WishAlloc[]
   mediaRequest    MediaRequest?
+  // "กาชา": the fan asked for a pull, and the box they saw (odds + prizes).
+  gachaPull       Boolean       @default(false)
+  gachaBox        Json?
+  gachaResult     GachaPull?
   status          TipStatus     @default(PENDING)
   isMessagePublic Boolean       @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
@@ -661,4 +678,45 @@ model Tip {
   @@index([spinWheelId])
   @@index([creatorId, comboEligible, confirmedAt])
   @@index([wishItemId])
+}
+
+// "กาชา" prize: rarity "common" | "rare" | "epic". Soft-deleted so past pulls
+// keep their snapshot.
+model GachaPrize {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rarity    String
+  text      String
+  imageUrl  String?
+  noAction  Boolean   @default(false)
+  position  Int       @default(0)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// A gacha result for one tip (drawn at confirm from the tip's box). The prize
+// is a snapshot; reject cancels it, confirming again restores the same one.
+model GachaPull {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipId       String     @unique
+  tip         Tip        @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  rarity      String
+  prizeId     String?
+  prizeText   String
+  imageUrl    String?
+  noAction    Boolean    @default(false)
+  status      SpinStatus @default(ACTIVE)
+  confirmedAt DateTime
+  // First gacha overlay to fetch it claims it (plays once across sources).
+  playedAt    DateTime?
+  // Ticked "ทำแล้ว" in the to-do list.
+  doneAt      DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([userId, status])
 }

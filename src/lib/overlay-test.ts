@@ -107,6 +107,47 @@ export async function readWheelTest(userId: string, now: number = Date.now()): P
 }
 
 /**
+ * "ทดสอบกาชาบนจอ OBS": a fake pull on the gacha link (same TTL and store).
+ * The result is drawn once here so every open source shows the same one.
+ */
+export type GachaTest = { id: string; rarity: "common" | "rare" | "epic"; prizeText: string; imageUrl: string | null };
+
+const gachaKeyFor = (userId: string) => `tiptang/gachatest/${userId}`;
+const gachaMemory = g as unknown as { __tiptangGachaTests?: Map<string, { value: GachaTest; expiresAt: number }> };
+const gachaStore = (gachaMemory.__tiptangGachaTests ??= new Map());
+
+export async function pushGachaTest(
+  userId: string,
+  pull: Omit<GachaTest, "id">,
+  now: number = Date.now(),
+): Promise<GachaTest> {
+  const value: GachaTest = { id: `test_${randomUUID()}`, ...pull };
+  if (redis) {
+    await redis.set(gachaKeyFor(userId), value, { px: TEST_TTL_MS });
+  } else {
+    gachaStore.set(gachaKeyFor(userId), { value, expiresAt: now + TEST_TTL_MS });
+  }
+  return value;
+}
+
+export async function readGachaTest(userId: string, now: number = Date.now()): Promise<GachaTest | null> {
+  if (redis) {
+    try {
+      return (await redis.get<GachaTest>(gachaKeyFor(userId))) ?? null;
+    } catch {
+      return null;
+    }
+  }
+  const hit = gachaStore.get(gachaKeyFor(userId));
+  if (!hit) return null;
+  if (hit.expiresAt <= now) {
+    gachaStore.delete(gachaKeyFor(userId));
+    return null;
+  }
+  return hit.value;
+}
+
+/**
  * "ทดสอบคอมโบบนจอ OBS": a scripted sample combo on the combo link. Only the
  * start time is stored; the feed plays phases by elapsed time.
  */

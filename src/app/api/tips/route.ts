@@ -41,6 +41,7 @@ import { bytesMatchType } from "@/lib/filetype";
 import { fetchOEmbed, type OEmbedResult } from "@/lib/youtube";
 import { mediaQueueConfirmTx } from "@/lib/media-queue";
 import { lockCreator } from "@/lib/combo-server";
+import { forgetGachaPull, gachaSnapshot, gachaStartTx } from "@/lib/gacha-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 /**
@@ -179,6 +180,22 @@ export async function POST(req: Request) {
     } else spinDropped = true;
   }
 
+  // "กาชา" (src/lib/gacha.ts): `gachaSeen` is the box version the fan saw.
+  // The pull stands if that is still the box (K1), the card is on and the
+  // amount covers it on top of the sound and spin; the box is saved on the
+  // tip and the draw at confirm uses it. Otherwise the fan is told.
+  let gachaPrice: number | null = null;
+  let gachaBox: Awaited<ReturnType<typeof gachaSnapshot>> = null;
+  let gachaDropped = false;
+  if (form.get("gachaPull") === "1") {
+    const seen = Number(form.get("gachaSeen"));
+    const snap = Number.isInteger(seen) ? await gachaSnapshot(creator.id, seen) : null;
+    if (snap && parsed.data.amount >= extrasFloor(creator.minTipAmount, [pickedSoundPrice, spinPrice, snap.price])) {
+      gachaBox = snap;
+      gachaPrice = snap.price;
+    } else gachaDropped = true;
+  }
+
   // "ขอคลิป/เพลง" (src/lib/media.ts): the form sends only the video ID and
   // start (never the URL). One kind of fan media per tip. The clip stands if
   // the card is on and the amount covers it on top of the sound and spin; the
@@ -198,7 +215,7 @@ export async function POST(req: Request) {
     if (
       isVideoId(mediaRaw) &&
       creator.mediaEnabled &&
-      parsed.data.amount >= extrasFloor(creator.minTipAmount, [pickedSoundPrice, spinPrice, creator.mediaMinAmount])
+      parsed.data.amount >= extrasFloor(creator.minTipAmount, [pickedSoundPrice, spinPrice, gachaPrice, creator.mediaMinAmount])
     ) {
       mediaVideoId = mediaRaw;
       mediaStart = parseStart(typeof startRaw === "string" ? startRaw : null);
@@ -221,7 +238,7 @@ export async function POST(req: Request) {
       voiceRaw.size <= VOICE_MAX_BYTES &&
       bytesMatchType(type, head) &&
       creator.voiceEnabled &&
-      parsed.data.amount >= extrasFloor(creator.minTipAmount, [pickedSoundPrice, spinPrice, creator.voiceMinAmount])
+      parsed.data.amount >= extrasFloor(creator.minTipAmount, [pickedSoundPrice, spinPrice, gachaPrice, creator.voiceMinAmount])
     ) {
       voiceFile = { file: voiceRaw, type, sec: clampVoiceSec(form.get("voiceSec")) };
     } else voiceDropped = true;
@@ -386,6 +403,7 @@ export async function POST(req: Request) {
         paymentMethod,
         pickedSoundId,
         spinWheelId,
+        ...(gachaBox ? { gachaPull: true, gachaBox: gachaBox.box } : {}),
         wishItemId,
         ...(mediaVideoId
           ? {
@@ -443,8 +461,9 @@ export async function POST(req: Request) {
         await tx.$queryRaw`SELECT "id" FROM "Tip" WHERE "id" = ${tipId} FOR UPDATE`;
         const now = new Date();
         const spin = spinWheelId ? await startSpinTx(tx, tipId, now) : null;
+        const pull = gachaBox ? await gachaStartTx(tx, tipId, now) : null;
         await onTipConfirmedTx(tx, tipId, now);
-        return spin;
+        return { spin, pull };
       }, TIP_TX)
       .catch(async (err) => {
         console.error("[tip-hooks] auto-confirm features failed:", err);
@@ -474,9 +493,20 @@ export async function POST(req: Request) {
             });
         }
         // A failure elsewhere (combo, wishlist…) must not cost the fan a paid
-        // spin: retry the draw on its own.
-        if (!spinWheelId) return null;
-        return prisma
+        // gacha pull or spin: retry each draw on its own.
+        const pull = gachaBox
+          ? await prisma
+              .$transaction(async (tx) => {
+                if (!(await stillConfirmed(tx, tipId))) return "none" as const;
+                return gachaStartTx(tx, tipId, new Date());
+              }, TIP_TX)
+              .catch((err2) => {
+                console.error("[gacha] pull retry failed:", err2);
+                return "none" as const;
+              })
+          : null;
+        if (!spinWheelId) return { spin: null, pull };
+        const spin = await prisma
           .$transaction(async (tx) => {
             if (!(await stillConfirmed(tx, tipId))) return "empty" as const;
             return startSpinTx(tx, tipId, new Date());
@@ -485,8 +515,14 @@ export async function POST(req: Request) {
             console.error("[wheel] spin retry failed:", err2);
             return "empty" as const;
           });
+        return { spin, pull };
       });
-    if (spinWheelId && spun !== "started") spinDropped = true;
+    if (spinWheelId && spun.spin !== "started") spinDropped = true;
+    if (gachaBox && spun.pull !== "started" && spun.pull !== "restored") {
+      gachaDropped = true;
+      // Told it didn't happen: a later reject + confirm must not draw it.
+      await forgetGachaPull(prisma, tipId).catch((err) => console.error("[gacha] forget failed:", err));
+    }
   }
 
   // Notify the creator by email after the response is sent (best-effort — never
@@ -516,6 +552,7 @@ export async function POST(req: Request) {
     confirmed: status === "CONFIRMED",
     pickDropped,
     spinDropped,
+    gachaDropped,
     mediaDropped,
     voiceDropped,
   });

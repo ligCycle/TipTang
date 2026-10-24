@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pushTestAlert, readTestAlert, pushWheelTest, readWheelTest, pushComboTest, readComboTest, COMBO_TEST_MS } from "./overlay-test.ts";
+import { pushTestAlert, readTestAlert, pushWheelTest, readWheelTest, pushComboTest, readComboTest, COMBO_TEST_MS, pushGachaTest, readGachaTest } from "./overlay-test.ts";
 
 test("a pushed test can be read, and reading does not consume it", async () => {
   const now = Date.now();
@@ -56,4 +56,12 @@ test("combo test: keeps its start time until it expires, separate from other tes
   assert.deepEqual(await readComboTest("u7", now + 20_000), c);
   assert.equal(await readWheelTest("u7", now + 1000), null);
   assert.equal(await readComboTest("u7", now + COMBO_TEST_MS + 1), null);
+});
+
+test("gacha test pull: same result for every source, gone after 15 s, per user", async () => {
+  const now = Date.now();
+  const g = await pushGachaTest("g1", { rarity: "epic", prizeText: "ร้องเพลง", imageUrl: null }, now);
+  assert.deepEqual(await readGachaTest("g1", now + 1000), g);
+  assert.equal(await readGachaTest("g2", now + 1000), null);
+  assert.equal(await readGachaTest("g1", now + 16_000), null);
 });

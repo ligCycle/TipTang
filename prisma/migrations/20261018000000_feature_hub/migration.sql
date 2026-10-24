@@ -283,3 +283,55 @@ ALTER TABLE "MediaRequest" ADD COLUMN "audioKey" TEXT;
 ALTER TABLE "MediaRequest" ADD COLUMN "durationSec" INTEGER;
 ALTER TABLE "MediaRequest" ADD COLUMN "audioPurgedAt" TIMESTAMP(3);
 CREATE INDEX "MediaRequest_kind_audioPurgedAt_idx" ON "MediaRequest"("kind", "audioPurgedAt");
+
+-- Project 8: กาชา (rarity capsule)
+ALTER TABLE "User" ADD COLUMN "gachaEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "gachaPrice" INTEGER NOT NULL DEFAULT 50;
+ALTER TABLE "User" ADD COLUMN "gachaCommon" INTEGER NOT NULL DEFAULT 70;
+ALTER TABLE "User" ADD COLUMN "gachaRare" INTEGER NOT NULL DEFAULT 25;
+ALTER TABLE "User" ADD COLUMN "gachaEpic" INTEGER NOT NULL DEFAULT 5;
+ALTER TABLE "User" ADD COLUMN "gachaVersion" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN "gachaColor" TEXT;
+ALTER TABLE "User" ADD COLUMN "gachaRulesAcceptedAt" TIMESTAMP(3);
+
+ALTER TABLE "Tip" ADD COLUMN "gachaPull" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Tip" ADD COLUMN "gachaBox" JSONB;
+
+CREATE TABLE "GachaPrize" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "rarity" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "imageUrl" TEXT,
+    "noAction" BOOLEAN NOT NULL DEFAULT false,
+    "position" INTEGER NOT NULL DEFAULT 0,
+    "deletedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "GachaPrize_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "GachaPrize_userId_idx" ON "GachaPrize"("userId");
+ALTER TABLE "GachaPrize" ADD CONSTRAINT "GachaPrize_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "GachaPull" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tipId" TEXT NOT NULL,
+    "rarity" TEXT NOT NULL,
+    "prizeId" TEXT,
+    "prizeText" TEXT NOT NULL,
+    "imageUrl" TEXT,
+    "noAction" BOOLEAN NOT NULL DEFAULT false,
+    "status" "SpinStatus" NOT NULL DEFAULT 'ACTIVE',
+    "confirmedAt" TIMESTAMP(3) NOT NULL,
+    "playedAt" TIMESTAMP(3),
+    "doneAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "GachaPull_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "GachaPull_tipId_key" ON "GachaPull"("tipId");
+CREATE INDEX "GachaPull_userId_status_idx" ON "GachaPull"("userId", "status");
+ALTER TABLE "GachaPull" ADD CONSTRAINT "GachaPull_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "GachaPull" ADD CONSTRAINT "GachaPull_tipId_fkey" FOREIGN KEY ("tipId") REFERENCES "Tip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "GachaPrize" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "GachaPull" ENABLE ROW LEVEL SECURITY;

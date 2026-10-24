@@ -4,6 +4,7 @@ import { cancelSpinTx } from "@/lib/wheel-server";
 import { comboConfirmTx, comboRejectTx, lockCreator } from "@/lib/combo-server";
 import { wishConfirmTx, wishRejectTx } from "@/lib/goal-server";
 import { mediaQueueConfirmTx, mediaQueueRejectTx } from "@/lib/media-queue";
+import { cancelGachaTx } from "@/lib/gacha-server";
 
 type Tx = Prisma.TransactionClient;
 
@@ -33,6 +34,7 @@ export async function onTipConfirmedTx(tx: Tx, tipId: string, now: Date): Promis
 /** A CONFIRMED tip was rejected: undo every feature's effect, in the same lock order. */
 export async function onTipRejectedTx(tx: Tx, tipId: string, now: Date): Promise<void> {
   await cancelSpinTx(tx, tipId);
+  await cancelGachaTx(tx, tipId);
   const tip = await tx.tip.findUnique({ where: { id: tipId }, select: { creatorId: true } });
   if (!tip) return;
   await lockCreator(tx, tip.creatorId);

@@ -6,6 +6,7 @@ import { deleteSlip, deleteFile, deleteVoices } from "@/lib/storage";
 import { startSpinTx } from "@/lib/wheel-server";
 import { onTipConfirmedTx, onTipRejectedTx, TIP_TX } from "@/lib/tip-hooks";
 import { mediaQueueRejectTx } from "@/lib/media-queue";
+import { forgetGachaPull, gachaStartTx } from "@/lib/gacha-server";
 
 export async function PATCH(
   req: Request,
@@ -48,6 +49,8 @@ export async function PATCH(
       if (before !== "CONFIRMED") {
         const spin = await startSpinTx(tx, id, now);
         if (spin === "empty" && !force) return { blocked: true as const, before };
+        // "กาชา": drawn from the box saved on the tip (never blocks the confirm).
+        if ((await gachaStartTx(tx, id, now)) === "none") await forgetGachaPull(tx, id);
       }
     } else if (before === "CONFIRMED") {
       await onTipRejectedTx(tx, id, now);

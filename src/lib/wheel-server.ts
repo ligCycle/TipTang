@@ -1,5 +1,7 @@
 import "server-only";
 import { randomInt } from "node:crypto";
+import { gachaTodoRows } from "@/lib/gacha-server";
+import { isRarity } from "@/lib/gacha";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { clampSlots, drawSegment, layoutSegments, LATE_PLAY_MS, type WheelTask } from "@/lib/wheel";
@@ -161,7 +163,9 @@ export const DONE_KEEP_MS = 30 * 24 * 3_600_000;
  */
 export type TodoItem = {
   id: string;
-  kind: "wheel" | "combo";
+  kind: "wheel" | "combo" | "gacha";
+  /** Gacha prizes: their rarity (for the chip). */
+  rarity?: "common" | "rare" | "epic" | null;
   taskText: string;
   fan: string;
   amount: number | null;
@@ -196,7 +200,19 @@ export async function todoItems(userId: string, status: "open" | "done", take = 
       tip: { select: { supporterName: true, amount: true } },
     },
   });
+  const pulls = await gachaTodoRows(userId, status, take, new Date(Date.now() - DONE_KEEP_MS));
   const items: TodoItem[] = [
+    ...pulls.map((r) => ({
+      id: r.id,
+      kind: "gacha" as const,
+      rarity: isRarity(r.rarity) ? r.rarity : null,
+      taskText: r.prizeText,
+      fan: r.tip.supporterName,
+      amount: Number(r.tip.amount),
+      level: null,
+      confirmedAt: r.confirmedAt.toISOString(),
+      doneAt: r.doneAt?.toISOString() ?? null,
+    })),
     ...rows.map((r) => ({
       id: r.id,
       kind: "wheel" as const,
