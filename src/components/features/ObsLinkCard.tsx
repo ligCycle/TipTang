@@ -121,16 +121,19 @@ export function ObsLinkCard({
         {ownBars.map((f) => {
           const url = link(f.obsPath ?? "");
           return (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => copy(url)}
-              aria-label={t("copyOwnLink", { name: t(`f_${f.id}`) })}
-              className="inline-flex items-center gap-1 rounded-full border border-brand-300 px-2.5 py-0.5 font-semibold text-brand-700 hover:bg-brand-100"
-            >
-              <Icon name="link" className="h-3 w-3" />
-              {copied === url ? t("copied") : t(`f_${f.id}`)}
-            </button>
+            <span key={f.id} className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => copy(url)}
+                aria-label={t("copyOwnLink", { name: t(`f_${f.id}`) })}
+                className="inline-flex items-center gap-1 rounded-full border border-brand-300 px-2.5 py-0.5 font-semibold text-brand-700 hover:bg-brand-100"
+              >
+                <Icon name="link" className="h-3 w-3" />
+                {copied === url ? t("copied") : t(`f_${f.id}`)}
+              </button>
+              {/* Its suggested OBS size, same as the advanced list. */}
+              <span className="mr-1.5 text-brand-900/50">{f.obsSize}</span>
+            </span>
           );
         })}
         <span className="w-full text-brand-900/55">{t("placeSeparatelyHint")}</span>
