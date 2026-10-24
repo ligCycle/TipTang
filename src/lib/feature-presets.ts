@@ -16,6 +16,8 @@ export type FeatureFlags = {
   mediaEnabled: boolean;
   /** Fan voice messages (not part of any preset). */
   voiceEnabled: boolean;
+  /** Gacha pull on the donate page (not part of any preset; needs its own rules). */
+  gachaEnabled: boolean;
 };
 
 export const PRESETS = {

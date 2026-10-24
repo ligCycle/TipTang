@@ -119,7 +119,17 @@ export function SpinTodo({
               key={`${i.kind}_${i.id}`}
               className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-brand-200 bg-brand-50/40 px-3 py-2"
             >
-              <span className="min-w-0 flex-1 font-semibold text-brand-900">{i.taskText}</span>
+              <span className="min-w-0 flex-1 font-semibold text-brand-900">
+                {i.kind === "gacha" && i.rarity && (
+                  <span
+                    className="mr-1.5 inline-block rounded-full px-2 py-0.5 align-middle text-[10px] font-bold text-white"
+                    style={{ background: i.rarity === "epic" ? "#f59e0b" : i.rarity === "rare" ? "#8b5cf6" : "#94a3b8" }}
+                  >
+                    {t(`todoRarity_${i.rarity}`)}
+                  </span>
+                )}
+                {i.taskText}
+              </span>
               <span className="text-xs text-brand-900/60">
                 {i.kind === "combo" ? t("todoComboLevel", { level: i.level ?? 0 }) : `${i.fan} · ฿${(i.amount ?? 0).toLocaleString()}`} · {time(tab === "open" ? i.confirmedAt : (i.doneAt ?? i.confirmedAt))}
               </span>

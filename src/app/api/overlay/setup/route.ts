@@ -50,6 +50,7 @@ export async function POST() {
       comboEnabled: true,
       mediaEnabled: true,
       voiceEnabled: true,
+      gachaEnabled: true,
       featuresOnboardedAt: true,
     },
   });
@@ -112,6 +113,7 @@ export async function POST() {
     comboEnabled: user.comboEnabled,
     mediaEnabled: user.mediaEnabled,
     voiceEnabled: user.voiceEnabled,
+    gachaEnabled: user.gachaEnabled,
     activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,

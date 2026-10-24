@@ -40,6 +40,7 @@ export async function loadHub(): Promise<HubState | null> {
       comboEnabled: Boolean(d.comboEnabled),
       mediaEnabled: Boolean(d.mediaEnabled),
       voiceEnabled: Boolean(d.voiceEnabled),
+      gachaEnabled: Boolean(d.gachaEnabled),
     },
     featuresOnboardedAt: d.featuresOnboardedAt ?? null,
     wheelRulesAccepted: Boolean(d.wheelRulesAccepted),
@@ -101,6 +102,12 @@ export function FeatureHub() {
       fd.append("kind", f.toggleKind);
       fd.append("enabled", next ? "1" : "0");
       const res = await fetch("/api/overlay/asset", { method: "POST", body: fd });
+      if (res.status === 409 && f.id === "gacha") {
+        // Its own rules checklist lives on the gacha page.
+        setHub(prev);
+        router.push(`/${locale}/dashboard/features/gacha?rules=1`);
+        return;
+      }
       if (res.status === 409 && f.id === "wheel") {
         setHub(prev);
         setWheelStep("rules");
