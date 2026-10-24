@@ -24,6 +24,160 @@ export const UPDATES_SEEN_KEY = "tiptang_last_seen_update";
 
 export const UPDATES: Update[] = [
   {
+    id: "2026-10-24-two-obs-links",
+    date: "2026-10-24",
+    tags: ["creator"],
+    href: "/dashboard/features",
+    th: {
+      title: "เชื่อม OBS ง่ายขึ้น เหลือ 2 ลิงก์",
+      body: "ลิงก์แจ้งเตือนเดิมกลายเป็นลิงก์หลัก ป๊อปอัปทุกอย่างขึ้นในนี้ทีละอย่างไม่ทับกัน และมีลิงก์แถบอีกอันสำหรับเป้าหมาย นาฬิกา PK คอมโบ และบอส คัดลอกได้ที่การ์ด \"เชื่อม OBS\" หน้าลูกเล่น ระหว่างตั้งค่าจะเห็นกรอบ \"เชื่อมต่อแล้ว\" ซึ่งหายเองตอนเริ่มไลฟ์",
+    },
+    en: {
+      title: "Easier OBS setup: just 2 links",
+      body: "Your old alert link is now the main link: every popup plays there, one at a time. A second bars link holds the goal, timer, PK, combo and boss. Copy both from the \"Connect OBS\" card on the features page. While setting up you'll see a \"connected\" frame that hides itself once you go live.",
+    },
+  },
+  {
+    id: "2026-10-24-feature-hub",
+    date: "2026-10-24",
+    tags: ["creator"],
+    href: "/dashboard/features",
+    th: {
+      title: "หน้าลูกเล่นใหม่ เปิดปิดได้จากที่เดียว",
+      body: "ลูกเล่นทั้งหมดรวมอยู่ในหน้า \"ลูกเล่น\" เปิดปิดได้จากสวิตช์บนการ์ด ทุกหน้ามีพรีวิวให้เห็นหน้าตาก่อนขึ้นจอ และมีปุ่มทดสอบบนจอ OBS",
+    },
+    en: {
+      title: "A new features page, everything in one place",
+      body: "Every feature now lives on the \"Features\" page with an on/off switch on its card. Each settings page shows a preview of how it looks on stream and has a test-on-OBS button.",
+    },
+  },
+  {
+    id: "2026-10-24-wheel",
+    date: "2026-10-24",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/features/wheel",
+    th: {
+      title: "วงล้อสุ่มภารกิจ",
+      body: "แฟนติ๊ก \"หมุนวงล้อ\" ตอนทิป เมื่อยืนยันทิปแล้ววงล้อหมุนบนจอไลฟ์ ภารกิจที่ได้เข้ารายการภารกิจค้างทำให้คุณทำ",
+    },
+    en: {
+      title: "Spin wheel of tasks",
+      body: "Fans tick \"Spin the wheel\" when they tip. Once you confirm the tip, the wheel spins on stream and the task lands in your to-do list.",
+    },
+  },
+  {
+    id: "2026-10-24-gacha",
+    date: "2026-10-24",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/features/gacha",
+    th: {
+      title: "กาชา 3 ระดับ",
+      body: "แฟนสุ่มกาชาไปกับทิป เห็นโอกาสของแต่ละระดับก่อนจ่ายเสมอ (ธรรมดา หายาก สุดหายาก) แคปซูลเปิดบนจอไลฟ์ รางวัลเข้ารายการภารกิจค้างทำ รางวัลต้องไม่ใช่เงินหรือของที่มีมูลค่าเป็นเงิน",
+    },
+    en: {
+      title: "Gacha with 3 rarities",
+      body: "Fans can add a gacha pull to their tip and always see the odds first (common, rare, epic). The capsule opens on stream and the prize goes to your to-do list. Prizes can't be money or worth money.",
+    },
+  },
+  {
+    id: "2026-10-24-clip-and-voice",
+    date: "2026-10-24",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/features/media",
+    th: {
+      title: "ขอคลิป/เพลง และฝากเสียง",
+      body: "แฟนแนบลิงก์ YouTube หรืออัดเสียงสั้น ๆ (ไม่เกิน 30 วินาที) มากับทิปได้ คลิปและเสียงเข้าคิวให้คุณอนุมัติก่อน (หรือเปิดอนุมัติอัตโนมัติ) แล้วเล่นบนจอไลฟ์ตามลำดับ",
+    },
+    en: {
+      title: "Clip requests and voice messages",
+      body: "Fans can attach a YouTube link or a short voice message (up to 30 s) to their tip. They queue for your approval (or auto-approve) and play on stream in order.",
+    },
+  },
+  {
+    id: "2026-10-24-pk",
+    date: "2026-10-24",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/features/pk",
+    th: {
+      title: "PK แข่งยอดทิป",
+      body: "แบ่งสองฝั่งแข่งกันในไลฟ์เดียว แฟนเลือกฝั่งตอนทิป หรือท้า PK กับครีเอเตอร์ TipTang คนอื่นด้วยชื่อผู้ใช้ จอไลฟ์โชว์แถบสองสี เวลาที่เหลือ และผู้ชนะ",
+    },
+    en: {
+      title: "PK tip battles",
+      body: "Split your stream into two sides and let fans pick one when they tip, or challenge another TipTang creator by username. The stream shows a two-color bar, the time left and the winner.",
+    },
+  },
+  {
+    id: "2026-10-24-boss-raid",
+    date: "2026-10-24",
+    tags: ["creator"],
+    href: "/dashboard/features/boss",
+    th: {
+      title: "ตีบอส",
+      body: "ทิปกลายเป็นดาเมจ 1 บาท = 1 HP ตั้งบอสได้หลายตัวพร้อมรางวัล ปิดบอสได้รางวัลเข้าภารกิจค้างทำ แล้วบอสตัวต่อไปก็มา",
+    },
+    en: {
+      title: "Boss raid",
+      body: "Tips deal damage, 1 baht = 1 HP. Set up several bosses with rewards; each one defeated adds its reward to your to-do list, then the next boss appears.",
+    },
+  },
+  {
+    id: "2026-10-24-combo",
+    date: "2026-10-24",
+    tags: ["creator"],
+    href: "/dashboard/features/combo",
+    th: {
+      title: "คอมโบทิป",
+      body: "เมื่อมีหลายคนทิปติด ๆ กัน คอมโบเริ่มบนจอไลฟ์ หลอดเต็มเลเวลขึ้นและปลดล็อกรางวัลที่คุณตั้งไว้",
+    },
+    en: {
+      title: "Combo tips",
+      body: "When several fans tip in a row, a combo starts on stream. Each full bar levels up and unlocks the reward you set.",
+    },
+  },
+  {
+    id: "2026-10-24-wishlist-goal",
+    date: "2026-10-24",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/features/goal",
+    th: {
+      title: "เป้าหมายหลายชิ้นและแถบ 4 แบบ",
+      body: "ตั้งของที่อยากได้ได้หลายชิ้น แฟนเลือกได้ว่าทิปนี้ช่วยซื้อชิ้นไหน และเลือกหน้าตาแถบได้ 4 แบบ (แบบหลัก ใหญ่ กระจก วงกลม)",
+    },
+    en: {
+      title: "Wishlist goals and 4 bar styles",
+      body: "List several things you're saving for and let fans choose which one their tip helps buy. Pick from 4 bar styles: classic, big, glass and ring.",
+    },
+  },
+  {
+    id: "2026-10-24-sound-pick",
+    date: "2026-10-24",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/library",
+    th: {
+      title: "แฟนเลือกเสียงแจ้งเตือนได้",
+      body: "แฟนเลือกเสียงจากคลังของคุณตอนทิปได้ และคุณจัดเสียงเป็นชุดสลับใช้ได้ในคลังเสียงและรูป",
+    },
+    en: {
+      title: "Fans can pick the alert sound",
+      body: "Fans can choose a sound from your library when they tip, and you can organize sounds into sets to switch between in your library.",
+    },
+  },
+  {
+    id: "2026-10-24-terms-update",
+    date: "2026-10-24",
+    tags: ["creator", "supporter"],
+    href: "/terms",
+    th: {
+      title: "อัปเดตข้อกำหนดและนโยบายความเป็นส่วนตัว",
+      body: "เพิ่มส่วนลูกเล่นจากแฟน เช่น การสุ่มรางวัล ลิขสิทธิ์คลิปที่ขอ และการเก็บเสียงที่ฝาก อ่านได้ในหน้าข้อกำหนดและนโยบายความเป็นส่วนตัว",
+    },
+    en: {
+      title: "Updated terms and privacy policy",
+      body: "New sections cover fan features such as random prizes, copyright for requested clips and how voice messages are kept. Read them on the terms and privacy pages.",
+    },
+  },
+  {
     id: "2026-10-09-channel-colour",
     date: "2026-10-09",
     tags: ["creator"],
