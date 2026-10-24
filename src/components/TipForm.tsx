@@ -11,6 +11,7 @@ import { WheelPicker, type WheelChoice } from "@/components/WheelPicker";
 import { WishPicker, type WishChoiceItem } from "@/components/WishPicker";
 import { MediaPicker, type ClipPick, type MediaChoice } from "@/components/MediaPicker";
 import { VoicePicker, type VoiceChoice, type VoicePick } from "@/components/VoiceRecorder";
+import { GachaPicker, type GachaChoice } from "@/components/GachaPicker";
 import { extrasFloor } from "@/lib/wishlist";
 import { mediaExtrasDrop, voiceBaseType, VOICE_EXT } from "@/lib/media";
 
@@ -49,6 +50,7 @@ export function TipForm({
   wishChoice = null,
   mediaChoice = null,
   voiceChoice = null,
+  gachaChoice = null,
 }: {
   username: string;
   creatorName: string;
@@ -71,6 +73,8 @@ export function TipForm({
   mediaChoice?: MediaChoice | null;
   /** "ฝากเสียง" when the creator has it on; null = hidden. */
   voiceChoice?: VoiceChoice | null;
+  /** "กาชา" when the card is on and something can come out; null = hidden. */
+  gachaChoice?: GachaChoice | null;
   /** Present whenever the creator runs a subathon timer; `reduceEnabled`
    *  adds the sabotage option. */
   timerChoice?: {
@@ -119,6 +123,10 @@ export function TipForm({
   const [spin, setSpin] = useState(false);
   const [spinNote, setSpinNote] = useState(false);
   const [spinDropped, setSpinDropped] = useState(false);
+  // "สุ่มกาชา": ticked by the fan; its price adds to the other extras.
+  const [gachaOn, setGachaOn] = useState(false);
+  const [gachaNote, setGachaNote] = useState(false);
+  const [gachaDropped, setGachaDropped] = useState(false);
   // Goal item this tip helps (no price; null = main item).
   const [wishItemId, setWishItemId] = useState<string | null>(null);
   // "ขอคลิป/เพลง": the checked clip (its price adds to the other extras).
@@ -155,6 +163,7 @@ export function TipForm({
   }
   const pickedSound = soundChoices?.find((c) => c.id === pickedSoundId) ?? null;
   const spinPrice = spin && wheelChoice ? wheelChoice.price : 0;
+  const gachaPrice = gachaOn && gachaChoice ? gachaChoice.price : 0;
   const clipPrice = clip && mediaChoice ? mediaChoice.minAmount : 0;
   // One fan media per tip: the clip or the voice fills the same price slot.
   const voicePrice = voiceOn && voiceChoice ? voiceChoice.minAmount : 0;
@@ -171,9 +180,14 @@ export function TipForm({
   function checkPick(n: number): boolean {
     const drop = mediaExtrasDrop(n, minAmount, {
       media: voiceOn && voiceChoice ? voiceChoice.minAmount : clip && mediaChoice ? mediaChoice.minAmount : null,
+      gacha: gachaOn && gachaChoice ? gachaChoice.price : null,
       wheel: spin && wheelChoice ? wheelChoice.price : null,
       sound: pickedSound ? pickedSound.minAmount : null,
     });
+    if (drop.includes("gacha")) {
+      setGachaOn(false);
+      setGachaNote(true);
+    }
     if (drop.includes("media")) {
       if (voiceOn) {
         clearVoice();
@@ -296,6 +310,10 @@ export function TipForm({
       fd.set("paymentMethod", method);
       if (pickedSoundId) fd.set("pickedSoundId", pickedSoundId);
       if (spin && wheelChoice) fd.set("spinWheel", wheelChoice.id);
+      if (gachaOn && gachaChoice) {
+        fd.set("gachaPull", "1");
+        fd.set("gachaSeen", String(gachaChoice.version));
+      }
       if (wishItemId && wishChoice) fd.set("wishItemId", wishItemId);
       if (clip && mediaChoice) {
         fd.set("mediaVideoId", clip.videoId);
@@ -340,6 +358,7 @@ export function TipForm({
       setAutoVerified(Boolean(data.autoVerified) || Boolean(data.confirmed));
       setPickDropped(Boolean(data.pickDropped));
       setSpinDropped(Boolean(data.spinDropped));
+      setGachaDropped(Boolean(data.gachaDropped));
       setMediaDropped(Boolean(data.mediaDropped));
       setVoiceDropped(Boolean(data.voiceDropped));
       setStep("done");
@@ -365,6 +384,9 @@ export function TipForm({
     setSpin(false);
     setSpinNote(false);
     setSpinDropped(false);
+    setGachaOn(false);
+    setGachaNote(false);
+    setGachaDropped(false);
     setWishItemId(null);
     setClip(null);
     setClipKey((k) => k + 1);
@@ -430,6 +452,11 @@ export function TipForm({
         {pickDropped && (
           <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
             {t("soundPickDropped")}
+          </p>
+        )}
+        {gachaDropped && (
+          <p className="mx-auto mt-3 max-w-md text-sm text-amber-700 dark:text-amber-400">
+            {t("gachaDropped")}
           </p>
         )}
         {spinDropped && (
@@ -548,7 +575,7 @@ export function TipForm({
                 username={username}
                 choice={mediaChoice}
                 amount={amount}
-                floor={extrasFloor(minAmount, [mediaChoice.minAmount, pickedSound?.minAmount ?? null, spinPrice])}
+                floor={extrasFloor(minAmount, [mediaChoice.minAmount, pickedSound?.minAmount ?? null, spinPrice, gachaPrice])}
                 value={clip}
                 onChange={(next) => {
                   setClip(next);
@@ -574,7 +601,7 @@ export function TipForm({
                 <VoicePicker
                   choice={voiceChoice}
                   amount={amount}
-                  floor={extrasFloor(minAmount, [voiceChoice.minAmount, pickedSound?.minAmount ?? null, spinPrice])}
+                  floor={extrasFloor(minAmount, [voiceChoice.minAmount, pickedSound?.minAmount ?? null, spinPrice, gachaPrice])}
                   checked={voiceOn}
                   onCheck={(next) => {
                     if (next) {
@@ -607,13 +634,33 @@ export function TipForm({
             </div>
           )}
 
+          {gachaChoice && (
+            <div>
+              <GachaPicker
+                gacha={gachaChoice}
+                amount={amount}
+                floor={extrasFloor(minAmount, [gachaChoice.price, pickedSound?.minAmount ?? null, spinPrice, mediaPrice])}
+                checked={gachaOn}
+                onChange={(next) => {
+                  setGachaOn(next);
+                  setGachaNote(false);
+                }}
+              />
+              {gachaNote && (
+                <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400" role="status">
+                  {t("gachaCleared")}
+                </p>
+              )}
+            </div>
+          )}
+
           {wheelChoice && (
             <div>
               <p className="mb-2 text-sm font-medium text-brand-900/80">{t("extrasLabel")}</p>
               <WheelPicker
                 wheel={wheelChoice}
                 amount={amount}
-                floor={extrasFloor(minAmount, [wheelChoice.price, pickedSound?.minAmount ?? null, mediaPrice])}
+                floor={extrasFloor(minAmount, [wheelChoice.price, pickedSound?.minAmount ?? null, mediaPrice, gachaPrice])}
                 checked={spin}
                 onChange={(next) => {
                   setSpin(next);
@@ -635,7 +682,7 @@ export function TipForm({
                 setName={soundSetName ?? ""}
                 amount={amount}
                 creatorMin={minAmount}
-                addOn={spinPrice + mediaPrice}
+                addOn={spinPrice + mediaPrice + gachaPrice}
                 value={pickedSoundId}
                 onChange={(id) => {
                   setPickedSoundId(id);

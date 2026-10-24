@@ -16,6 +16,7 @@ import { CreatorTheme } from "@/components/CreatorTheme";
 import { libraryNumber } from "@/lib/alert-sets";
 import { clampSlots, taskOdds } from "@/lib/wheel";
 import { wheelForFans } from "@/lib/wheel-server";
+import { gachaForFans } from "@/lib/gacha-server";
 import { goalItems } from "@/lib/goal-server";
 import { mainItem } from "@/lib/wishlist";
 import { VOICE_MAX_SEC } from "@/lib/media";
@@ -162,6 +163,8 @@ export default async function ProfilePage({
   // "วงล้อสุ่ม": the wheel in use, when the card is on and segments remain.
   // Fans see every task with its remaining segment count.
   const wheel = await wheelForFans(creator.id);
+  // "กาชา": the box fans see (odds per rarity + prizes), with its version.
+  const gachaChoice = await gachaForFans(creator.id);
   const wheelChoice = wheel
     ? {
         id: wheel.id,
@@ -392,6 +395,7 @@ export default async function ProfilePage({
             soundChoices={soundChoices}
             soundSetName={soundSet?.name ?? null}
             wheelChoice={wheelChoice}
+            gachaChoice={canTip ? gachaChoice : null}
             wishChoice={wishChoice}
             mediaChoice={canTip && creator.mediaEnabled ? { minAmount: creator.mediaMinAmount, maxSec: creator.mediaMaxSec } : null}
             voiceChoice={canTip && creator.voiceEnabled ? { minAmount: creator.voiceMinAmount, maxSec: VOICE_MAX_SEC } : null}

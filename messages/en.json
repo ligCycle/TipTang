@@ -234,7 +234,17 @@
     "voiceCleared": "This amount doesn't cover the voice message, so it was removed",
     "voiceDropped": "Your voice message didn't join the queue (the file didn't work, the amount was short, or the creator turned this off), but your tip went through.",
     "voiceTooBig": "The voice file is too big — try a shorter recording",
-    "voiceSlipTooBig": "Your slip and voice message are too big together. Use a smaller slip image (e.g. a screenshot) or untick the voice message."
+    "voiceSlipTooBig": "Your slip and voice message are too big together. Use a smaller slip image (e.g. a screenshot) or untick the voice message.",
+    "gachaPull": "Gacha pull",
+    "gachaPullHint": "Open a prize capsule on stream",
+    "gachaSeeOdds": "See odds and prizes",
+    "gacha_common": "Common",
+    "gacha_rare": "Rare",
+    "gacha_epic": "Epic",
+    "gachaNoPrize": "No prizes yet",
+    "gachaOddsNote": "Drawn from this box when your tip is confirmed · prizes within a rarity have equal odds · prizes are never money or anything of money value.",
+    "gachaCleared": "This amount doesn't cover the gacha pull, so it was removed",
+    "gachaDropped": "No gacha pull this time (the creator just changed the prizes or odds, the amount was short, or it was turned off), but your tip went through."
   },
   "tipSuccess": {
     "title": "Tip sent!",
@@ -437,7 +447,8 @@
     "spinResetFailed": "Couldn’t reset — the wheel may have been deleted. You can confirm without a spin.",
     "wishBadge": "Helps: {name}",
     "clipBadge": "Clip: {title}",
-    "voiceBadge": "Voice {sec}s"
+    "voiceBadge": "Voice {sec}s",
+    "gachaBadge": "Gacha: {prize}"
   },
   "settings": {
     "title": "Donate page settings",
@@ -775,8 +786,8 @@
     "s6Body": "You may stop using the service at any time, and request account deletion by emailing support@tiptang.com — we delete it within 7 days. We may improve or discontinue the service and may update these terms from time to time. Continued use means you accept the updated terms.",
     "s7Title": "Governing law & contact",
     "s7Body": "These terms are governed by the laws of Thailand. For questions, contact support@tiptang.com",
-    "randomTitle": "Fan features: random features, feature rewards and fan clip requests (e.g. the spin wheel, combo tip, clip requests)",
-    "randomBody": "• Results of random features are drawn by the system; every slot has the same odds, and supporters can see every slot before tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task.\n• Combo tip rewards (unlocked when viewers tip together to reach a level) follow the same rules: no money, cash equivalents or items of monetary value, and the creator is responsible for delivering the rewards they set.\n• Clips or songs supporters request through \"clip requests\": the copyright and content of a clip are the responsibility of the requester and of the creator who chooses to play it on their stream. The creator may skip or not play any clip, and TipTang doesn't guarantee a clip will play on every platform.\n• Voice messages supporters send through \"voice messages\": the sender must not record anything illegal, abusive or another person's personal details. The creator is responsible for what plays on their stream and may skip or not play any message. Voice files are stored privately and deleted within 7 days after they play, are skipped or rejected (30 days after sending at most)."
+    "randomTitle": "Fan features: random features, feature rewards and fan clip requests (e.g. the spin wheel, gacha, combo tip, clip requests)",
+    "randomBody": "• Random features are drawn by the system. Spin wheel: every slot has the same odds · Gacha: drawn by the odds per rarity the creator set and shows (prizes within a rarity have equal odds). Supporters see every slot or the odds before they tip, and the draw uses the box the supporter saw when tipping.\n• Rewards must not be money, cash equivalents or items of monetary value.\n• The creator is responsible for what is on their wheel, for carrying out results, and for following applicable law.\n• TipTang only records and displays results; it does not run or guarantee any reward or task.\n• Combo tip rewards (unlocked when viewers tip together to reach a level) follow the same rules: no money, cash equivalents or items of monetary value, and the creator is responsible for delivering the rewards they set.\n• Clips or songs supporters request through \"clip requests\": the copyright and content of a clip are the responsibility of the requester and of the creator who chooses to play it on their stream. The creator may skip or not play any clip, and TipTang doesn't guarantee a clip will play on every platform.\n• Voice messages supporters send through \"voice messages\": the sender must not record anything illegal, abusive or another person's personal details. The creator is responsible for what plays on their stream and may skip or not play any message. Voice files are stored privately and deleted within 7 days after they play, are skipped or rejected (30 days after sending at most)."
   },
   "featureHub": {
     "secLook": "Look",

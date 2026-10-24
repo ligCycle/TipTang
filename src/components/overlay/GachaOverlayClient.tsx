@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { OverlayPull } from "@/lib/gacha-server";
 import type { Rarity } from "@/lib/gacha";
+import { DEFAULT_COLOR } from "@/lib/colors";
 
 const POLL_MS = 3000;
 /** Drop 0.8 s + shake 1.2 s, then the capsule opens. */
@@ -44,6 +45,8 @@ const SPARKS = [
 export function GachaOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
   const [current, setCurrent] = useState<OverlayPull | null>(null);
   const [open, setOpen] = useState(false);
+  // The creator's colour (gacha → alert → brand): capsule base and the fan line.
+  const [color, setColor] = useState(DEFAULT_COLOR);
   const busy = useRef(false);
   const seen = useRef(new Set<string>());
 
@@ -55,7 +58,8 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
       busy.current = true;
       try {
         const res = await fetch(`/api/overlay/${username}/gacha?key=${encodeURIComponent(apiKey)}`, { cache: "no-store" });
-        const data = res.ok ? ((await res.json()) as { pull: OverlayPull | null }) : null;
+        const data = res.ok ? ((await res.json()) as { pull: OverlayPull | null; color: string | null }) : null;
+        if (data?.color && /^#[0-9a-fA-F]{6}$/.test(data.color)) setColor(data.color);
         const pull = data?.pull;
         if (!active || !pull || seen.current.has(pull.id)) {
           busy.current = false;
@@ -95,7 +99,7 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
         <div key={current.id} style={{ animation: "gacha-drop 0.8s ease-out both" }}>
           <div style={{ animation: "gacha-shake 0.4s ease-in-out 0.8s 3" }} className="relative h-40 w-40">
             <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-full border-4 border-white/80" style={{ background: r.color }} />
-            <div className="absolute inset-x-0 bottom-0 h-1/2 rounded-b-full border-4 border-white/80 bg-white" />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 rounded-b-full border-4 border-white/80" style={{ background: color }} />
             <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 bg-[#120c16]" />
           </div>
         </div>
@@ -131,7 +135,9 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
               // eslint-disable-next-line @next/next/no-img-element
               <img src={current.imageUrl} alt="" className="mx-auto mt-3 h-24 w-24 rounded-xl object-cover" />
             )}
-            <p className="mt-3 text-lg font-semibold text-pink-200">{current.fan} ได้</p>
+            <p className="mt-3 text-lg font-semibold" style={{ color }}>
+              {current.fan} ได้
+            </p>
             <p className="text-3xl font-extrabold leading-tight" style={{ color: r.color }}>
               {current.prizeText}!
             </p>

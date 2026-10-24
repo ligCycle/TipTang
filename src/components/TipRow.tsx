@@ -39,6 +39,8 @@ type Tip = {
   clipTitle?: string | null;
   /** Length of the fan's voice message ("ฝากเสียง"). */
   voiceSec?: number | null;
+  /** Prize from the fan's gacha pull ("กาชา"). */
+  gachaPrize?: string | null;
 };
 
 // Dashboard flag styling per verifier verdict. `ok` = amount + receiver matched
@@ -207,6 +209,12 @@ export function TipRow({ tip, locale }: { tip: Tip; locale: string }) {
             <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
               <Icon name="music" className="h-3 w-3 shrink-0" />
               <span className="truncate">{t("clipBadge", { title: tip.clipTitle })}</span>
+            </span>
+          )}
+          {tip.gachaPrize && (
+            <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
+              <Icon name="gift" className="h-3 w-3 shrink-0" />
+              <span className="truncate">{t("gachaBadge", { prize: tip.gachaPrize })}</span>
             </span>
           )}
           {tip.voiceSec != null && (

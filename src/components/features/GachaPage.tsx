@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import { ColorField } from "@/components/ColorField";
@@ -61,10 +62,8 @@ export function GachaPage() {
   const [hub, setHub] = useState<HubState | null>(null);
   const [error, setError] = useState<string | null>(null);
   // From the hub: switched on before the rules were accepted (?rules=1).
-  // The page renders nothing until its data loads, so server and client agree.
-  const [rulesOpen, setRulesOpen] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("rules") === "1",
-  );
+  const searchParams = useSearchParams();
+  const [rulesOpen, setRulesOpen] = useState(() => searchParams.get("rules") === "1");
   const [ticked, setTicked] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState<Odds | null>(null);
   const [newText, setNewText] = useState<Record<Rarity, string>>({ common: "", rare: "", epic: "" });
@@ -104,7 +103,10 @@ export function GachaPage() {
     setDraft(next);
     if (oddsTimer.current) clearTimeout(oddsTimer.current);
     oddsTimer.current = setTimeout(async () => {
-      if (await run("/api/gacha", "PATCH", { odds: next })) setDraft(null);
+      await run("/api/gacha", "PATCH", { odds: next });
+      // Saved or not, show what the server has now — unless the creator is
+      // already dragging again (a newer draft).
+      setDraft((cur) => (cur === next ? null : cur));
     }, 500);
   }
 
@@ -175,7 +177,16 @@ export function GachaPage() {
       <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-bold text-brand-900">① {t("odds")}</h2>
-          <button type="button" onClick={() => void run("/api/gacha", "PATCH", { odds: DEFAULT_ODDS })} className="text-xs font-semibold text-brand-700 hover:underline">
+          <button
+            type="button"
+            onClick={() => {
+              // A slider save still waiting must not land after the reset.
+              if (oddsTimer.current) clearTimeout(oddsTimer.current);
+              setDraft(null);
+              void run("/api/gacha", "PATCH", { odds: DEFAULT_ODDS });
+            }}
+            className="text-xs font-semibold text-brand-700 hover:underline"
+          >
             {t("resetOdds")}
           </button>
         </div>

@@ -122,7 +122,7 @@ export function SpinTodo({
               <span className="min-w-0 flex-1 font-semibold text-brand-900">
                 {i.kind === "gacha" && i.rarity && (
                   <span
-                    className="mr-1.5 inline-block rounded-full px-2 py-0.5 align-middle text-[10px] font-bold text-white"
+                    className={`mr-1.5 inline-block rounded-full px-2 py-0.5 align-middle text-[11px] font-bold ${i.rarity === "rare" ? "text-white" : "text-[#120c16]"}`}
                     style={{ background: i.rarity === "epic" ? "#f59e0b" : i.rarity === "rare" ? "#8b5cf6" : "#94a3b8" }}
                   >
                     {t(`todoRarity_${i.rarity}`)}

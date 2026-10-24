@@ -62,6 +62,7 @@ export async function TipList({
       spinWheelId: true,
       wishItemId: true,
       mediaRequest: { select: { title: true, status: true, kind: true, durationSec: true } },
+      gachaResult: { select: { prizeText: true, status: true } },
       spin: { select: { taskText: true, status: true } },
     },
   });
@@ -146,6 +147,8 @@ export async function TipList({
       tip.mediaRequest?.kind !== "voice" && tip.mediaRequest && tip.mediaRequest.status !== "REMOVED" && tip.mediaRequest.status !== "CANCELLED"
         ? tip.mediaRequest.title || "YouTube"
         : null,
+    // "กาชา": the prize the pull drew.
+    gachaPrize: tip.gachaResult?.status === "ACTIVE" ? tip.gachaResult.prizeText : null,
     // "ฝากเสียง": length of the fan's voice message.
     voiceSec:
       tip.mediaRequest?.kind === "voice" && tip.mediaRequest.status !== "REMOVED" && tip.mediaRequest.status !== "CANCELLED"
