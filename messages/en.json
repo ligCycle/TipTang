@@ -1311,7 +1311,7 @@
     "duoCounting": "Each side counts tips sent during the match and confirmed by that side's creator.",
     "cancelMatch": "Cancel PK (no winner)",
     "duoTitle": "PK with another creator",
-    "duoHow": "Invite another TipTang creator by username. Once they accept, the PK starts on both streams at the same time. Each side's total is that creator's own tips (no money moves between you). Invitations expire after 10 minutes.",
+    "duoHow": "Invite another TipTang creator by username. Once they accept, the PK starts on both streams at the same time. Each side's total is that creator's own tips (no money moves between you). Invitations expire after 10 minutes. · Totals count the tips each side confirms.",
     "invitesOff": "Don't accept invitations",
     "invitedBy": "{name} invites you to a {min}-minute PK",
     "accept": "Accept",

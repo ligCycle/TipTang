@@ -307,7 +307,8 @@ export async function fanSide(
 /** The creator's last 10 finished or cancelled matches. */
 export async function pkHistory(userId: string) {
   const rows = await prisma.pkMatch.findMany({
-    where: { OR: [{ ownerId: userId }, { opponentId: userId }], status: { in: ["ENDED", "CANCELLED"] } },
+    // Matches that actually ran (withdrawn or lapsed invitations aren't results).
+    where: { OR: [{ ownerId: userId }, { opponentId: userId }], status: { in: ["ENDED", "CANCELLED"] }, startedAt: { not: null } },
     orderBy: { endedAt: "desc" },
     take: 10,
     select: { id: true, kind: true, status: true, ownerId: true, opponentId: true, nameA: true, nameB: true, colorA: true, colorB: true, totalA: true, totalB: true, startedAt: true, endedAt: true },
@@ -394,21 +395,29 @@ function sideName(displayName: string): string {
  */
 export async function inviteDuo(ownerId: string, username: unknown, durationSec: unknown, now: Date): Promise<void> {
   if (typeof username !== "string" || !isPkDuration(durationSec)) throw new PkError("invalid");
+  // The inviter's own limits come first: what is said about the other
+  // creator afterwards is always the same generic "invalid".
+  await expireInvites(ownerId, now);
+  const self = await prisma.user.findUnique({ where: { id: ownerId }, select: { pkEnabled: true } });
+  if (!self?.pkEnabled) throw new PkError("off");
+  if ((await prisma.pkMatch.count({ where: { ownerId, kind: "duo", status: "PENDING" } })) >= MAX_PENDING_OUT) {
+    throw new PkError("busy");
+  }
   const other = await prisma.user.findUnique({
     where: { username: username.trim().replace(/^@/, "").toLowerCase() },
     select: { id: true, displayName: true, alertColor: true, pkEnabled: true, pkInvitesOff: true, autoConfirmTips: true },
   });
   if (!other || other.id === ownerId || !other.pkEnabled || other.pkInvitesOff) throw new PkError("invalid");
-  await expireInvites(ownerId, now);
   await prisma.$transaction(async (tx) => {
     await lockPair(tx, ownerId, other.id);
     const me = await tx.user.findUnique({
       where: { id: ownerId },
       select: { displayName: true, alertColor: true, pkEnabled: true, autoConfirmTips: true },
     });
-    if (!me?.pkEnabled) throw new PkError("off");
+    // Checked again under the locks; a change in between reads as generic.
+    if (!me?.pkEnabled) throw new PkError("invalid");
     const pendingOut = await tx.pkMatch.count({ where: { ownerId, kind: "duo", status: "PENDING" } });
-    if (pendingOut >= MAX_PENDING_OUT) throw new PkError("busy");
+    if (pendingOut >= MAX_PENDING_OUT) throw new PkError("invalid");
     const sameOpen = await tx.pkMatch.count({
       where: { ownerId, opponentId: other.id, kind: "duo", status: { in: ["PENDING", "ACTIVE"] } },
     });
@@ -447,6 +456,11 @@ export async function respondDuo(userId: string, id: string, answer: "accept" | 
   });
   if (!m?.ownerId || !m.opponentId) throw new PkError("not_found");
   const ownerId = m.ownerId;
+  const running = await prisma.pkMatch.findMany({
+    where: { status: "ACTIVE", OR: [{ ownerId: { in: [ownerId, userId] } }, { opponentId: { in: [ownerId, userId] } }] },
+    select: MATCH_SELECT,
+  });
+  for (const r of running) await freezeIfDue(r, now);
   await prisma.$transaction(async (tx) => {
     await lockPair(tx, ownerId, userId);
     const [row] = await tx.$queryRaw<{ status: string }[]>`
