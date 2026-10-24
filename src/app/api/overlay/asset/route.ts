@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { lockCreator, stopComboTx } from "@/lib/combo-server";
 import { isAlertStyle } from "@/lib/alertStyles";
 import { isAlertTheme } from "@/lib/alertThemes";
-import { isPresetId, presetChanges } from "@/lib/feature-presets";
+import { isPresetId, presetChanges, goalDefaults } from "@/lib/feature-presets";
 import { cleanName, MAX_NAME } from "@/lib/alert-sets";
 import { getActiveSetId, touchSet } from "@/lib/alert-sets-server";
 import { setMediaEnabled, setVoiceEnabled } from "@/lib/media-queue";
@@ -122,9 +122,14 @@ export async function POST(req: Request) {
       }
       const cur = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { alertsEnabled: true, goalOverlayEnabled: true, timerEnabled: true },
+        select: { alertsEnabled: true, goalOverlayEnabled: true, timerEnabled: true, goalTitle: true, goalAmount: true },
       });
-      if (cur) Object.assign(data, presetChanges(cur, preset));
+      if (cur) {
+        const changes = presetChanges(cur, preset);
+        Object.assign(data, changes);
+        // A goal switched on by the preset starts with a name and an amount.
+        if (changes.goalOverlayEnabled) Object.assign(data, goalDefaults(cur));
+      }
     }
     await prisma.user.update({ where: { id: session.user.id }, data });
     return NextResponse.json({ ok: true });
@@ -143,9 +148,13 @@ export async function POST(req: Request) {
   // Goal-bar overlay on/off toggle.
   if (kind === "goalToggle") {
     const enabled = form?.get("enabled") === "1";
+    // Turned on with no name or amount yet: start from defaults so the bar shows.
+    const cur = enabled
+      ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { goalTitle: true, goalAmount: true } })
+      : null;
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { goalOverlayEnabled: enabled },
+      data: { goalOverlayEnabled: enabled, ...(cur ? goalDefaults(cur) : {}) },
     });
     return NextResponse.json({ ok: true, enabled });
   }

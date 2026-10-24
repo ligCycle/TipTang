@@ -41,3 +41,22 @@ export function presetChanges(current: Partial<FeatureFlags>, preset: PresetId):
   for (const k of PRESETS[preset]) if (!current[k]) out[k] = true;
   return out;
 }
+
+/** What a goal turned on with no name or amount starts with, so the bar never shows up empty. */
+export const DEFAULT_GOAL_TITLE = "เป้าหมายของฉัน";
+export const DEFAULT_GOAL_AMOUNT = 1000;
+
+/**
+ * Turning the goal card on (page, hub or preset): fill only what's missing —
+ * an empty name, a missing or zero amount. Never touches what the creator set.
+ */
+export function goalDefaults(cur: { goalTitle: string | null; goalAmount: unknown }): {
+  goalTitle?: string;
+  goalAmount?: number;
+} {
+  const out: { goalTitle?: string; goalAmount?: number } = {};
+  if (!cur.goalTitle?.trim()) out.goalTitle = DEFAULT_GOAL_TITLE;
+  const amount = Number(cur.goalAmount ?? 0);
+  if (!Number.isFinite(amount) || amount <= 0) out.goalAmount = DEFAULT_GOAL_AMOUNT;
+  return out;
+}

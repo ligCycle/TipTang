@@ -110,6 +110,8 @@ export function GoalPage() {
     const ok = await assetForm({ kind: "goalToggle", enabled: next ? "1" : "0" });
     if (ok) setS((cur) => (cur ? { ...cur, enabled: next } : cur));
     else setError(tHub("toggleFailed"));
+    // Switched on with no name or amount: the server filled defaults; show them.
+    if (ok && next) void run(() => json("/api/goal"));
     setToggling(false);
   }
 
