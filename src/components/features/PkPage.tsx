@@ -179,7 +179,7 @@ export function PkPage() {
 
       {m && m.kind === "solo" ? (
         <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">① {m.phase === "ended" ? t("result") : t("live")}</h2>
+          <h2 className="font-bold text-brand-900">{m.phase === "ended" ? t("result") : `① ${t("live")}`}</h2>
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-bold" style={{ color: m.colorA }}>{m.nameA}</p>
@@ -206,7 +206,7 @@ export function PkPage() {
         </section>
       ) : m && m.kind === "duo" ? (
         <section className="space-y-3 rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">① {m.phase === "ended" ? t("result") : t("duoLive")}</h2>
+          <h2 className="font-bold text-brand-900">{m.phase === "ended" ? t("result") : `① ${t("duoLive")}`}</h2>
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-bold" style={{ color: m.colorA }}>{m.nameA}</p>
@@ -244,7 +244,9 @@ export function PkPage() {
             onCancel={() => setGiveUp(null)}
           />
         </section>
-      ) : (
+      ) : null}
+      {/* After a result the next match can be set up right away (the result stays above). */}
+      {(!m || m.phase === "ended") && (
         <section className="space-y-4 rounded-2xl border border-brand-200 p-4">
           <h2 className="font-bold text-brand-900">① {t("newMatch")}</h2>
           {(["A", "B"] as const).map((side) => (
@@ -309,7 +311,7 @@ export function PkPage() {
               <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-brand-400 bg-brand-50 px-3 py-2 text-sm">
                 <span className="font-semibold text-brand-900">{t("invitedBy", { name: i.name, min: i.durationSec / 60 })}</span>
                 <span className="flex gap-1.5">
-                  <button type="button" disabled={busy || !!m} onClick={() => void call(`/api/pk/${i.id}`, "PATCH", { action: "accept" }, (c) => (c === "busy" ? t("busy") : c === "off" ? t("turnOnFirst") : t("inviteGone")))} className="btn-primary px-3 py-1 text-xs">
+                  <button type="button" disabled={busy || (!!m && m.phase !== "ended")} onClick={() => void call(`/api/pk/${i.id}`, "PATCH", { action: "accept" }, (c) => (c === "busy" ? t("busy") : c === "off" ? t("turnOnFirst") : t("inviteGone")))} className="btn-primary px-3 py-1 text-xs">
                     {t("accept")}
                   </button>
                   <button type="button" disabled={busy} onClick={() => void call(`/api/pk/${i.id}`, "PATCH", { action: "decline" }, () => t("inviteGone"))} className="btn-secondary px-3 py-1 text-xs">
