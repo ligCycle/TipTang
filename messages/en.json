@@ -306,7 +306,7 @@
     "verifyReceiver": "Wrong recipient",
     "verifyNotSlip": "Not a transfer slip",
     "verifyUnreadable": "Couldn't read slip",
-    "goSettings": "Open donate page settings",
+    "goSettings": "Go to profile and donate page",
     "obsTitle": "Donation alert on your stream",
     "obsDesc": "Add this URL to your live software on a computer — OBS, Streamlabs or TikTok LIVE Studio — to show tips on stream.",
     "obsAlertSection": "Alert card — pops when a tip arrives",
@@ -456,7 +456,7 @@
     "pkBadge": "PK: {side}"
   },
   "settings": {
-    "title": "Donate page settings",
+    "title": "Profile and donate page",
     "connectedAccounts": "Connected accounts",
     "connectedAccountsHint": "Link a social account to sign in faster.",
     "connected": "Connected",
@@ -1038,7 +1038,7 @@
     "groupAccount": "Account",
     "home": "Home",
     "tips": "Tips",
-    "donatePage": "Donate page settings",
+    "donatePage": "Profile and donate page",
     "features": "Features",
     "library": "Sounds & images",
     "account": "Account settings",
