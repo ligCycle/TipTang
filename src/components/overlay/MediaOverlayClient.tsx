@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import { Icon } from "@/components/Icon";
 import type { MediaFeed } from "@/lib/media-queue";
+import { useStage } from "@/components/overlay/Stage";
 
 const POLL_MS = 3000;
 /** A clip that hasn't started playing by then can't play here: next one. */
@@ -14,6 +15,7 @@ const AUTOPLAY_CHECK_MS = 2000;
 // The bits of the YouTube IFrame API used here.
 type YTPlayer = {
   playVideo(): void;
+  pauseVideo(): void;
   setVolume(v: number): void;
   getPlayerState(): number;
   destroy(): void;
@@ -74,9 +76,16 @@ function loadYouTube(): Promise<YTNamespace> {
  * Problems that belong to this source only (player errors 2/5/153, a browser
  * tab blocking autoplay) are never reported, so a broken preview can't skip
  * the request for the real OBS source.
+ * On the main link (via=main) it plays only while the stage is free: a popup
+ * pauses it (reported, so that time doesn't count) and it resumes after; with
+ * the stage busy nothing new starts (C1).
  */
-export function MediaOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
+export function MediaOverlayClient({ username, apiKey, via = null }: { username: string; apiKey: string; via?: "main" | null }) {
   const [feed, setFeed] = useState<MediaFeed | null>(null);
+  const stage = useStage();
+  const busyRef = useRef(stage.busy);
+  // Pause / resume of whatever is loaded (set by the load effect below).
+  const control = useRef<{ pause(): void; resume(): void } | null>(null);
   const [needsClick, setNeedsClick] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const player = useRef<YTPlayer | null>(null);
@@ -92,12 +101,15 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
   }, [needsClick]);
 
   const url = `/api/overlay/${username}/media?key=${encodeURIComponent(apiKey)}`;
+  const hasCurrent = useRef(false);
 
   useEffect(() => {
     let active = true;
     async function poll() {
       try {
-        const res = await fetch(url, { cache: "no-store" });
+        // hold=1: the stage is busy, so nothing new may start (its clock would run).
+        const q = via === "main" ? `&via=main${busyRef.current && !hasCurrent.current ? "&hold=1" : ""}` : "";
+        const res = await fetch(url + q, { cache: "no-store" });
         if (res.ok && active) setFeed((await res.json()) as MediaFeed);
       } catch {
         // Network blip: try again next tick.
@@ -109,9 +121,18 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       active = false;
       clearInterval(id);
     };
-  }, [url]);
+  }, [url, via]);
 
   const current = feed?.current ?? null;
+  useEffect(() => {
+    hasCurrent.current = current !== null;
+  }, [current]);
+  // A popup took the stage: pause; it's free again: resume.
+  useEffect(() => {
+    busyRef.current = stage.busy;
+    if (stage.busy) control.current?.pause();
+    else control.current?.resume();
+  }, [stage.busy]);
   const volume = feed?.volume ?? 70;
 
   // Player methods exist only once it is ready; onReady reads the newest volume.
@@ -134,6 +155,7 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
     player.current?.destroy();
     player.current = null;
     stopAudio(audio);
+    control.current = null;
     setVoiceStart(null);
     loadedId.current = current?.id ?? null;
     setNeedsClick(false);
@@ -141,20 +163,27 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
 
     const clip = current;
     const maxSec = clip.maxSec;
-    const report = (event: "started" | "ended" | "error") =>
+    const report = (event: "started" | "ended" | "error" | "paused" | "resumed") =>
       fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: clip.id, event }) }).catch(() => {});
     let started = false;
     let retried = false;
     let sourceBroken = false;
+    // Paused behind a popup on the main link: timers stop with it (C1).
+    let paused = false;
     // Never started (premiere, blocked in this region, endless ad): move on —
     // unless the problem is this source (broken player, blocked autoplay).
     let watchdog: ReturnType<typeof setTimeout> | null = null;
     const armWatchdog = () => {
       if (watchdog) clearTimeout(watchdog);
+      if (paused) return;
       watchdog = setTimeout(() => {
         if (!started && !sourceBroken && (window.obsstudio || !needsClickRef.current)) void report("error");
       }, WATCHDOG_MS);
       timers.current.push(watchdog);
+    };
+    const holdWatchdog = () => {
+      if (watchdog) clearTimeout(watchdog);
+      watchdog = null;
     };
     // Refreshed after the clip's time was already up (the server allows a
     // grace minute): it's done.
@@ -175,6 +204,41 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       el.preload = "auto";
       el.volume = volumeRef.current / 100;
       audio.current = el;
+      // The player enforces the 30 s limit itself (recorder files carry no
+      // reliable duration); time paused behind a popup doesn't count.
+      let leftMs = maxSec * 1000;
+      let armedAt = 0;
+      let limit: ReturnType<typeof setTimeout> | null = null;
+      const armLimit = () => {
+        armedAt = Date.now();
+        limit = setTimeout(() => {
+          stopAudio(audio);
+          void report("ended");
+        }, leftMs);
+        timers.current.push(limit);
+      };
+      control.current = {
+        pause() {
+          if (paused) return;
+          paused = true;
+          holdWatchdog();
+          if (limit) {
+            clearTimeout(limit);
+            limit = null;
+            leftMs = Math.max(0, leftMs - (Date.now() - armedAt));
+          }
+          el.pause();
+          void report("paused");
+        },
+        resume() {
+          if (!paused) return;
+          paused = false;
+          void report("resumed");
+          if (started) armLimit();
+          else armWatchdog();
+          void el.play().catch(() => {});
+        },
+      };
       armWatchdog();
       const begin = () => {
         if (started) return;
@@ -182,14 +246,7 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
         setNeedsClick(false);
         setVoiceStart(Date.now());
         void report("started");
-        // The player enforces the 30 s limit itself (recorder files carry no
-        // reliable duration).
-        timers.current.push(
-          setTimeout(() => {
-            stopAudio(audio);
-            void report("ended");
-          }, maxSec * 1000),
-        );
+        if (!paused) armLimit();
       };
       el.addEventListener("playing", begin);
       el.addEventListener("ended", () => {
@@ -213,6 +270,11 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
         }
         void report("error");
       });
+      // Handed out while a popup holds the stage: wait for it.
+      if (busyRef.current) {
+        control.current.pause();
+        return undefined;
+      }
       el.play().catch((e: unknown) => {
         // A normal browser tab blocks sound until a click; OBS doesn't. A
         // play cut short because this voice was skipped is not that.
@@ -222,11 +284,25 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       return undefined;
     }
 
+    control.current = {
+      pause() {
+        if (paused) return;
+        paused = true;
+        holdWatchdog();
+        if (ready.current) player.current?.pauseVideo();
+        void report("paused");
+      },
+      resume() {
+        if (!paused) return;
+        paused = false;
+        void report("resumed");
+        if (!started) armWatchdog();
+        if (ready.current) player.current?.playVideo();
+      },
+    };
+    if (busyRef.current) control.current.pause();
+
     const create = async () => {
-      // The IFrame API sends this page's address to YouTube (forigin): take
-      // the overlay key out of it first. OBS reloads its saved link, so it
-      // keeps working; the key stays in memory for the feed calls.
-      if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
       const YT = await loadYouTube();
       if (loadedId.current !== clip.id || !box.current) return;
       ready.current = false;
@@ -237,13 +313,22 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
       const el = document.createElement("div");
       box.current.appendChild(el);
       const startAt = clip.startSec + clip.elapsedSec;
+      // The IFrame API sends this page's address to YouTube (forigin): take
+      // the overlay key out of it while the player is made, and put it back
+      // once it's ready, so a refresh of this link still works (C6). The key
+      // stays in memory for the feed calls.
+      const query = window.location.search;
+      if (query) window.history.replaceState(null, "", window.location.pathname);
+      const restoreKey = () => {
+        if (query && !window.location.search) window.history.replaceState(null, "", window.location.pathname + query);
+      };
       player.current = new YT.Player(el, {
         host: "https://www.youtube-nocookie.com",
         videoId: clip.videoId ?? "",
         width: "640",
         height: "360",
         playerVars: {
-          autoplay: 1,
+          autoplay: paused ? 0 : 1,
           controls: 0,
           rel: 0,
           playsinline: 1,
@@ -253,8 +338,10 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
         },
         events: {
           onReady: () => {
+            restoreKey();
             ready.current = true;
             player.current?.setVolume(volumeRef.current);
+            if (paused) return;
             player.current?.playVideo();
             timers.current.push(
               setTimeout(() => {
@@ -264,6 +351,8 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
             );
           },
           onStateChange: (e) => {
+            // Started by itself while a popup holds the stage: wait.
+            if (e.data === PLAYING && paused) player.current?.pauseVideo();
             if (e.data === PLAYING && !started) {
               started = true;
               setNeedsClick(false);
@@ -298,8 +387,10 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
 
   const color = feed?.color && /^#[0-9a-fA-F]{6}$/.test(feed.color) ? feed.color : DEFAULT_COLOR;
 
+  // On the main link it's hidden (never unmounted) while a popup has the stage.
+  const hidden = !current || (stage.embedded && stage.busy);
   return (
-    <div className={`mx-auto w-[640px] ${current ? "" : "invisible"}`}>
+    <div className={`mx-auto w-[640px] ${hidden ? "invisible" : ""}`}>
       <div
         className={`relative w-[640px] overflow-hidden rounded-2xl ${current?.kind === "voice" ? "h-[120px] bg-[#120c16]/90" : "h-[360px] bg-black"}`}
       >
@@ -321,6 +412,7 @@ export function MediaOverlayClient({ username, apiKey }: { username: string; api
                   animation: voiceStart
                     ? `media-voice-bar ${Math.min(current.durationSec ?? current.maxSec, current.maxSec)}s linear forwards`
                     : undefined,
+                  animationPlayState: stage.embedded && stage.busy ? "paused" : "running",
                 }}
               />
             </div>

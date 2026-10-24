@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { OverlayClient } from "@/components/OverlayClient";
+import { MainStage } from "@/components/overlay/MainStage";
 import { activeSetMedia } from "@/lib/alert-sets-server";
 import { DEFAULT_ALERT_THEME, isAlertTheme } from "@/lib/alertThemes";
 
@@ -24,6 +24,7 @@ export default async function OverlayPage({
       alertStyle: true,
       alertTheme: true,
       ttsEnabled: true,
+      bossColor: true,
     },
   });
 
@@ -48,19 +49,23 @@ export default async function OverlayPage({
   // Tiers may use any library file.
   const libraryAll = assets.map((a) => a.url);
 
+  // The main link: alerts plus every other popup, one at a time (MainStage).
   return (
-    <OverlayClient
-      username={username}
-      apiKey={key}
-      test={test}
-      color={user.alertColor}
-      ttsEnabled={user.ttsEnabled}
-      normal={media.normal}
-      mediaVersion={media.version}
-      libraryAll={libraryAll}
-      tiers={tierRows}
-      alertStyle={user.alertStyle}
-      alertTheme={isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME}
+    <MainStage
+      bossColor={user.bossColor ?? user.alertColor}
+      alerts={{
+        username,
+        apiKey: key,
+        test,
+        color: user.alertColor,
+        ttsEnabled: user.ttsEnabled,
+        normal: media.normal,
+        mediaVersion: media.version,
+        libraryAll,
+        tiers: tierRows,
+        alertStyle: user.alertStyle,
+        alertTheme: isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME,
+      }}
     />
   );
 }

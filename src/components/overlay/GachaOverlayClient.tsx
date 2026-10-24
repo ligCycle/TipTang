@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { OverlayPull } from "@/lib/gacha-server";
 import type { Rarity } from "@/lib/gacha";
 import { DEFAULT_COLOR } from "@/lib/colors";
+import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
 
 const POLL_MS = 3000;
 /** Drop 0.8 s + shake 1.2 s, then the capsule opens. */
@@ -40,7 +41,8 @@ const SPARKS = [
  * The gacha OBS link: hidden until a pull arrives, then a capsule drops,
  * shakes and opens in the rarity colour to show "<fan> ได้ <prize>!", and
  * hides again. Asking for the next pull claims it for this source, so it only
- * asks when idle (waiting pulls stay on the server).
+ * asks when idle (waiting pulls stay on the server) — on the main link, only
+ * when the stage is free, then it waits for its turn.
  */
 export function GachaOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
   const [current, setCurrent] = useState<OverlayPull | null>(null);
@@ -49,15 +51,23 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
   const [color, setColor] = useState(DEFAULT_COLOR);
   const busy = useRef(false);
   const seen = useRef(new Set<string>());
+  const stage = useStage();
+  const stageRef = useRef(stage);
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
 
   useEffect(() => {
     let active = true;
+    let holding = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
+    const wait = (ms: number) => new Promise<void>((r) => timers.push(setTimeout(r, ms)));
     async function poll() {
-      if (busy.current) return;
+      if (busy.current || !stageRef.current.canClaim()) return;
       busy.current = true;
       try {
-        const res = await fetch(`/api/overlay/${username}/gacha?key=${encodeURIComponent(apiKey)}`, { cache: "no-store" });
+        const via = stageRef.current.embedded ? "&via=main" : "";
+        const res = await fetch(`/api/overlay/${username}/gacha?key=${encodeURIComponent(apiKey)}${via}`, { cache: "no-store" });
         const data = res.ok ? ((await res.json()) as { pull: OverlayPull | null; color: string | null }) : null;
         if (data?.color && /^#[0-9a-fA-F]{6}$/.test(data.color)) setColor(data.color);
         const pull = data?.pull;
@@ -66,6 +76,11 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
           return;
         }
         seen.current.add(pull.id);
+        // The tip's own alert goes first, then wait for the turn (C8).
+        if (stageRef.current.embedded) await wait(POPUP_DELAY_MS);
+        await stageRef.current.acquire("popup");
+        holding = true;
+        if (!active) return;
         setOpen(false);
         setCurrent(pull);
         timers.push(setTimeout(() => setOpen(true), OPEN_AT_MS));
@@ -74,6 +89,8 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
             setCurrent(null);
             setOpen(false);
             busy.current = false;
+            holding = false;
+            stageRef.current.release();
           }, OPEN_AT_MS + SHOW_MS),
         );
       } catch {
@@ -86,6 +103,7 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
       active = false;
       clearInterval(iv);
       timers.forEach(clearTimeout);
+      if (holding) stageRef.current.release();
     };
   }, [username, apiKey]);
 
@@ -93,7 +111,13 @@ export function GachaOverlayClient({ username, apiKey }: { username: string; api
   const r = RARITY[current.rarity] ?? RARITY.common;
 
   return (
-    <div className="relative mx-auto flex h-screen max-h-[500px] w-screen max-w-[500px] items-center justify-center overflow-hidden">
+    <div
+      className={
+        stage.embedded
+          ? "relative flex h-full w-full items-center justify-center overflow-hidden"
+          : "relative mx-auto flex h-screen max-h-[500px] w-screen max-w-[500px] items-center justify-center overflow-hidden"
+      }
+    >
       <style>{KEYFRAMES}</style>
       {!open ? (
         <div key={current.id} style={{ animation: "gacha-drop 0.8s ease-out both" }}>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import type { BossChain, BossFeed, BossKillView } from "@/lib/boss";
+import { useStage } from "@/components/overlay/Stage";
 
 const POLL_MS = 2000;
 const BANNER_MS = 5000;
@@ -22,8 +23,26 @@ function shade(hex: string, amount: number): string {
  * when damage goes up; a "ปิดบอส" banner for every boss defeated (5 s each,
  * one at a time), or one summary card for a long chain. Hidden when the card
  * is off or the list is empty.
+ * Modes: own link = card + banners; main link (via=main) = banners only, each
+ * on its own stage turn, claiming only while the stage is free (C3); bars link
+ * (via=bars) = the card, plus banners only while the main link isn't live.
  */
-export function BossOverlayClient({ username, apiKey, color }: { username: string; apiKey: string; color: string | null }) {
+export function BossOverlayClient({
+  username,
+  apiKey,
+  color,
+  via = null,
+}: {
+  username: string;
+  apiKey: string;
+  color: string | null;
+  via?: "main" | "bars" | null;
+}) {
+  const stage = useStage();
+  const stageRef = useRef(stage);
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
   const [feed, setFeed] = useState<BossFeed>({ phase: "off" });
   const [hit, setHit] = useState<{ key: number; amount: number } | null>(null);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -34,9 +53,14 @@ export function BossOverlayClient({ username, apiKey, color }: { username: strin
 
   useEffect(() => {
     let active = true;
+    let holding = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    function nextBanner() {
+    async function nextBanner() {
+      if (holding) {
+        holding = false;
+        stageRef.current.release();
+      }
       const b = queue.current.shift();
       if (!b || !active) {
         showing.current = false;
@@ -44,20 +68,32 @@ export function BossOverlayClient({ username, apiKey, color }: { username: strin
         return;
       }
       showing.current = true;
+      // On the main link every banner is a turn of its own.
+      await stageRef.current.acquire("popup");
+      holding = true;
+      if (!active) return;
       setBanner(b);
-      timers.push(setTimeout(nextBanner, BANNER_MS));
+      timers.push(setTimeout(() => void nextBanner(), BANNER_MS));
     }
 
     function enqueue(b: Banner) {
       if (played.current.has(b.key)) return;
       played.current.add(b.key);
       queue.current.push(b);
-      if (!showing.current) nextBanner();
+      if (!showing.current) void nextBanner();
     }
 
     async function poll() {
       try {
-        const res = await fetch(`/api/overlay/${username}/boss?key=${encodeURIComponent(apiKey)}`);
+        // Main: claim only while the stage is free and nothing is showing (C3);
+        // bars: the server claims only while the main link isn't live (S5).
+        const q =
+          via === "main"
+            ? `&via=main&claim=${stageRef.current.canClaim() && !showing.current ? 1 : 0}`
+            : via === "bars"
+              ? "&via=bars&claim=auto"
+              : "";
+        const res = await fetch(`/api/overlay/${username}/boss?key=${encodeURIComponent(apiKey)}${q}`);
         if (!res.ok) return;
         const data = (await res.json()) as BossFeed;
         if (!active) return;
@@ -80,13 +116,15 @@ export function BossOverlayClient({ username, apiKey, color }: { username: strin
       }
     }
     poll();
-    const iv = setInterval(poll, POLL_MS);
+    // The main link already runs several feeds: the boss asks less often there (C14).
+    const iv = setInterval(poll, via === "main" ? 4000 : POLL_MS);
     return () => {
       active = false;
       clearInterval(iv);
       timers.forEach(clearTimeout);
+      if (holding) stageRef.current.release();
     };
-  }, [username, apiKey]);
+  }, [username, apiKey, via]);
 
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   const card = {
@@ -96,6 +134,8 @@ export function BossOverlayClient({ username, apiKey, color }: { username: strin
   };
 
   if (!banner && feed.phase !== "live") return null;
+  // The main link only plays the banners; the card lives on the bars link.
+  if (via === "main" && !banner) return null;
 
   return (
     <div className="p-3">

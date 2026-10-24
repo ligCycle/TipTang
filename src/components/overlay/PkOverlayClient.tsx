@@ -59,7 +59,7 @@ export function PkOverlayClient({ username, apiKey }: { username: string; apiKey
   const winnerName = match.winner === "A" ? match.nameA : match.winner === "B" ? match.nameB : null;
 
   return (
-    <div className="mx-auto w-[800px] px-2 pt-2 text-white">
+    <div className="mx-auto w-full max-w-[800px] px-2 pt-2 text-white">
       <div className="rounded-2xl bg-[#120c16]/90 px-5 py-4 shadow-2xl">
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">

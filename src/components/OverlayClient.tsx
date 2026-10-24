@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Confetti } from "./Confetti";
 import { AlertCard } from "@/components/overlay/AlertCard";
+import { useStage } from "@/components/overlay/Stage";
 import { pickTier, resolveAlert, celebrates, pickNormal, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
 import { poolsForAmount, applyPick, type NormalMedia } from "@/lib/alert-sets";
 import type { TestAlert } from "@/lib/overlay-test";
@@ -39,6 +40,8 @@ export type FeedTip = {
 const BASE_DURATION_SEC = 7;
 /** Combo level from which alerts get the big celebration (the card adds a shake from level 5). */
 const COMBO_BIG_LEVEL = 3;
+/** On the main link an alert holds the stage at most this long, read-aloud included. */
+const MAX_TURN_MS = 30_000;
 
 export function OverlayClient({
   username,
@@ -76,6 +79,12 @@ export function OverlayClient({
   const lastSeen = useRef<string>(new Date().toISOString());
   const showing = useRef(false);
   const libraryUrls = useRef(new Set(libraryAll));
+  // The main link's stage (always free on a page of its own).
+  const stage = useStage();
+  const stageRef = useRef(stage);
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
   // Swapped in place when the creator switches or edits the active set.
   const normalRef = useRef(normal);
   const versionRef = useRef(mediaVersion);
@@ -112,8 +121,10 @@ export function OverlayClient({
   }, []);
 
   // Read the supporter's name + amount + message aloud via the TTS proxy.
-  function speak(a: Alert) {
-    if (!ttsEnabled) return;
+  // `done` runs when it has finished (or won't play), so the main link's stage
+  // isn't handed on mid-sentence.
+  function speak(a: Alert, done: () => void = () => {}) {
+    if (!ttsEnabled) return done();
     const parts = [a.name || "ผู้ไม่ประสงค์ออกนาม", "ทิป", String(a.amount), "บาท"];
     if (a.message) parts.push(a.message);
     const text = parts.join(" ").slice(0, 200);
@@ -122,17 +133,23 @@ export function OverlayClient({
       const tts = new Audio(
         `/api/tts?lang=th&u=${encodeURIComponent(username)}&key=${encodeURIComponent(apiKey)}&text=${encodeURIComponent(text)}`,
       );
-      tts.play().catch(() => {});
+      tts.addEventListener("ended", done, { once: true });
+      tts.addEventListener("error", done, { once: true });
+      tts.play().catch(done);
     } catch {
-      // ignore
+      done();
     }
   }
 
-  function pump() {
+  async function pump() {
     if (showing.current) return;
     const next = queue.current.shift();
     if (!next) return;
     showing.current = true;
+    // On the main link alerts take turns with the other popups (alerts first, C8).
+    await stageRef.current.acquire("alert");
+    let ttsDone: () => void = () => {};
+    const ttsFinished = new Promise<void>((r) => (ttsDone = r));
     setCurrent(next);
     // Random pick from the files switched on for normal alerts, then the
     // amount's tier overrides whatever it sets.
@@ -155,22 +172,30 @@ export function OverlayClient({
       try {
         const audio = new Audio(chosen.soundUrl);
         if (ttsEnabled) {
-          audio.addEventListener("ended", () => speak(next), { once: true });
-        }
+          audio.addEventListener("ended", () => speak(next, ttsDone), { once: true });
+        } else ttsDone();
         audio.play().catch(() => {
-          if (ttsEnabled) speak(next);
+          if (ttsEnabled) speak(next, ttsDone);
         });
       } catch {
-        if (ttsEnabled) speak(next);
+        speak(next, ttsDone);
       }
     } else if (!chosen.videoUrl) {
-      speak(next);
-    }
+      speak(next, ttsDone);
+    } else ttsDone();
     setTimeout(() => {
       setCurrent(null);
       setMedia(null);
-      showing.current = false;
-      setTimeout(pump, 600); // small gap before the next alert
+      const handOn = () => {
+        stageRef.current.release();
+        showing.current = false;
+        setTimeout(pump, 600); // small gap before the next alert
+      };
+      // Own link: as before. Main link: the turn ends once the read-aloud has
+      // too, at most 30 s after the alert began (C7).
+      if (!stageRef.current.embedded) return handOn();
+      const capMs = Math.max(0, MAX_TURN_MS - chosen.durationSec * 1000);
+      void Promise.race([ttsFinished, new Promise<void>((r) => setTimeout(r, capMs))]).then(handOn);
     }, chosen.durationSec * 1000);
   }
 
