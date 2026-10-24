@@ -42,6 +42,7 @@ import { fetchOEmbed, type OEmbedResult } from "@/lib/youtube";
 import { mediaQueueConfirmTx } from "@/lib/media-queue";
 import { lockCreator } from "@/lib/combo-server";
 import { forgetGachaPull, gachaSnapshot, gachaStartTx } from "@/lib/gacha-server";
+import { fanSide } from "@/lib/pk-server";
 import { getActiveSetId } from "@/lib/alert-sets-server";
 
 /**
@@ -179,6 +180,10 @@ export async function POST(req: Request) {
       spinPrice = wheel.price;
     } else spinDropped = true;
   }
+
+  // "PK": the side the fan chose, kept only for this creator's own running
+  // two-sides match (never an error — the tip itself is unaffected).
+  const pk = await fanSide(creator.id, form.get("pkMatchId"), form.get("pkSide"), new Date());
 
   // "กาชา" (src/lib/gacha.ts): `gachaSeen` is the box version the fan saw.
   // The pull stands if that is still the box (K1), the card is on and the
@@ -404,6 +409,7 @@ export async function POST(req: Request) {
         pickedSoundId,
         spinWheelId,
         ...(gachaBox ? { gachaPull: true, gachaBox: gachaBox.box } : {}),
+        ...(pk ?? {}),
         wishItemId,
         ...(mediaVideoId
           ? {

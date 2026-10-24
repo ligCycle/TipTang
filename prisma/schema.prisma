@@ -590,6 +590,12 @@ model User {
   gachaRulesAcceptedAt DateTime?
   gachaPrizes          GachaPrize[]
   gachaPulls           GachaPull[]
+  // Feature hub card "PK" (src/lib/pk.ts): matches are started from its page.
+  pkEnabled            Boolean       @default(false)
+  // Creator vs creator: refuse invitations from other creators.
+  pkInvitesOff         Boolean       @default(false)
+  pkOwned              PkMatch[]     @relation("PkOwner")
+  pkOpposed            PkMatch[]     @relation("PkOpponent")
   shopItems            ShopItem[]
   shopOrders           ShopOrder[]
 }
@@ -657,6 +663,9 @@ model Tip {
   gachaPull       Boolean       @default(false)
   gachaBox        Json?
   gachaResult     GachaPull?
+  // "PK": the match and side ("A" | "B") the fan chose (no FK; validated on create).
+  pkMatchId       String?
+  pkSide          String?
   status          TipStatus     @default(PENDING)
   isMessagePublic Boolean       @default(true)
   // Bank transaction reference from slip verification — unique to block reuse
@@ -678,6 +687,8 @@ model Tip {
   @@index([spinWheelId])
   @@index([creatorId, comboEligible, confirmedAt])
   @@index([wishItemId])
+  @@index([pkMatchId, status])
+  @@index([creatorId, status, createdAt])
 }
 
 // "กาชา" prize: rarity "common" | "rare" | "epic". Soft-deleted so past pulls
@@ -719,4 +730,43 @@ model GachaPull {
   createdAt   DateTime   @default(now())
 
   @@index([userId, status])
+}
+
+enum PkStatus {
+  // Creator vs creator invitation waiting for an answer.
+  PENDING
+  ACTIVE
+  ENDED
+  CANCELLED
+  DECLINED
+}
+
+// A PK match (spec docs/superpowers/specs/2026-10-24-pk-design.md): "solo" =
+// two sides in one stream (fans pick a side), "duo" = creator vs creator.
+// Names are snapshots so history survives account deletion (users SetNull).
+model PkMatch {
+  id          String    @id @default(cuid())
+  kind        String
+  ownerId     String?
+  owner       User?     @relation("PkOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  opponentId  String?
+  opponent    User?     @relation("PkOpponent", fields: [opponentId], references: [id], onDelete: SetNull)
+  status      PkStatus  @default(ACTIVE)
+  nameA       String
+  nameB       String
+  colorA      String
+  colorB      String
+  durationSec Int
+  // Confirms in flight still count this long after the end (60 s auto-confirm, 300 s manual).
+  graceSec    Int       @default(60)
+  startedAt   DateTime?
+  endsAt      DateTime?
+  endedAt     DateTime?
+  // Frozen result (whole baht).
+  totalA      Int?
+  totalB      Int?
+  createdAt   DateTime  @default(now())
+
+  @@index([ownerId, status])
+  @@index([opponentId, status])
 }

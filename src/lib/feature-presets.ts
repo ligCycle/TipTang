@@ -18,6 +18,8 @@ export type FeatureFlags = {
   voiceEnabled: boolean;
   /** Gacha pull on the donate page (not part of any preset; needs its own rules). */
   gachaEnabled: boolean;
+  /** PK matches (not part of any preset). */
+  pkEnabled: boolean;
 };
 
 export const PRESETS = {

@@ -335,3 +335,41 @@ ALTER TABLE "GachaPull" ADD CONSTRAINT "GachaPull_tipId_fkey" FOREIGN KEY ("tipI
 
 ALTER TABLE "GachaPrize" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "GachaPull" ENABLE ROW LEVEL SECURITY;
+
+-- Project 9: PK
+CREATE TYPE "PkStatus" AS ENUM ('PENDING', 'ACTIVE', 'ENDED', 'CANCELLED', 'DECLINED');
+
+ALTER TABLE "User" ADD COLUMN "pkEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "pkInvitesOff" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "Tip" ADD COLUMN "pkMatchId" TEXT;
+ALTER TABLE "Tip" ADD COLUMN "pkSide" TEXT;
+CREATE INDEX "Tip_pkMatchId_status_idx" ON "Tip"("pkMatchId", "status");
+CREATE INDEX "Tip_creatorId_status_createdAt_idx" ON "Tip"("creatorId", "status", "createdAt");
+
+CREATE TABLE "PkMatch" (
+    "id" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "ownerId" TEXT,
+    "opponentId" TEXT,
+    "status" "PkStatus" NOT NULL DEFAULT 'ACTIVE',
+    "nameA" TEXT NOT NULL,
+    "nameB" TEXT NOT NULL,
+    "colorA" TEXT NOT NULL,
+    "colorB" TEXT NOT NULL,
+    "durationSec" INTEGER NOT NULL,
+    "graceSec" INTEGER NOT NULL DEFAULT 60,
+    "startedAt" TIMESTAMP(3),
+    "endsAt" TIMESTAMP(3),
+    "endedAt" TIMESTAMP(3),
+    "totalA" INTEGER,
+    "totalB" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PkMatch_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "PkMatch_ownerId_status_idx" ON "PkMatch"("ownerId", "status");
+CREATE INDEX "PkMatch_opponentId_status_idx" ON "PkMatch"("opponentId", "status");
+ALTER TABLE "PkMatch" ADD CONSTRAINT "PkMatch_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "PkMatch" ADD CONSTRAINT "PkMatch_opponentId_fkey" FOREIGN KEY ("opponentId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "PkMatch" ENABLE ROW LEVEL SECURITY;

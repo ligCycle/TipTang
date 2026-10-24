@@ -184,3 +184,41 @@ export async function readComboTest(userId: string, now: number = Date.now()): P
   }
   return hit.value;
 }
+
+/**
+ * "ทดสอบ PK บนจอ OBS": a scripted sample match on the PK link. Only the start
+ * time is stored; the feed plays it by elapsed time (15 s race, then the result).
+ */
+export const PK_TEST_MS = 20_000;
+export type PkTest = { id: string; startedAt: number };
+
+const pkKeyFor = (userId: string) => `tiptang/pktest/${userId}`;
+const pkMemory = g as unknown as { __tiptangPkTests?: Map<string, { value: PkTest; expiresAt: number }> };
+const pkStore = (pkMemory.__tiptangPkTests ??= new Map());
+
+export async function pushPkTest(userId: string, now: number = Date.now()): Promise<PkTest> {
+  const value: PkTest = { id: `test_${randomUUID()}`, startedAt: now };
+  if (redis) {
+    await redis.set(pkKeyFor(userId), value, { px: PK_TEST_MS });
+  } else {
+    pkStore.set(pkKeyFor(userId), { value, expiresAt: now + PK_TEST_MS });
+  }
+  return value;
+}
+
+export async function readPkTest(userId: string, now: number = Date.now()): Promise<PkTest | null> {
+  if (redis) {
+    try {
+      return (await redis.get<PkTest>(pkKeyFor(userId))) ?? null;
+    } catch {
+      return null;
+    }
+  }
+  const hit = pkStore.get(pkKeyFor(userId));
+  if (!hit) return null;
+  if (hit.expiresAt <= now) {
+    pkStore.delete(pkKeyFor(userId));
+    return null;
+  }
+  return hit.value;
+}

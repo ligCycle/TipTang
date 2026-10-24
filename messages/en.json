@@ -978,7 +978,9 @@
     "f_voice": "Voice messages",
     "d_voice": "Fans record a short voice message with their tip to play on stream — uses the clip requests OBS link (in its settings).",
     "f_gacha": "Gacha",
-    "d_gacha": "Fans pull a capsule from 3 prize rarities with their tip — odds shown before they pay, revealed on stream."
+    "d_gacha": "Fans pull a capsule from 3 prize rarities with their tip — odds shown before they pay, revealed on stream.",
+    "f_pk": "PK",
+    "d_pk": "Two sides race for tips against the clock — fans pick a side when they tip; the stream shows the bar and the winner."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",
@@ -1276,5 +1278,30 @@
     "rule3": "I'm responsible for delivering the prizes that come out.",
     "rulesTermsLink": "Read the random features terms",
     "rulesAccept": "Accept and turn on"
+  },
+  "pkPage": {
+    "howItWorks": "Start a timed PK with two sides. While it runs, fans choose which side their tip goes to on the donate page. Confirmed tips sent during the match count. The stream shows a two-colour bar, the totals and the time left.",
+    "graceNote": "When time is up, tips still being confirmed count for {min} more minute(s), then the result is final · tips confirmed after that don't count.",
+    "saveFailed": "Couldn't save — try again.",
+    "busy": "A PK is already running — finish it before starting another.",
+    "turnOnFirst": "Turn PK on first (switch above).",
+    "live": "Live",
+    "result": "Result",
+    "graceNow": "Time's up · counting tips being confirmed",
+    "draw": "Draw",
+    "wins": "{name} wins",
+    "endNow": "End now",
+    "newMatch": "Start a new PK",
+    "colorOf": "{side} colour",
+    "nameA": "First side name",
+    "nameB": "Second side name",
+    "duration": "Length",
+    "minutes": "{n} min",
+    "start": "Start PK",
+    "obsLink": "OBS link",
+    "testOnObs": "Test on stream",
+    "testSent": "Sample PK sent to the stream (20 seconds)",
+    "history": "Past results",
+    "cancelled": "Cancelled"
   }
 }

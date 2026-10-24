@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/ratelimit";
 import { forgetSessionVersion } from "@/lib/account-security";
 import { deleteFile, deleteSlip } from "@/lib/storage";
+import { cancelAllFor } from "@/lib/pk-server";
 
 const schema = z.object({
   username: z.string().trim().min(1).max(60),
@@ -66,6 +67,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "wrong_password" }, { status: 400 });
     }
   }
+
+  // PK matches with this creator stop now with their totals (the other side
+  // keeps the history; the user rows are SetNull).
+  await cancelAllFor(user.id, new Date());
 
   // Orders reference shop items with ON DELETE RESTRICT, so remove them
   // before the user row cascades to the items.
