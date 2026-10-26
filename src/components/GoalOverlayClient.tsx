@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GoalFullMoment, GoalView } from "@/components/overlay/GoalView";
 import type { GoalFeed, GoalFeedItem } from "@/lib/wishlist";
+import { useLinkFeed } from "@/components/overlay/LinkFeed";
 
 const POLL_MS = 5000;
 const ROTATE_MS = 8000;
@@ -34,6 +35,7 @@ export function GoalOverlayClient({
   const moments = useRef<GoalFeedItem[]>([]);
   const showing = useRef(false);
   const latest = useRef<GoalFeed | null>(null);
+  const linkFeed = useLinkFeed();
 
   useEffect(() => {
     let active = true;
@@ -55,28 +57,29 @@ export function GoalOverlayClient({
       try {
         const res = await fetch(`/api/overlay/${username}/goal?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`);
         if (!res.ok) return;
-        const data: GoalFeed = await res.json();
-        if (!active) return;
-        const before = prev.current;
-        if (before && data.type === "multi") {
-          for (const i of data.items) {
-            const was = before.get(i.id);
-            if (was && i.raised > was.raised) jumpTo.current = i.id;
-            if (was && !was.full && i.full) moments.current.push(i);
-          }
-          if (!showing.current && moments.current.length > 0) nextMoment();
-        }
-        // Only track items while the goal is "หลายชิ้น": a switch from single
-        // starts clean instead of announcing old money as new.
-        prev.current = data.type === "multi" ? new Map(data.items.map((i) => [i.id, { raised: i.raised, full: i.full }])) : null;
-        latest.current = data;
-        setGoal(data);
+        apply((await res.json()) as GoalFeed);
       } catch {
         // ignore transient network errors
       }
     }
-    poll();
-    const iv = setInterval(poll, POLL_MS);
+
+    function apply(data: GoalFeed) {
+      if (!active) return;
+      const before = prev.current;
+      if (before && data.type === "multi") {
+        for (const i of data.items) {
+          const was = before.get(i.id);
+          if (was && i.raised > was.raised) jumpTo.current = i.id;
+          if (was && !was.full && i.full) moments.current.push(i);
+        }
+        if (!showing.current && moments.current.length > 0) nextMoment();
+      }
+      // Only track items while the goal is "หลายชิ้น": a switch from single
+      // starts clean instead of announcing old money as new.
+      prev.current = data.type === "multi" ? new Map(data.items.map((i) => [i.id, { raised: i.raised, full: i.full }])) : null;
+      latest.current = data;
+      setGoal(data);
+    }
     const rot = setInterval(() => {
       const g = latest.current;
       if (!g || g.type !== "multi" || g.display !== "rotate" || g.items.length === 0) return;
@@ -84,13 +87,28 @@ export function GoalOverlayClient({
       jumpTo.current = null;
       setRotateIndex((n) => (target >= 0 ? target : n + 1));
     }, ROTATE_MS);
+    // Bars link: the feed rides on the link's one poll (src/components/overlay/LinkFeed.tsx).
+    if (via === "bars" && linkFeed) {
+      const off = linkFeed.on("feeds", (f) => {
+        const d = (f as { goal?: GoalFeed | null } | null)?.goal;
+        if (d) apply(d);
+      });
+      return () => {
+        active = false;
+        off();
+        clearInterval(rot);
+        timers.forEach(clearTimeout);
+      };
+    }
+    poll();
+    const iv = setInterval(poll, POLL_MS);
     return () => {
       active = false;
       clearInterval(iv);
       clearInterval(rot);
       timers.forEach(clearTimeout);
     };
-  }, [username, apiKey, via]);
+  }, [username, apiKey, via, linkFeed]);
 
   if (!goal || !goal.enabled) return null;
   return (

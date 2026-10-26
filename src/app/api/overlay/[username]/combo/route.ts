@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { overlayUser, touchOverlaySeen } from "@/lib/overlay-feed";
-import { comboFeed, touchComboSeen } from "@/lib/combo-server";
 import { touchOwnBar } from "@/lib/obs-stage-server";
+import { comboJson } from "@/lib/link-feed-server";
 
 // Polled by the combo OBS link. Polling is also what makes tips count: combos
 // only run while this link is open (src/lib/combo-server.ts).
@@ -17,13 +16,6 @@ export async function GET(
   }
   const now = new Date();
   touchOverlaySeen(user);
-  await touchOwnBar(req, user, "comboLinkSeenAt", new Date());
-  const combo = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { comboEnabled: true, comboOverlaySeenAt: true },
-  });
-  await touchComboSeen(user.id, combo?.comboOverlaySeenAt ?? null, now);
-  // Card off: nothing runs, but the dashboard's test still plays.
-  if (!combo?.comboEnabled) return NextResponse.json(await comboFeed(user.id, now, { testOnly: true }));
-  return NextResponse.json(await comboFeed(user.id, now));
+  await touchOwnBar(req, user, "comboLinkSeenAt", now);
+  return NextResponse.json(await comboJson(user.id, now));
 }

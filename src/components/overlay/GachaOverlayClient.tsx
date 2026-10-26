@@ -5,6 +5,7 @@ import type { OverlayPull } from "@/lib/gacha-server";
 import type { Rarity } from "@/lib/gacha";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
+import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
 
 const POLL_MS = 3000;
 /** Drop 0.8 s + shake 1.2 s, then the capsule opens. */
@@ -65,6 +66,7 @@ export function GachaOverlayClient({
   const busy = useRef(false);
   const seen = useRef(new Set<string>());
   const stage = useStage();
+  const linkFeed = useLinkFeed();
   const stageRef = useRef(stage);
   useEffect(() => {
     stageRef.current = stage;
@@ -114,14 +116,19 @@ export function GachaOverlayClient({
       }
     }
     void poll();
-    const iv = setInterval(poll, POLL_MS);
+    // Main link: ask when its poll says a pull waits, and now and then anyway.
+    const iv = setInterval(poll, linkFeed ? IDLE_POLL_MS : POLL_MS);
+    const offHot = linkFeed?.on("hot", (h) => {
+      if ((h as { gacha?: boolean } | null)?.gacha) void poll();
+    });
     return () => {
       active = false;
       clearInterval(iv);
+      offHot?.();
       timers.forEach(clearTimeout);
       if (holding) stageRef.current.release();
     };
-  }, [username, apiKey]);
+  }, [username, apiKey, linkFeed]);
 
   if (!current) return null;
   return <GachaReveal pull={current} open={open} color={color} embedded={stage.embedded} />;

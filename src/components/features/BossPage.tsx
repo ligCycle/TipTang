@@ -67,8 +67,10 @@ export function BossPage() {
   useEffect(() => {
     json("/api/boss").then((r) => r.data && setData(r.data));
     // Keep the connection badge and the run's progress fresh without touching edits.
+    // Not while the tab is hidden (every request is billed).
     const id = setInterval(
       () =>
+        !document.hidden &&
         json("/api/boss").then((r) => {
           const d = r.data;
           if (!d) return;

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Confetti } from "./Confetti";
 import { AlertCard } from "@/components/overlay/AlertCard";
 import { useStage } from "@/components/overlay/Stage";
+import { useLinkFeed } from "@/components/overlay/LinkFeed";
 import { pickTier, resolveAlert, celebrates, pickNormal, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
 import { poolsForAmount, applyPick, type NormalMedia } from "@/lib/alert-sets";
 import type { TestAlert } from "@/lib/overlay-test";
@@ -81,6 +82,7 @@ export function OverlayClient({
   const libraryUrls = useRef(new Set(libraryAll));
   // The main link's stage (always free on a page of its own).
   const stage = useStage();
+  const linkFeed = useLinkFeed();
   const stageRef = useRef(stage);
   useEffect(() => {
     stageRef.current = stage;
@@ -255,23 +257,39 @@ export function OverlayClient({
     }
 
     let active = true;
+    const cursorQuery = () => `after=${encodeURIComponent(lastSeen.current)}&v=${encodeURIComponent(versionRef.current)}`;
+    function apply(raw: unknown) {
+      const data = raw as { tips?: FeedTip[]; test?: TestAlert | null; cursor?: string; media?: { version: string; normal: NormalMedia } } | null;
+      if (!data) return;
+      // The server's cursor also jumps forward while alerts are switched off,
+      // so tips from that time never replay when they come back on.
+      if (data.media && typeof data.media.version === "string") {
+        normalRef.current = data.media.normal;
+        versionRef.current = data.media.version;
+      }
+      if (typeof data.cursor === "string" && data.cursor > lastSeen.current) {
+        lastSeen.current = data.cursor;
+      }
+      take(data.tips ?? [], data.test ?? null);
+    }
+
+    // Main link: the alerts ride on the link's one poll (src/components/overlay/LinkFeed.tsx).
+    if (linkFeed) {
+      const offQuery = linkFeed.addQuery(cursorQuery);
+      const offAlerts = linkFeed.on("alerts", apply);
+      return () => {
+        active = false;
+        offQuery();
+        offAlerts();
+        if (testIv) clearInterval(testIv);
+      };
+    }
+
     async function poll() {
       try {
-        const res = await fetch(
-          `/api/overlay/${username}?key=${encodeURIComponent(apiKey)}&after=${encodeURIComponent(lastSeen.current)}&v=${encodeURIComponent(versionRef.current)}`,
-        );
+        const res = await fetch(`/api/overlay/${username}?key=${encodeURIComponent(apiKey)}&${cursorQuery()}`);
         if (!res.ok) return;
-        const data = await res.json();
-        // The server's cursor also jumps forward while alerts are switched off,
-        // so tips from that time never replay when they come back on.
-        if (data.media && typeof data.media.version === "string") {
-          normalRef.current = data.media.normal;
-          versionRef.current = data.media.version;
-        }
-        if (typeof data.cursor === "string" && data.cursor > lastSeen.current) {
-          lastSeen.current = data.cursor;
-        }
-        take(data.tips ?? [], data.test ?? null);
+        apply(await res.json());
       } catch {
         // ignore transient network errors
       }

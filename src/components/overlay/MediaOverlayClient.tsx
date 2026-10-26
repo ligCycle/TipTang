@@ -5,6 +5,7 @@ import { DEFAULT_COLOR } from "@/lib/colors";
 import { Icon } from "@/components/Icon";
 import type { MediaFeed } from "@/lib/media-queue";
 import { useStage } from "@/components/overlay/Stage";
+import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
 
 const POLL_MS = 3000;
 /** A clip that hasn't started playing by then can't play here: next one. */
@@ -83,6 +84,7 @@ function loadYouTube(): Promise<YTNamespace> {
 export function MediaOverlayClient({ username, apiKey, via = null }: { username: string; apiKey: string; via?: "main" | null }) {
   const [feed, setFeed] = useState<MediaFeed | null>(null);
   const stage = useStage();
+  const linkFeed = useLinkFeed();
   const busyRef = useRef(stage.busy);
   // Pause / resume of whatever is loaded (set by the load effect below).
   const control = useRef<{ pause(): void; resume(): void; dispose(): void } | null>(null);
@@ -115,12 +117,21 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
       }
     }
     void poll();
-    const id = setInterval(poll, POLL_MS);
+    // Main link: ask while its poll says something plays or waits, once more
+    // when that stops (so a finished clip clears), and now and then anyway.
+    const id = setInterval(poll, linkFeed ? IDLE_POLL_MS : POLL_MS);
+    let wasHot = false;
+    const offHot = linkFeed?.on("hot", (h) => {
+      const hot = Boolean((h as { media?: boolean } | null)?.media);
+      if (hot || wasHot) void poll();
+      wasHot = hot;
+    });
     return () => {
       active = false;
       clearInterval(id);
+      offHot?.();
     };
-  }, [url, via]);
+  }, [url, via, linkFeed]);
 
   const current = feed?.current ?? null;
   // A popup took the stage: pause; it's free again: resume.

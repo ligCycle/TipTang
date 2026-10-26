@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { readBossTest, readGachaTest, readWheelTest } from "@/lib/overlay-test";
-import { barCards, ownLinkLive, stageCards, type OwnLinks, type StageLink } from "@/lib/obs-stage";
+import { barCards, ownLinkLive, stageCards, type BarCard, type MainCard, type OwnLinks, type StageLink } from "@/lib/obs-stage";
 
 /** Which page polled a feed: the main link, the bars link, or the feature's own link (null). */
 export type Via = StageLink | null;
@@ -67,7 +67,11 @@ export async function ownLinkLiveFor(userId: string, feature: keyof OwnLinks, no
 }
 
 /** The stage poll: which clients the main or bars link mounts; touches that link's seen time. */
-export async function stageFor(userId: string, link: StageLink, now: Date) {
+type MainStageAnswer = { cards: Record<MainCard, boolean>; tests: OwnLinks };
+type BarsStageAnswer = { cards: Record<BarCard, boolean>; tests: null };
+export async function stageFor(userId: string, link: "main", now: Date): Promise<MainStageAnswer | null>;
+export async function stageFor(userId: string, link: "bars", now: Date): Promise<BarsStageAnswer | null>;
+export async function stageFor(userId: string, link: StageLink, now: Date): Promise<MainStageAnswer | BarsStageAnswer | null> {
   const u = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -105,18 +109,19 @@ export async function stageFor(userId: string, link: StageLink, now: Date) {
     pk: u.pkEnabled,
   };
   if (link === "bars") {
-    return barCards({
+    const cards = barCards({
       goal: ownLinkLive(u.goalLinkSeenAt, now),
       timer: ownLinkLive(u.timerLinkSeenAt, now),
       combo: ownLinkLive(u.comboLinkSeenAt, now),
       pk: ownLinkLive(u.pkLinkSeenAt, now),
       boss: ownLinkLive(u.bossLinkSeenAt, now),
     });
+    return { cards, tests: null };
   }
   const t = now.getTime();
   const [wheel, gacha, boss] = await Promise.all([readWheelTest(userId, t), readGachaTest(userId, t), readBossTest(userId, t)]);
   // A pending test mounts its client even with the card off (C10). Media tests
   // play only with the card on, so they need no flag here.
   const tests = { wheel: Boolean(wheel), gacha: Boolean(gacha), media: false, boss: Boolean(boss) };
-  return stageCards(flags, ownLinksOf(u, now), tests, "main");
+  return { cards: stageCards(flags, ownLinksOf(u, now), tests, "main"), tests };
 }

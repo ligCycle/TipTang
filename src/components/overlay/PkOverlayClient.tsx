@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PkFeed } from "@/lib/pk-server";
 import { barShare, remainingSec } from "@/lib/pk";
+import { useLinkFeed } from "@/components/overlay/LinkFeed";
 
 const LIVE_POLL_MS = 2000;
 const IDLE_POLL_MS = 5000;
@@ -32,35 +33,51 @@ export function PkOverlayClient({
   const skew = useRef(0);
   // "Now" on the server clock, moved forward by the local timer.
   const [serverNow, setServerNow] = useState(0);
+  const linkFeed = useLinkFeed();
 
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    function apply(next: PkFeed | null) {
+      if (next) {
+        skew.current = new Date(next.serverNow).getTime() - Date.now();
+        setServerNow(new Date(next.serverNow).getTime());
+      }
+      if (active) setMatch(next);
+    }
     async function poll() {
       let next: PkFeed | null = null;
       try {
         const res = await fetch(`/api/overlay/${username}/pk?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`, { cache: "no-store" });
         if (res.ok) {
           next = ((await res.json()) as { match: PkFeed | null }).match;
-          if (next) {
-            skew.current = new Date(next.serverNow).getTime() - Date.now();
-            setServerNow(new Date(next.serverNow).getTime());
-          }
-          if (active) setMatch(next);
+          apply(next);
         }
       } catch {
         // try again next tick
       }
       if (active) timer = setTimeout(poll, next ? LIVE_POLL_MS : IDLE_POLL_MS);
     }
-    void poll();
     const tick = setInterval(() => setServerNow(Date.now() + skew.current), 500);
+    // Bars link: the match rides on the link's one poll (src/components/overlay/LinkFeed.tsx).
+    if (via === "bars" && linkFeed) {
+      const off = linkFeed.on("feeds", (f) => {
+        const d = (f as { pk?: { match: PkFeed | null } | null } | null)?.pk;
+        if (d) apply(d.match);
+      });
+      return () => {
+        active = false;
+        off();
+        clearInterval(tick);
+      };
+    }
+    void poll();
     return () => {
       active = false;
       if (timer) clearTimeout(timer);
       clearInterval(tick);
     };
-  }, [username, apiKey, via]);
+  }, [username, apiKey, via, linkFeed]);
 
   if (!match) return null;
   const left = remainingSec(new Date(match.endsAt), new Date(serverNow || new Date(match.serverNow).getTime()));

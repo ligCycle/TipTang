@@ -8,9 +8,11 @@ import { GachaOverlayClient } from "@/components/overlay/GachaOverlayClient";
 import { BossOverlayClient } from "@/components/overlay/BossOverlayClient";
 import { FitBox, StageProvider, useStage } from "@/components/overlay/Stage";
 import { ObsSetupHint } from "@/components/overlay/ObsSetupHint";
+import { LinkFeedProvider, useLinkFeedPoll } from "@/components/overlay/LinkFeed";
 import type { MainCard } from "@/lib/obs-stage";
 
-const STAGE_POLL_MS = 5000;
+/** The main link's one poll: also the alerts' pace, as before. */
+const STAGE_POLL_MS = 3000;
 const NONE: Record<MainCard, boolean> = { alerts: true, media: false, wheel: false, gacha: false, boss: false };
 
 /**
@@ -40,58 +42,51 @@ export function MainStage({
   const [onWheel, onGacha, onBoss] = useMemo(() => [busyFor("wheel"), busyFor("gacha"), busyFor("boss")], [busyFor]);
   const show = (k: MainCard) => cards[k] || Boolean(busy[k]);
 
-  useEffect(() => {
-    if (test || !apiKey) return;
-    let active = true;
-    async function poll() {
-      try {
-        const res = await fetch(`/api/overlay/${username}/stage?key=${encodeURIComponent(apiKey)}&link=main`, { cache: "no-store" });
-        if (!res.ok) return;
-        const d = (await res.json()) as { cards: Record<MainCard, boolean> | null };
-        if (active && d.cards) {
-          const next = d.cards;
-          // Same answer as last time: keep the object so nothing re-renders.
-          setCards((cur) => ((Object.keys(next) as MainCard[]).every((k) => cur[k] === next[k]) ? cur : next));
-        }
-      } catch {
-        // try again next tick
-      }
-    }
-    void poll();
-    const id = setInterval(poll, STAGE_POLL_MS);
-    return () => {
-      active = false;
-      clearInterval(id);
-    };
-  }, [username, apiKey, test]);
+  // The link's one poll (cards, hot clients, alerts); the preview never polls.
+  const feed = useLinkFeedPoll(
+    test || !apiKey ? null : `/api/overlay/${username}/stage?key=${encodeURIComponent(apiKey)}&link=main`,
+    STAGE_POLL_MS,
+  );
+  useEffect(
+    () =>
+      feed.on("cards", (d) => {
+        const next = d as Record<MainCard, boolean> | null;
+        if (!next) return;
+        // Same answer as last time: keep the object so nothing re-renders.
+        setCards((cur) => ((Object.keys(next) as MainCard[]).every((k) => cur[k] === next[k]) ? cur : next));
+      }),
+    [feed],
+  );
 
   if (test) return <OverlayClient {...alerts} />;
 
   return (
-    <StageProvider>
-      <MainHint />
-      {cards.media && (
-        <FitBox w={640} h={480} z={5}>
-          <MediaOverlayClient username={username} apiKey={apiKey} via="main" />
-        </FitBox>
-      )}
-      {show("wheel") && (
-        <FitBox w={600} h={600} z={20}>
-          <WheelOverlayClient username={username} apiKey={apiKey} onBusy={onWheel} />
-        </FitBox>
-      )}
-      {show("gacha") && (
-        <FitBox w={500} h={500} z={20}>
-          <GachaOverlayClient username={username} apiKey={apiKey} onBusy={onGacha} />
-        </FitBox>
-      )}
-      {show("boss") && (
-        <FitBox w={600} h={260} z={20}>
-          <BossOverlayClient username={username} apiKey={apiKey} color={bossColor} via="main" onBusy={onBoss} />
-        </FitBox>
-      )}
-      <OverlayClient {...alerts} />
-    </StageProvider>
+    <LinkFeedProvider value={feed}>
+      <StageProvider>
+        <MainHint />
+        {cards.media && (
+          <FitBox w={640} h={480} z={5}>
+            <MediaOverlayClient username={username} apiKey={apiKey} via="main" />
+          </FitBox>
+        )}
+        {show("wheel") && (
+          <FitBox w={600} h={600} z={20}>
+            <WheelOverlayClient username={username} apiKey={apiKey} onBusy={onWheel} />
+          </FitBox>
+        )}
+        {show("gacha") && (
+          <FitBox w={500} h={500} z={20}>
+            <GachaOverlayClient username={username} apiKey={apiKey} onBusy={onGacha} />
+          </FitBox>
+        )}
+        {show("boss") && (
+          <FitBox w={600} h={260} z={20}>
+            <BossOverlayClient username={username} apiKey={apiKey} color={bossColor} via="main" onBusy={onBoss} />
+          </FitBox>
+        )}
+        <OverlayClient {...alerts} />
+      </StageProvider>
+    </LinkFeedProvider>
   );
 }
 

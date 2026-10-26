@@ -46,7 +46,8 @@ export function SpinTodo({
 
   useEffect(() => {
     fetchTodo(tab).then(apply);
-    const id = setInterval(() => fetchTodo(tab).then(apply), REFRESH_MS);
+    // Not while the tab is hidden (every request is billed).
+    const id = setInterval(() => !document.hidden && fetchTodo(tab).then(apply), REFRESH_MS);
     return () => clearInterval(id);
   }, [tab, apply]);
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import type { BossChain, BossFeed, BossKillView } from "@/lib/boss";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
+import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
 
 const POLL_MS = 2000;
 const BANNER_MS = 5000;
@@ -47,6 +48,7 @@ export function BossOverlayClient({
     onBusyRef.current = onBusy;
   }, [onBusy]);
   const stage = useStage();
+  const linkFeed = useLinkFeed();
   const stageRef = useRef(stage);
   useEffect(() => {
     stageRef.current = stage;
@@ -108,36 +110,60 @@ export function BossOverlayClient({
               : "";
         const res = await fetch(`/api/overlay/${username}/boss?key=${encodeURIComponent(apiKey)}${q}`);
         if (!res.ok) return;
-        const data = (await res.json()) as BossFeed;
-        if (!active) return;
-        if (data.phase === "live") {
-          // The flash needs the same boss life on both polls (C9); never on the first.
-          const prev = last.current;
-          if (prev && prev.run === data.run && prev.life === data.life && prev.bossDefId === data.bossDefId && data.boss.damage > prev.damage) {
-            setHit({ key: Date.now(), amount: data.boss.damage - prev.damage });
-            timers.push(setTimeout(() => active && setHit(null), HIT_MS));
-          }
-          last.current = { run: data.run, life: data.life, bossDefId: data.bossDefId, damage: data.boss.damage };
-          if (data.kill) enqueue({ key: data.kill.id, kill: data.kill });
-          if (data.chain) enqueue({ key: `chain_${data.chain.id}`, chain: data.chain });
-        } else {
-          last.current = null;
-        }
-        setFeed(data);
+        apply((await res.json()) as BossFeed);
       } catch {
         // ignore transient network errors
       }
     }
+
+    function apply(data: BossFeed) {
+      if (!active) return;
+      if (data.phase === "live") {
+        // The flash needs the same boss life on both polls (C9); never on the first.
+        const prev = last.current;
+        if (prev && prev.run === data.run && prev.life === data.life && prev.bossDefId === data.bossDefId && data.boss.damage > prev.damage) {
+          setHit({ key: Date.now(), amount: data.boss.damage - prev.damage });
+          timers.push(setTimeout(() => active && setHit(null), HIT_MS));
+        }
+        last.current = { run: data.run, life: data.life, bossDefId: data.bossDefId, damage: data.boss.damage };
+        if (data.kill) enqueue({ key: data.kill.id, kill: data.kill });
+        if (data.chain) enqueue({ key: `chain_${data.chain.id}`, chain: data.chain });
+      } else {
+        last.current = null;
+      }
+      setFeed(data);
+    }
+
+    // Bars link: the feed rides on the link's one poll (src/components/overlay/LinkFeed.tsx).
+    if (via === "bars" && linkFeed) {
+      const off = linkFeed.on("feeds", (f) => {
+        const d = (f as { boss?: BossFeed | null } | null)?.boss;
+        if (d) apply(d);
+      });
+      return () => {
+        active = false;
+        off();
+        timers.forEach(clearTimeout);
+      };
+    }
     poll();
-    // The main link already runs several feeds: the boss asks less often there (C14).
-    const iv = setInterval(poll, via === "main" ? 4000 : POLL_MS);
+    // Main link: ask when its poll says a kill waits, and now and then anyway
+    // (that also keeps the raid live, LIVE_MS).
+    const main = via === "main" && linkFeed;
+    const iv = setInterval(poll, main ? IDLE_POLL_MS : POLL_MS);
+    const offHot = main
+      ? linkFeed.on("hot", (h) => {
+          if ((h as { boss?: boolean } | null)?.boss) void poll();
+        })
+      : null;
     return () => {
       active = false;
       clearInterval(iv);
+      offHot?.();
       timers.forEach(clearTimeout);
       if (holding) stageRef.current.release();
     };
-  }, [username, apiKey, via]);
+  }, [username, apiKey, via, linkFeed]);
 
   if (!banner && feed.phase !== "live") return null;
   // The main link only plays the banners; the card lives on the bars link.

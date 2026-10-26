@@ -77,7 +77,8 @@ export function PkPage() {
 
   useEffect(() => {
     fetchPk().then(apply);
-    const id = setInterval(() => fetchPk().then(apply), REFRESH_MS);
+    // Not while the tab is hidden (every request is billed).
+    const id = setInterval(() => !document.hidden && fetchPk().then(apply), REFRESH_MS);
     const tick = setInterval(() => setNow(Date.now()), 500);
     return () => {
       clearInterval(id);

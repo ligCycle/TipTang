@@ -94,7 +94,8 @@ export function MediaPage() {
     fetchMedia().then((d) => d && setData(d));
     // The queue moves on its own (fans tip, clips end): refresh it, never the settings being edited.
     const id = setInterval(
-      () => fetchMedia().then((d) => d && setData((cur) => (cur ? { ...cur, queue: d.queue, live: d.live } : d))),
+      // Not while the tab is hidden (every request is billed).
+      () => !document.hidden && fetchMedia().then((d) => d && setData((cur) => (cur ? { ...cur, queue: d.queue, live: d.live } : d))),
       QUEUE_REFRESH_MS,
     );
     return () => clearInterval(id);

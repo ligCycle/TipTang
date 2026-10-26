@@ -69,8 +69,10 @@ export function ComboPage() {
   useEffect(() => {
     fetchCombo().then(apply);
     // Keep the connection / running-combo status fresh without touching edits.
+    // Not while the tab is hidden (every request is billed).
     const id = setInterval(
       () =>
+        !document.hidden &&
         fetchCombo().then((d) => {
           if (!d) return;
           setData((cur) => (cur ? { ...cur, live: d.live, current: d.current, cooldownUntil: d.cooldownUntil } : d));

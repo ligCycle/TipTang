@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLinkFeed } from "@/components/overlay/LinkFeed";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import type { ComboFeed } from "@/lib/combo";
 
@@ -43,6 +44,7 @@ export function ComboOverlayClient({
   const firstPoll = useRef(true);
   const queue = useRef<{ key: string; level: number; text: string | null }[]>([]);
   const showing = useRef(false);
+  const linkFeed = useLinkFeed();
 
   useEffect(() => {
     let active = true;
@@ -64,36 +66,52 @@ export function ComboOverlayClient({
       try {
         const res = await fetch(`/api/overlay/${username}/combo?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`);
         if (!res.ok) return;
-        const data = (await res.json()) as ComboFeed;
-        if (!active) return;
-        if (data.phase === "running") {
-          // A combo already running when the link opens is shown as it is (no replay);
-          // one that starts while it's open celebrates every level past 1.
-          const known = seen.current.get(data.id);
-          const from = known ?? (firstPoll.current ? data.level : 1);
-          for (let level = from + 1; level <= data.level; level++) {
-            const text = data.unlocked.find((u) => u.level === level)?.text ?? null;
-            queue.current.push({ key: `${data.id}_${level}`, level, text });
-          }
-          seen.current.set(data.id, Math.max(from, data.level));
-          if (!showing.current && queue.current.length > 0) nextCelebration();
-        }
-        firstPoll.current = false;
-        setFeed(data);
+        apply((await res.json()) as ComboFeed);
       } catch {
         // ignore transient network errors
       }
     }
+
+    function apply(data: ComboFeed) {
+      if (!active) return;
+      if (data.phase === "running") {
+        // A combo already running when the link opens is shown as it is (no replay);
+        // one that starts while it's open celebrates every level past 1.
+        const known = seen.current.get(data.id);
+        const from = known ?? (firstPoll.current ? data.level : 1);
+        for (let level = from + 1; level <= data.level; level++) {
+          const text = data.unlocked.find((u) => u.level === level)?.text ?? null;
+          queue.current.push({ key: `${data.id}_${level}`, level, text });
+        }
+        seen.current.set(data.id, Math.max(from, data.level));
+        if (!showing.current && queue.current.length > 0) nextCelebration();
+      }
+      firstPoll.current = false;
+      setFeed(data);
+    }
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    // Bars link: the feed rides on the link's one poll (src/components/overlay/LinkFeed.tsx).
+    if (via === "bars" && linkFeed) {
+      const off = linkFeed.on("feeds", (f) => {
+        const d = (f as { combo?: ComboFeed | null } | null)?.combo;
+        if (d) apply(d);
+      });
+      return () => {
+        active = false;
+        off();
+        clearInterval(tick);
+        timers.forEach(clearTimeout);
+      };
+    }
     poll();
     const iv = setInterval(poll, POLL_MS);
-    const tick = setInterval(() => setNow(Date.now()), 1000);
     return () => {
       active = false;
       clearInterval(iv);
       clearInterval(tick);
       timers.forEach(clearTimeout);
     };
-  }, [username, apiKey, via]);
+  }, [username, apiKey, via, linkFeed]);
 
   if (feed.phase === "idle") return null;
   if (feed.phase === "summary" && Date.parse(feed.until) <= now) return null;
