@@ -5,7 +5,9 @@ import { GoalFullMoment, GoalView } from "@/components/overlay/GoalView";
 import type { GoalFeed, GoalFeedItem } from "@/lib/wishlist";
 import { useLinkFeed } from "@/components/overlay/LinkFeed";
 
-const POLL_MS = 5000;
+// Each request costs on Vercel and this link often sits open in OBS all day,
+// so it asks at the links' slow pace (alerts come through the main link).
+const POLL_MS = 15_000;
 const ROTATE_MS = 8000;
 const FULL_MOMENT_MS = 5000;
 
