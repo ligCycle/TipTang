@@ -16,7 +16,7 @@ import { GachaPicker, type GachaChoice } from "@/components/GachaPicker";
 import { PkPicker, type PkPick } from "@/components/PkPicker";
 import { extrasFloor } from "@/lib/wishlist";
 import { mediaExtrasDrop, voiceBaseType, VOICE_EXT } from "@/lib/media";
-import { quickAmountsFor } from "@/lib/quick-amounts";
+import { defaultAmountFor, quickAmountsFor } from "@/lib/quick-amounts";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 /** The host refuses request bodies over ~4.5 MB: slip + voice together stay under this. */
@@ -99,7 +99,7 @@ export function TipForm({
   // Keep the amount as the raw input string so clearing the field leaves it
   // empty (not a stubborn "0" that's annoying to type over); derive the number.
   const quickAmounts = quickAmountsFor(minAmount);
-  const defaultAmount = quickAmounts.includes(50) ? 50 : quickAmounts[0];
+  const defaultAmount = defaultAmountFor(minAmount);
   const [amountStr, setAmountStr] = useState(String(defaultAmount));
   const amount = amountStr.trim() === "" ? 0 : Number(amountStr);
   const belowMinimum = amount > 0 && amount < minAmount;

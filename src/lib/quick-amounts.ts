@@ -17,3 +17,12 @@ export function quickAmountsFor(min: number): number[] {
   const kept = QUICK_AMOUNTS.filter((a) => a >= min);
   return kept.length >= 3 ? kept : [min, min * 2, min * 5, min * 10];
 }
+
+/**
+ * The amount the form starts with: the creator's own minimum, so the floor
+ * they set is what supporters see first. The default minimum of 1 starts at
+ * the first chip (20) instead of a one-baht tip.
+ */
+export function defaultAmountFor(min: number): number {
+  return min > 1 ? min : QUICK_AMOUNTS[0];
+}
