@@ -19,7 +19,8 @@ type SeenField =
   | "goalLinkSeenAt"
   | "timerLinkSeenAt"
   | "comboLinkSeenAt"
-  | "pkLinkSeenAt";
+  | "pkLinkSeenAt"
+  | "topLinkSeenAt";
 
 /**
  * A bar's own link was polled (not the bars link): remember it, so the bars
@@ -27,8 +28,8 @@ type SeenField =
  */
 export async function touchOwnBar(
   req: Request,
-  user: { id: string } & Partial<Record<"goalLinkSeenAt" | "timerLinkSeenAt" | "comboLinkSeenAt" | "pkLinkSeenAt", Date | null>>,
-  field: "goalLinkSeenAt" | "timerLinkSeenAt" | "comboLinkSeenAt" | "pkLinkSeenAt",
+  user: { id: string } & Partial<Record<"goalLinkSeenAt" | "timerLinkSeenAt" | "comboLinkSeenAt" | "pkLinkSeenAt" | "topLinkSeenAt", Date | null>>,
+  field: "goalLinkSeenAt" | "timerLinkSeenAt" | "comboLinkSeenAt" | "pkLinkSeenAt" | "topLinkSeenAt",
   now: Date,
 ): Promise<void> {
   if (viaOf(req) !== null) return;
@@ -92,6 +93,7 @@ export async function stageFor(userId: string, link: StageLink, now: Date): Prom
       timerLinkSeenAt: true,
       comboLinkSeenAt: true,
       pkLinkSeenAt: true,
+      topLinkSeenAt: true,
     },
   });
   if (!u) return null;
@@ -115,6 +117,7 @@ export async function stageFor(userId: string, link: StageLink, now: Date): Prom
       combo: ownLinkLive(u.comboLinkSeenAt, now),
       pk: ownLinkLive(u.pkLinkSeenAt, now),
       boss: ownLinkLive(u.bossLinkSeenAt, now),
+      top: ownLinkLive(u.topLinkSeenAt, now),
     });
     return { cards, tests: null };
   }

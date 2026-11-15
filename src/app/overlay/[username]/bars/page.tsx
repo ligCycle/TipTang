@@ -33,6 +33,7 @@ export default async function BarsOverlayPage({
         timer: user.timerColor ?? user.alertColor,
         combo: user.comboColor ?? user.alertColor,
         boss: user.bossColor ?? user.alertColor,
+        top: user.alertColor,
       }}
     />
   );

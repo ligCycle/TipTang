@@ -635,6 +635,12 @@ model User {
   timerLinkSeenAt      DateTime?
   comboLinkSeenAt      DateTime?
   pkLinkSeenAt         DateTime?
+  topLinkSeenAt        DateTime?
+  // Feature hub card "ท็อปผู้สนับสนุน" (src/lib/top-board.ts): a bar ranking
+  // public supporters over a range ("today" | "7d" | "30d" | "all").
+  topEnabled           Boolean                  @default(false)
+  topRange             String                   @default("30d")
+  topCount             Int                      @default(5)
   bossDefs             BossDef[]
   bossHits             BossHit[]
   bossKills            BossKill[]

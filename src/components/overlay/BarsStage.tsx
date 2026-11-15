@@ -6,6 +6,7 @@ import { TimerOverlayClient } from "@/components/TimerOverlayClient";
 import { ComboOverlayClient } from "@/components/overlay/ComboOverlayClient";
 import { PkOverlayClient } from "@/components/overlay/PkOverlayClient";
 import { BossOverlayClient } from "@/components/overlay/BossOverlayClient";
+import { TopOverlayClient } from "@/components/overlay/TopOverlayClient";
 import { ObsSetupHint } from "@/components/overlay/ObsSetupHint";
 import { LinkFeedProvider, useLinkFeedPoll } from "@/components/overlay/LinkFeed";
 import type { BarCard } from "@/lib/obs-stage";
@@ -15,7 +16,7 @@ import type { BarCard } from "@/lib/obs-stage";
  * bar except one whose own link is open) and carries each bar's feed.
  */
 const STAGE_POLL_MS = 4000;
-const NO_BARS: Record<BarCard, boolean> = { goal: false, timer: false, combo: false, pk: false, boss: false };
+const NO_BARS: Record<BarCard, boolean> = { goal: false, timer: false, combo: false, pk: false, boss: false, top: false };
 /** Every bar is drawn this wide, so the stack reads as one neat column. */
 const WIDTH = 576;
 /*
@@ -37,7 +38,7 @@ function subscribeResize(fn: () => void) {
 const windowSize = () => `${window.innerWidth}x${window.innerHeight}`;
 
 /**
- * The bars OBS link: goal, timer, combo, PK and boss stacked top to bottom.
+ * The bars OBS link: goal, timer, combo, PK, boss and top supporters stacked top to bottom.
  * Each hides itself when there's nothing to show (card off, no combo or
  * match running, empty boss list). The column is scaled to fill the
  * creator's source by width and height (C9).
@@ -49,7 +50,7 @@ export function BarsStage({
 }: {
   username: string;
   apiKey: string;
-  colors: { goal: string | null; timer: string | null; combo: string | null; boss: string | null };
+  colors: { goal: string | null; timer: string | null; combo: string | null; boss: string | null; top: string | null };
 }) {
   const column = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
@@ -94,6 +95,7 @@ export function BarsStage({
           {show.combo && <ComboOverlayClient username={username} apiKey={apiKey} color={colors.combo} via="bars" />}
           {show.pk && <PkOverlayClient username={username} apiKey={apiKey} via="bars" />}
           {show.boss && <BossOverlayClient username={username} apiKey={apiKey} color={colors.boss} via="bars" />}
+          {show.top && <TopOverlayClient username={username} apiKey={apiKey} color={colors.top} via="bars" />}
         </div>
         <style>{BARS_CSS}</style>
       </div>

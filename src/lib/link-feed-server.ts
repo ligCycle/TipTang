@@ -9,6 +9,8 @@ import { readPkTest } from "@/lib/overlay-test";
 import { LATE_PLAY_MS } from "@/lib/wheel";
 import { ownLinkLive, type BarCard, type MainCard, type OwnLinks, type StageLink } from "@/lib/obs-stage";
 import { touchSeen } from "@/lib/obs-stage-server";
+import { topSupporters } from "@/lib/leaderboard";
+import { topCountOf, topRangeOf, topSince, type TopFeed } from "@/lib/top-board";
 
 /*
  * One poll per OBS link (Vercel bills every request): the main and bars links
@@ -68,19 +70,34 @@ export async function bossJson(userId: string, via: StageLink | null, claimParam
   return { ...feed, serverNow: now.toISOString() };
 }
 
+/**
+ * Top supporters bar: the public ranking over the creator's range, or null
+ * while the card is off (the bar then hides itself).
+ */
+export async function topJson(
+  user: { id: string; topEnabled: boolean; topRange: string; topCount: number },
+  now: Date,
+): Promise<TopFeed | null> {
+  if (!user.topEnabled) return null;
+  const range = topRangeOf(user.topRange);
+  const items = await topSupporters(user.id, { limit: topCountOf(user.topCount), publicOnly: true, since: topSince(range, now) });
+  return { range, items };
+}
+
 /** Every bar the bars link shows, in one answer. */
 export async function barsFeed(
-  user: Parameters<typeof timerState>[0] & { id: string },
+  user: Parameters<typeof timerState>[0] & { id: string; topEnabled: boolean; topRange: string; topCount: number },
   cards: Record<BarCard, boolean>,
   now: Date,
 ) {
-  const [goal, combo, pk, boss] = await Promise.all([
+  const [goal, combo, pk, boss, top] = await Promise.all([
     cards.goal ? goalFeed(user.id) : null,
     cards.combo ? comboJson(user.id, now) : null,
     cards.pk ? pkJson(user.id, now) : null,
     cards.boss ? bossJson(user.id, "bars", "auto", now) : null,
+    cards.top ? topJson(user, now) : null,
   ]);
-  return { goal, timer: cards.timer ? timerJson(user) : null, combo, pk, boss };
+  return { goal, timer: cards.timer ? timerJson(user) : null, combo, pk, boss, top };
 }
 
 /**

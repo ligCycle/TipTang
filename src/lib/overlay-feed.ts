@@ -40,6 +40,11 @@ export const OVERLAY_USER_SELECT = {
   timerLinkSeenAt: true,
   comboLinkSeenAt: true,
   pkLinkSeenAt: true,
+  topLinkSeenAt: true,
+  // Top supporters bar settings (src/lib/top-board.ts).
+  topEnabled: true,
+  topRange: true,
+  topCount: true,
   // Cheap check each poll: has the active sound set changed? (alertFeed)
   activeSetId: true,
   activeSet: { select: { updatedAt: true } },
@@ -70,6 +75,10 @@ type OverlayUser = {
   timerLinkSeenAt: Date | null;
   comboLinkSeenAt: Date | null;
   pkLinkSeenAt: Date | null;
+  topLinkSeenAt: Date | null;
+  topEnabled: boolean;
+  topRange: string;
+  topCount: number;
   activeSetId: string | null;
   activeSet: { updatedAt: Date } | null;
 };

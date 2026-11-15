@@ -29,22 +29,12 @@ test("main: voice alone turns the media player on", () => {
 });
 
 test("bars: every bar card is listed (they hide themselves)", () => {
-  assert.deepEqual(stageCards(FLAGS, NONE, NONE, "bars"), { goal: true, timer: true, combo: true, pk: true, boss: true });
+  assert.deepEqual(stageCards(FLAGS, NONE, NONE, "bars"), { goal: true, timer: true, combo: true, pk: true, boss: true, top: true });
 });
 
 test("bars: a bar whose own link is open is left out, so it never shows twice", () => {
-  assert.deepEqual(barCards({ goal: true, timer: false, combo: false, pk: false, boss: false }), {
-    goal: false,
-    timer: true,
-    combo: true,
-    pk: true,
-    boss: true,
-  });
-  assert.deepEqual(barCards({ goal: false, timer: false, combo: false, pk: false, boss: false }), {
-    goal: true,
-    timer: true,
-    combo: true,
-    pk: true,
-    boss: true,
-  });
+  const none = { goal: false, timer: false, combo: false, pk: false, boss: false, top: false };
+  assert.deepEqual(barCards({ ...none, goal: true }), { goal: false, timer: true, combo: true, pk: true, boss: true, top: true });
+  assert.deepEqual(barCards({ ...none, top: true }), { goal: true, timer: true, combo: true, pk: true, boss: true, top: false });
+  assert.deepEqual(barCards(none), { goal: true, timer: true, combo: true, pk: true, boss: true, top: true });
 });

@@ -6,7 +6,7 @@
 import { LIVE_MS } from "./combo.ts";
 
 export type MainCard = "alerts" | "media" | "wheel" | "gacha" | "boss";
-export type BarCard = "goal" | "timer" | "combo" | "pk" | "boss";
+export type BarCard = "goal" | "timer" | "combo" | "pk" | "boss" | "top";
 export type StageLink = "main" | "bars";
 
 export type CardFlags = {
@@ -42,7 +42,7 @@ export function stageCards(
   tests: OwnLinks,
   link: StageLink,
 ): Record<MainCard, boolean> | Record<BarCard, boolean> {
-  if (link === "bars") return { goal: true, timer: true, combo: true, pk: true, boss: true };
+  if (link === "bars") return { goal: true, timer: true, combo: true, pk: true, boss: true, top: true };
   const on = (k: keyof OwnLinks, flag: boolean) => (flag || tests[k]) && !own[k];
   return {
     alerts: true,
@@ -62,5 +62,5 @@ export type BarOwnLinks = Record<BarCard, boolean>;
  * the rest stacked, and nothing shows twice. Idle bars hide themselves.
  */
 export function barCards(own: BarOwnLinks): Record<BarCard, boolean> {
-  return { goal: !own.goal, timer: !own.timer, combo: !own.combo, pk: !own.pk, boss: !own.boss };
+  return { goal: !own.goal, timer: !own.timer, combo: !own.combo, pk: !own.pk, boss: !own.boss, top: !own.top };
 }
