@@ -24,6 +24,62 @@ export const UPDATES_SEEN_KEY = "tiptang_last_seen_update";
 
 export const UPDATES: Update[] = [
   {
+    id: "2026-11-15-overlay-language",
+    date: "2026-11-15",
+    tags: ["creator"],
+    href: "/dashboard/features",
+    th: {
+      title: "เลือกภาษาบนจอ OBS ได้ ไทยหรืออังกฤษ",
+      body: "ตั้งได้ที่การ์ด \"เชื่อม OBS\" หน้าลูกเล่น ใช้กับทุกลิงก์ทันที ไม่ต้องเปลี่ยนลิงก์ใน OBS แค่รีเฟรช source ข้อความที่คุณพิมพ์เอง เช่น ชื่อของหรือรางวัล ยังแสดงตามที่พิมพ์ และเสียงอ่านโดเนทยังเป็นภาษาไทย",
+    },
+    en: {
+      title: "Choose Thai or English for your OBS screens",
+      body: "Set it on the \"Connect OBS\" card on the features page. It applies to every link at once, so there's no need to change your OBS links, just refresh the source. Text you typed yourself, like item or reward names, stays as you wrote it, and tips are still read aloud in Thai.",
+    },
+  },
+  {
+    id: "2026-11-15-top-supporters",
+    date: "2026-11-15",
+    tags: ["creator"],
+    href: "/dashboard/features/top",
+    th: {
+      title: "ตารางท็อปผู้สนับสนุนบนจอไลฟ์",
+      body: "แถบอันดับคนที่โดเนทมากที่สุด ขึ้นในลิงก์แถบเอง เลือกได้ว่าจะนับวันนี้ 7 วัน 30 วัน หรือทั้งหมด โชว์ 3, 5 หรือ 10 อันดับ และเปลี่ยนสีได้ แสดงเฉพาะคนที่เลือกให้แสดงชื่อ เหมือนอันดับบนหน้าโดเนท",
+    },
+    en: {
+      title: "Top supporters on your live screen",
+      body: "A ranking of your biggest supporters that shows up on your bars link. Count today, 7 days, 30 days or all time, show the top 3, 5 or 10, and pick its colour. Only supporters who chose to show their name appear, same as on your donate page.",
+    },
+  },
+  {
+    id: "2026-11-15-channel-badge",
+    date: "2026-11-15",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/settings",
+    th: {
+      title: "เครื่องหมายยืนยันเจ้าของช่อง",
+      body: "ใส่ลิงก์หน้าโดเนทของคุณไว้ในคำอธิบายช่องหรือไบโอ แล้วกดขอเครื่องหมายในหน้า \"โปรไฟล์และหน้าโดเนท\" เมื่อทีมงานตรวจแล้ว จะมีดาวสีชมพูหลังชื่อบนหน้าโดเนท คนดูกดที่ดาวเพื่อดูว่ายืนยันช่องไหน",
+    },
+    en: {
+      title: "Channel owner badge",
+      body: "Put your donate page link in your channel description or bio, then ask for the badge on the \"Profile and donate page\" screen. Once we've checked it, a pink star appears after your name on your donate page. Viewers can tap it to see which channel was verified.",
+    },
+  },
+  {
+    id: "2026-11-15-donate-minimum",
+    date: "2026-11-15",
+    tags: ["creator", "supporter"],
+    href: "/dashboard/settings",
+    th: {
+      title: "หน้าโดเนทบอกยอดขั้นต่ำชัดขึ้น",
+      body: "ใต้ช่องจำนวนเงินบอกยอดขั้นต่ำเสมอ ช่องจำนวนเงินเริ่มที่ยอดขั้นต่ำของคุณ (ถ้าตั้งไว้ 1 บาท จะเริ่มที่ 20) และถ้าตั้งขั้นต่ำต่ำกว่า 20 บาท จะมีปุ่มยอดนั้นให้คนดูกดได้เลย ตั้งขั้นต่ำได้ที่หน้า \"โปรไฟล์และหน้าโดเนท\"",
+    },
+    en: {
+      title: "Your donate page shows the minimum clearly",
+      body: "The minimum is always shown under the amount, and the amount starts at your minimum (20 baht when it's 1). Set a minimum below 20 and viewers get a button for it. Change it on the \"Profile and donate page\" screen.",
+    },
+  },
+  {
     id: "2026-10-24-two-obs-links",
     date: "2026-10-24",
     tags: ["creator"],
