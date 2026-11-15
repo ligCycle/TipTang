@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
 export type ChannelVerifyRow = {
@@ -25,6 +25,7 @@ export function ChannelVerifyAdminRow({
   lookFor: string;
 }) {
   const t = useTranslations("channelVerify");
+  const locale = useLocale();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -52,7 +53,14 @@ export function ChannelVerifyAdminRow({
   return (
     <li className="card rounded-2xl p-4">
       <p className="font-semibold text-brand-900">
-        {row.displayName} <span className="font-normal text-brand-900/55">@{row.username}</span>
+        <a
+          href={`/${locale}/${row.username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline"
+        >
+          {row.displayName} <span className="font-normal text-brand-700">@{row.username}</span>
+        </a>
       </p>
       <p className="mt-1 text-sm">
         {row.platform}:{" "}
