@@ -1464,12 +1464,13 @@
     "r_all": "All time",
     "count": "How many places",
     "rows": "Top {n}",
-    "previewNote": "Sample names. On stream it shows your real supporters.",
+    "previewNote": "No public supporters in this period yet, so these names are a sample.",
     "saveFailed": "Couldn't save. Try again.",
     "loadFailed": "Couldn't load your settings. Refresh and try again.",
     "color": "Bar colour",
     "colorCode": "Colour code",
     "colorReset": "Use alert colour",
-    "colorDefault": "Not set = uses your alert colour"
+    "colorDefault": "Not set = uses your alert colour",
+    "previewNoteReal": "Your real ranking for the period you picked"
   }
 }

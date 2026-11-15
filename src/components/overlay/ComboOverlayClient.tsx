@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLinkFeed } from "@/components/overlay/LinkFeed";
-import { DEFAULT_COLOR } from "@/lib/colors";
+import { DEFAULT_COLOR, OVERLAY_CARD_BG } from "@/lib/colors";
 import type { ComboFeed } from "@/lib/combo";
 
 const POLL_MS = 2000;
@@ -135,8 +135,7 @@ export function ComboView({
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   const card = {
     borderColor: base,
-    boxShadow: `0 0 28px ${base}88`,
-    background: "rgba(18, 12, 22, 0.9)",
+    background: OVERLAY_CARD_BG,
   };
   const badge = { backgroundImage: `linear-gradient(135deg, ${base}, ${shade(base, -0.25)})` };
 

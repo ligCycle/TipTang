@@ -89,7 +89,7 @@ export function GoalCard({ bar, style, color }: { bar: Bar; style: GoalStyle; co
       <div className="flex w-full max-w-xl items-center gap-4 text-white">
         <div
           className="grid h-24 w-24 shrink-0 place-items-center rounded-full"
-          style={{ background: `conic-gradient(${from} 0 ${pct}%, rgba(255,255,255,0.2) 0)`, boxShadow: `0 0 22px ${from}66` }}
+          style={{ background: `conic-gradient(${from} 0 ${pct}%, rgba(255,255,255,0.2) 0)` }}
         >
           <div className="grid h-[76px] w-[76px] place-items-center rounded-full bg-[#120c16] text-xl font-black">{bar.pct}%</div>
         </div>

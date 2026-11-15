@@ -4,6 +4,12 @@
 
 export const DEFAULT_COLOR = "#ec4899";
 
+// OBS bars (goal, combo, boss, top supporters) share one look: a dark card
+// lifted by a slightly lighter surface and a coloured border, no glow.
+export const OVERLAY_CARD_BG = "rgba(30, 21, 37, 0.92)";
+/** Quiet fill for a chip or track on that card. */
+export const OVERLAY_CHIP_BG = "rgba(255, 255, 255, 0.14)";
+
 // Preset swatches — all mid/dark tones so white text stays readable on top.
 export const PRESET_COLORS = [
   "#ec4899", // pink

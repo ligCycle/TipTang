@@ -9,12 +9,12 @@ import { FeaturePreviewLayout, PREVIEW_WIDTH, PreviewStage } from "@/components/
 import { TopView } from "@/components/overlay/TopOverlayClient";
 import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { RANGES, type Range } from "@/lib/range";
-import { TOP_COUNTS, topCountOf, topRangeOf, type TopCount } from "@/lib/top-board";
+import { TOP_COUNTS, topCountOf, topRangeOf, type TopCount, type TopFeed } from "@/lib/top-board";
 
 /** `color` = the bar's own colour (null = the alert colour, `alertColor`). */
 type TopSettings = { enabled: boolean; range: Range; count: TopCount; color: string | null; alertColor: string | null };
 
-/** Sample names for the preview only (the OBS link shows real supporters). */
+/** Stand-in rows for a creator with no public supporters yet in the range (labelled as a sample). */
 const SAMPLE = ["มิ้นท์", "พี่โอ๊ต", "Skye", "น้ำหวาน", "Ken", "ฟ้าใส", "Boss", "ต้นกล้า", "Mali", "แพรว"].map((name, i) => ({
   name,
   total: [1250, 800, 450, 300, 220, 150, 120, 90, 60, 40][i],
@@ -30,6 +30,8 @@ export function TopPage() {
   const [data, setData] = useState<TopSettings | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  // The creator's real ranking for the chosen range and rows (null = not loaded yet).
+  const [real, setReal] = useState<TopFeed["items"] | null>(null);
 
   useEffect(() => {
     fetch("/api/overlay/setup", { method: "POST" })
@@ -40,6 +42,20 @@ export function TopPage() {
       })
       .catch(() => setError(true));
   }, []);
+
+  const range = data?.range;
+  const count = data?.count;
+  useEffect(() => {
+    if (!range || !count) return;
+    let active = true;
+    fetch(`/api/overlay/top-preview?range=${range}&count=${count}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: TopFeed | null) => active && setReal(d?.items ?? []))
+      .catch(() => active && setReal([]));
+    return () => {
+      active = false;
+    };
+  }, [range, count]);
 
   async function post(fields: Record<string, string>): Promise<boolean> {
     const fd = new FormData();
@@ -89,8 +105,11 @@ export function TopPage() {
     >
       <FeaturePreviewLayout
         preview={
-          <PreviewStage width={PREVIEW_WIDTH} note={t("previewNote")}>
-            <TopView feed={{ range: data.range, items: SAMPLE.slice(0, data.count) }} color={data.color ?? data.alertColor} />
+          <PreviewStage width={PREVIEW_WIDTH} note={real && real.length > 0 ? t("previewNoteReal") : t("previewNote")}>
+            <TopView
+              feed={{ range: data.range, items: real && real.length > 0 ? real : SAMPLE.slice(0, data.count) }}
+              color={data.color ?? data.alertColor}
+            />
           </PreviewStage>
         }
       >
@@ -99,7 +118,7 @@ export function TopPage() {
         {error && <p className="text-sm font-medium text-red-600">{t("saveFailed")}</p>}
 
         <section className="rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">① {t("range")}</h2>
+          <h2 className="font-bold text-brand-900">{t("range")}</h2>
           <div className="mt-2 inline-flex flex-wrap overflow-hidden rounded-full border border-brand-300" role="radiogroup" aria-label={t("range")}>
             {RANGES.map((r) => (
               <button key={r} type="button" role="radio" aria-checked={data.range === r} onClick={() => data.range !== r && void config(r, data.count)} className={pill(data.range === r)}>
@@ -110,7 +129,7 @@ export function TopPage() {
         </section>
 
         <section className="rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">② {t("count")}</h2>
+          <h2 className="font-bold text-brand-900">{t("count")}</h2>
           <div className="mt-2 inline-flex flex-wrap overflow-hidden rounded-full border border-brand-300" role="radiogroup" aria-label={t("count")}>
             {TOP_COUNTS.map((c) => (
               <button key={c} type="button" role="radio" aria-checked={data.count === c} onClick={() => data.count !== c && void config(data.range, c)} className={pill(data.count === c)}>
@@ -121,7 +140,7 @@ export function TopPage() {
         </section>
 
         <section className="rounded-2xl border border-brand-200 p-4">
-          <h2 className="font-bold text-brand-900">③ {t("color")}</h2>
+          <h2 className="font-bold text-brand-900">{t("color")}</h2>
           <div className="mt-2 rounded-xl bg-brand-50 p-3">
             <ColorField
               value={data.color}

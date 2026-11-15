@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { DEFAULT_COLOR } from "@/lib/colors";
 
 /**
- * TipTang's own scalloped star with a tick, in brand pink — drawn here, not a
- * stock icon, and pink so it isn't mistaken for a platform's blue tick.
+ * TipTang's own scalloped star with a tick, in the brand pink (DEFAULT_COLOR) —
+ * drawn here, not a stock icon, and pink so it isn't mistaken for a
+ * platform's blue tick.
  * Sized 1em so it matches the text it sits next to.
  */
 export function BadgeStar({ className = "" }: { className?: string }) {
@@ -13,7 +15,7 @@ export function BadgeStar({ className = "" }: { className?: string }) {
     <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" className={className}>
       <path
         d="M12 1.2l2.3 2.2 3.1-.6.9 3 3 .9-.6 3.1 2.2 2.3-2.2 2.3.6 3.1-3 .9-.9 3-3.1-.6-2.3 2.2-2.3-2.2-3.1.6-.9-3-3-.9.6-3.1L1.2 12l2.2-2.3-.6-3.1 3-.9.9-3 3.1.6z"
-        fill="#e8467f"
+        fill={DEFAULT_COLOR}
       />
       <path d="M7.4 12.3l3.1 3.1 6.1-6.6" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>

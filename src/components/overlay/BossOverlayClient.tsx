@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DEFAULT_COLOR } from "@/lib/colors";
+import { DEFAULT_COLOR, OVERLAY_CARD_BG } from "@/lib/colors";
 import type { BossChain, BossFeed, BossKillView } from "@/lib/boss";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
 import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
@@ -186,8 +186,7 @@ export function BossView({
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   const card = {
     borderColor: base,
-    boxShadow: `0 0 28px ${base}88`,
-    background: "rgba(18, 12, 22, 0.9)",
+    background: OVERLAY_CARD_BG,
   };
   return (
     <div className="p-3">

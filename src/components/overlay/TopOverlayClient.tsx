@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLinkFeed } from "@/components/overlay/LinkFeed";
-import { DEFAULT_COLOR } from "@/lib/colors";
+import { DEFAULT_COLOR, OVERLAY_CARD_BG, OVERLAY_CHIP_BG } from "@/lib/colors";
 import type { TopFeed } from "@/lib/top-board";
 
 /** Its own link sits in OBS all day: ask at the links' slow pace (every request costs on Vercel). */
@@ -70,7 +70,7 @@ export function TopView({ feed, color }: { feed: TopFeed; color: string | null }
     <div className="p-3">
       <div
         className="mx-auto w-full max-w-[576px] rounded-2xl border-2 px-4 py-3 text-white"
-        style={{ borderColor: base, boxShadow: `0 0 28px ${base}88`, background: "rgba(18, 12, 22, 0.9)" }}
+        style={{ borderColor: base, background: OVERLAY_CARD_BG }}
       >
         <p className="text-lg font-extrabold">
           ท็อปผู้สนับสนุน <span className="text-sm font-semibold text-white/60">· {RANGE_LABEL[feed.range]}</span>
@@ -80,7 +80,7 @@ export function TopView({ feed, color }: { feed: TopFeed; color: string | null }
             <li key={`${i}-${s.name}`} className="flex items-center gap-3 text-[17px]">
               <span
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-black"
-                style={{ background: i === 0 ? base : "rgba(255,255,255,0.14)" }}
+                style={{ background: i === 0 ? base : OVERLAY_CHIP_BG }}
               >
                 {i + 1}
               </span>
