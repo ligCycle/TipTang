@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { GoalOverlayClient } from "@/components/GoalOverlayClient";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 export default async function GoalOverlayPage({
   params,
@@ -14,7 +16,7 @@ export default async function GoalOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true, goalColor: true },
+    select: { overlayKey: true, overlayLang: true, alertColor: true, goalColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -26,6 +28,8 @@ export default async function GoalOverlayPage({
   const color = user.goalColor ?? user.alertColor;
 
   return (
-    <GoalOverlayClient username={username} apiKey={key} color={color} />
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <GoalOverlayClient username={username} apiKey={key} color={color} />
+    </OverlayLangProvider>
   );
 }

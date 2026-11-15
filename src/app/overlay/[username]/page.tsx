@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { MainStage } from "@/components/overlay/MainStage";
 import { activeSetMedia } from "@/lib/alert-sets-server";
 import { DEFAULT_ALERT_THEME, isAlertTheme } from "@/lib/alertThemes";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 export default async function OverlayPage({
   params,
@@ -20,6 +22,7 @@ export default async function OverlayPage({
     select: {
       id: true,
       overlayKey: true,
+      overlayLang: true,
       alertColor: true,
       alertStyle: true,
       alertTheme: true,
@@ -51,21 +54,23 @@ export default async function OverlayPage({
 
   // The main link: alerts plus every other popup, one at a time (MainStage).
   return (
-    <MainStage
-      bossColor={user.bossColor ?? user.alertColor}
-      alerts={{
-        username,
-        apiKey: key,
-        test,
-        color: user.alertColor,
-        ttsEnabled: user.ttsEnabled,
-        normal: media.normal,
-        mediaVersion: media.version,
-        libraryAll,
-        tiers: tierRows,
-        alertStyle: user.alertStyle,
-        alertTheme: isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME,
-      }}
-    />
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <MainStage
+        bossColor={user.bossColor ?? user.alertColor}
+        alerts={{
+          username,
+          apiKey: key,
+          test,
+          color: user.alertColor,
+          ttsEnabled: user.ttsEnabled,
+          normal: media.normal,
+          mediaVersion: media.version,
+          libraryAll,
+          tiers: tierRows,
+          alertStyle: user.alertStyle,
+          alertTheme: isAlertTheme(user.alertTheme) ? user.alertTheme : DEFAULT_ALERT_THEME,
+        }}
+      />
+    </OverlayLangProvider>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 const POLL_MS = 4000;
 
@@ -8,6 +9,7 @@ type Todo = { items: { id: string; taskText: string; fan: string }[]; more: numb
 
 /** The to-do OBS link: open wheel results (newest last), hidden when empty. */
 export function TodoOverlayClient({ username, apiKey }: { username: string; apiKey: string }) {
+  const tx = useOverlayText();
   const [todo, setTodo] = useState<Todo | null>(null);
 
   useEffect(() => {
@@ -36,8 +38,8 @@ export function TodoOverlayClient({ username, apiKey }: { username: string; apiK
   return (
     <div className="p-3">
       <div className="w-full max-w-[400px] rounded-2xl border-2 border-brand-500 bg-[#120c16]/85 p-3.5 text-white shadow-2xl">
-        <p className="mb-2 text-base font-extrabold">ภารกิจค้างทำ ({total})</p>
-        {todo.more > 0 && <p className="mb-1 text-xs text-white/55">+{todo.more} รายการก่อนหน้า</p>}
+        <p className="mb-2 text-base font-extrabold">{tx.todoTitle(total)}</p>
+        {todo.more > 0 && <p className="mb-1 text-xs text-white/55">{tx.todoEarlier(todo.more)}</p>}
         <ul>
           {todo.items.map((i) => (
             <li key={i.id} className="flex items-baseline justify-between gap-3 border-b border-white/10 py-1.5 last:border-0">

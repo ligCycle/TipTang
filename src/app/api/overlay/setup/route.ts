@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { topCountOf, topRangeOf } from "@/lib/top-board";
+import { overlayLangOf } from "@/lib/overlay-text";
 import crypto from "crypto";
 import { auth } from "@/lib/auth";
 import { getActiveSetId } from "@/lib/alert-sets-server";
@@ -58,6 +59,7 @@ export async function POST() {
       topRange: true,
       topCount: true,
       topColor: true,
+      overlayLang: true,
       featuresOnboardedAt: true,
     },
   });
@@ -127,6 +129,7 @@ export async function POST() {
     topRange: topRangeOf(user.topRange),
     topCount: topCountOf(user.topCount),
     topColor: user.topColor,
+    overlayLang: overlayLangOf(user.overlayLang),
     activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,

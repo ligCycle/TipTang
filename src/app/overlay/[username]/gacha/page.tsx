@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { GachaOverlayClient } from "@/components/overlay/GachaOverlayClient";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 export default async function GachaOverlayPage({
   params,
@@ -14,7 +16,7 @@ export default async function GachaOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true },
+    select: { overlayKey: true, overlayLang: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -22,5 +24,9 @@ export default async function GachaOverlayPage({
     return null;
   }
 
-  return <GachaOverlayClient username={username} apiKey={key} />;
+  return (
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <GachaOverlayClient username={username} apiKey={key} />
+    </OverlayLangProvider>
+  );
 }

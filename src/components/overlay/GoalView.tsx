@@ -1,6 +1,7 @@
 import { formatBaht } from "@/lib/format";
 import { Icon } from "@/components/Icon";
 import { mainItem, pctOf, type GoalFeed, type GoalFeedItem, type GoalStyle } from "@/lib/wishlist";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 /** Legacy single-goal shape (kept for callers that only know the old feed). */
 export type GoalState = {
@@ -143,6 +144,7 @@ const barOf = (i: GoalFeedItem): Bar => ({
 
 /** "ทุกชิ้น": a compact row per item, in the chosen style's look. */
 function ItemRow({ item, style, color }: { item: GoalFeedItem; style: GoalStyle; color: string | null }) {
+  const tx = useOverlayText();
   const { from, to } = colors(color);
   const pct = Math.min(100, pctOf(item.raised, item.price));
   return (
@@ -161,7 +163,7 @@ function ItemRow({ item, style, color }: { item: GoalFeedItem; style: GoalStyle;
         <span className="flex items-baseline justify-between gap-2 text-sm font-bold">
           <span className="truncate">{item.name}</span>
           <span className={`shrink-0 text-xs ${item.full ? "text-emerald-300" : "text-white/80"}`}>
-            {item.full ? "ครบแล้ว!" : `${formatBaht(item.raised)} / ${formatBaht(item.price)}`}
+            {item.full ? tx.goalFull : `${formatBaht(item.raised)} / ${formatBaht(item.price)}`}
           </span>
         </span>
         {style !== "ring" && (
@@ -191,15 +193,16 @@ export function GoalView({
   color: string | null;
   rotateIndex?: number;
 }) {
+  const tx = useOverlayText();
   if (!goal || !goal.enabled) return null;
   // Old single-goal shape.
   if (!("type" in goal)) {
     if (goal.goal <= 0) return null;
-    return <GoalCard bar={{ ...goal, imageUrl: null, title: goal.title || "เป้าหมาย" }} style="classic" color={color} />;
+    return <GoalCard bar={{ ...goal, imageUrl: null, title: goal.title || tx.goal }} style="classic" color={color} />;
   }
   if (goal.type === "single") {
     if (goal.single.goal <= 0) return null;
-    return <GoalCard bar={{ ...goal.single, imageUrl: null, title: goal.single.title || "เป้าหมาย" }} style={goal.style} color={color} />;
+    return <GoalCard bar={{ ...goal.single, imageUrl: null, title: goal.single.title || tx.goal }} style={goal.style} color={color} />;
   }
   const items = goal.items;
   if (items.length === 0) return null;
@@ -217,7 +220,7 @@ export function GoalView({
             <ItemRow key={i.id} item={i} style={goal.style} color={color} />
           ))}
         </ul>
-        {items.length > LIST_ROWS && <p className="pt-1 text-right text-xs text-white/70">+{items.length - LIST_ROWS} ชิ้น</p>}
+        {items.length > LIST_ROWS && <p className="pt-1 text-right text-xs text-white/70">{tx.goalMoreItems(items.length - LIST_ROWS)}</p>}
       </div>
     );
   }
@@ -229,7 +232,7 @@ export function GoalView({
       <GoalCard bar={barOf(item)} style={goal.style} color={color} />
       {next.length > 0 && (
         <p className="mt-1.5 truncate text-sm font-semibold text-white/85 drop-shadow">
-          ถัดไป: {next.map((i) => `${i.name} ${formatBaht(i.price)}`).join(" · ")}
+          {tx.goalNext} {next.map((i) => `${i.name} ${formatBaht(i.price)}`).join(" · ")}
         </p>
       )}
       {goal.display === "rotate" && items.length > 1 && (
@@ -243,12 +246,13 @@ export function GoalView({
 
 /** "<item> ครบแล้ว! ขอบคุณทุกคน" for a few seconds when an item fills up. */
 export function GoalFullMoment({ item }: { item: GoalFeedItem }) {
+  const tx = useOverlayText();
   return (
     <div className="w-full max-w-xl animate-[ttpop_0.4s_ease-out] rounded-2xl border-2 border-emerald-400 bg-[#120c16]/90 p-4 text-center text-white shadow-[0_0_28px_rgba(74,222,128,0.5)]">
       <p className="text-lg font-extrabold">{item.name}</p>
-      <p className="text-2xl font-black text-emerald-300">ครบแล้ว! ขอบคุณทุกคน</p>
+      <p className="text-2xl font-black text-emerald-300">{tx.goalFullThanks}</p>
       <p className="text-sm text-white/80">
-        {formatBaht(item.raised)} จาก {item.fans} คน
+        {tx.fromFans(formatBaht(item.raised), item.fans)}
       </p>
       <style>{`@keyframes ttpop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }`}</style>
     </div>

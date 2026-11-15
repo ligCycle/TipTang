@@ -10,6 +10,7 @@ import { TopOverlayClient } from "@/components/overlay/TopOverlayClient";
 import { ObsSetupHint } from "@/components/overlay/ObsSetupHint";
 import { LinkFeedProvider, useLinkFeedPoll } from "@/components/overlay/LinkFeed";
 import type { BarCard } from "@/lib/obs-stage";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 /**
  * The link's one poll: marks it "connected", says which bars to mount (every
@@ -52,6 +53,7 @@ export function BarsStage({
   apiKey: string;
   colors: { goal: string | null; timer: string | null; combo: string | null; boss: string | null; top: string | null };
 }) {
+  const tx = useOverlayText();
   const column = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
   const size = useSyncExternalStore(subscribeResize, windowSize, () => "0x0");
@@ -84,7 +86,7 @@ export function BarsStage({
   return (
     <LinkFeedProvider value={feed}>
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <ObsSetupHint label="ลิงก์แถบ" place="bottom" />
+        <ObsSetupHint label={tx.barsLink} place="bottom" />
         <div
           ref={column}
           className="tt-bars absolute left-1/2 top-2 flex flex-col gap-3"

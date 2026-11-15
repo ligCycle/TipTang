@@ -3,6 +3,7 @@ import { isAlertStyle, DEFAULT_ALERT_STYLE } from "@/lib/alertStyles";
 import { darkCardGlow } from "@/lib/alertThemes";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import { Icon } from "@/components/Icon";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 // Darken a #rrggbb color by mixing toward black (amount 0..1).
 function darken(hex: string, amount: number): string {
@@ -52,6 +53,7 @@ export function AlertCard({
   /** Goal item the fan chose to help: a small "ช่วยซื้อ <item>" line. */
   wishName?: string | null;
 }) {
+  const tx = useOverlayText();
   const useCustom = Boolean(color && /^#[0-9a-fA-F]{6}$/.test(color));
   const dark = alertTheme === "dark";
   const glow = darkCardGlow(useCustom ? color! : DEFAULT_COLOR);
@@ -83,7 +85,7 @@ export function AlertCard({
       <div className={comboLevel != null && comboLevel >= 5 ? "alert-combo-shake" : undefined}>
       {comboLevel != null && (
         <p className="mx-auto mb-2 w-fit rounded-full bg-white/20 px-3 py-0.5 text-xs font-extrabold tracking-wide ring-1 ring-white/40">
-          คอมโบทิป เลเวล {comboLevel}
+          {tx.comboLevel(comboLevel)}
         </p>
       )}
       {isBig && (
@@ -98,7 +100,7 @@ export function AlertCard({
           className="mb-2 text-xs font-bold uppercase tracking-widest"
           style={{ color: glow }}
         >
-          ทิปใหม่!
+          {tx.newTip}
         </p>
       )}
       {videoUrl ? (
@@ -122,7 +124,7 @@ export function AlertCard({
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex min-w-0 items-center gap-2 text-lg font-extrabold drop-shadow">
           <Icon name="heart" className="h-5 w-5 shrink-0" />
-          <span className="truncate">{name || "ผู้ไม่ประสงค์ออกนาม"}</span>
+          <span className="truncate">{name || tx.anonymous}</span>
         </span>
         <span
           className={`rounded-full px-3 py-1 text-lg font-black ${dark ? "bg-tip-400 text-tip-900" : "bg-white/25"}`}
@@ -134,10 +136,10 @@ export function AlertCard({
         <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/25 px-3 py-0.5 text-sm font-bold">
           <Icon name="clock" className="h-3.5 w-3.5" />
           {timerDelta < 0 ? "−" : "+"}
-          {Math.max(1, Math.round(Math.abs(timerDelta) / 60))} นาที
+          {tx.minutes(Math.max(1, Math.round(Math.abs(timerDelta) / 60)))}
         </p>
       )}
-      {wishName && <p className="mt-1 text-sm font-semibold text-white/85">ช่วยซื้อ {wishName}</p>}
+      {wishName && <p className="mt-1 text-sm font-semibold text-white/85">{tx.towards(wishName)}</p>}
       {message && <p className="mt-2 text-white/95">{message}</p>}
       </div>
     </div>

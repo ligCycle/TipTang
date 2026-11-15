@@ -643,6 +643,8 @@ model User {
   topCount             Int                      @default(5)
   // Null = the alert colour.
   topColor             String?
+  // Words on every OBS link: "th" | "en" (src/lib/overlay-text.ts).
+  overlayLang          String                   @default("th")
   bossDefs             BossDef[]
   bossHits             BossHit[]
   bossKills            BossKill[]

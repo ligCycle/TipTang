@@ -4,16 +4,10 @@ import { useEffect, useState } from "react";
 import { useLinkFeed } from "@/components/overlay/LinkFeed";
 import { DEFAULT_COLOR, OVERLAY_CARD_BG, OVERLAY_CHIP_BG } from "@/lib/colors";
 import type { TopFeed } from "@/lib/top-board";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 /** Its own link sits in OBS all day: ask at the links' slow pace (every request costs on Vercel). */
 const POLL_MS = 15_000;
-
-const RANGE_LABEL: Record<TopFeed["range"], string> = {
-  today: "วันนี้",
-  "7d": "7 วัน",
-  "30d": "30 วัน",
-  all: "ทั้งหมด",
-};
 
 /**
  * The top supporters bar (src/lib/top-board.ts). In the bars link the feed
@@ -65,6 +59,7 @@ export function TopOverlayClient({
 
 /** The ranking card (the OBS link and the settings preview). */
 export function TopView({ feed, color }: { feed: TopFeed; color: string | null }) {
+  const tx = useOverlayText();
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   return (
     <div className="p-3">
@@ -73,7 +68,7 @@ export function TopView({ feed, color }: { feed: TopFeed; color: string | null }
         style={{ borderColor: base, background: OVERLAY_CARD_BG }}
       >
         <p className="text-lg font-extrabold">
-          ท็อปผู้สนับสนุน <span className="text-sm font-semibold text-white/60">· {RANGE_LABEL[feed.range]}</span>
+          {tx.topTitle} <span className="text-sm font-semibold text-white/60">· {tx.range[feed.range]}</span>
         </p>
         <ol className="mt-2 space-y-1">
           {feed.items.map((s, i) => (

@@ -6,6 +6,7 @@ import { Icon } from "@/components/Icon";
 import type { MediaFeed } from "@/lib/media-queue";
 import { useStage } from "@/components/overlay/Stage";
 import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 const POLL_MS = 3000;
 /** A clip that hasn't started playing by then can't play here: next one. */
@@ -82,6 +83,7 @@ function loadYouTube(): Promise<YTNamespace> {
  * the stage busy nothing new starts (C1).
  */
 export function MediaOverlayClient({ username, apiKey, via = null }: { username: string; apiKey: string; via?: "main" | null }) {
+  const tx = useOverlayText();
   const [feed, setFeed] = useState<MediaFeed | null>(null);
   const stage = useStage();
   const linkFeed = useLinkFeed();
@@ -456,7 +458,7 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
             }}
             className="absolute inset-0 grid place-items-center bg-black/60 text-lg font-bold text-white"
           >
-            คลิกเพื่อเปิดเสียง
+            {tx.clickForSound}
           </button>
         )}
       </div>
@@ -473,21 +475,22 @@ export function MediaInfoCard({
   current: { test: boolean; kind: "clip" | "voice"; fan: string; amount: number; title: string | null };
   color: string;
 }) {
+  const tx = useOverlayText();
   return (
     <div className="mt-3 rounded-2xl border-2 bg-[#120c16]/90 px-5 py-3 text-white shadow-2xl" style={{ borderColor: color }}>
       <p className="text-base font-semibold" style={{ color }}>
         {current.test
-          ? "ทดสอบ"
+          ? tx.test
           : current.kind === "voice"
-            ? `ฝากเสียงจาก ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`
-            : `ขอโดย ${current.fan} · ฿${current.amount.toLocaleString("th-TH")}`}
+            ? tx.voiceFrom(current.fan, current.amount.toLocaleString("th-TH"))
+            : tx.requestedBy(current.fan, current.amount.toLocaleString("th-TH"))}
       </p>
       <p className="truncate text-xl font-extrabold leading-tight">
         {current.kind === "voice"
           ? current.test
-            ? "ทดสอบเสียง"
-            : "ฝากเสียง"
-          : current.title || (current.test ? "คลิปทดสอบ" : "คลิป YouTube")}
+            ? tx.voiceTest
+            : tx.voice
+          : current.title || (current.test ? tx.clipTest : tx.youtubeClip)}
       </p>
     </div>
   );

@@ -6,16 +6,18 @@ import type { Rarity } from "@/lib/gacha";
 import { DEFAULT_COLOR } from "@/lib/colors";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
 import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 const POLL_MS = 3000;
 /** Drop 0.8 s + shake 1.2 s, then the capsule opens. */
 const OPEN_AT_MS = 2000;
 const SHOW_MS = 4000;
 
-const RARITY: Record<Rarity, { color: string; label: string }> = {
-  common: { color: "#94a3b8", label: "ธรรมดา" },
-  rare: { color: "#8b5cf6", label: "หายาก" },
-  epic: { color: "#f59e0b", label: "สุดหายาก" },
+// Labels come from the overlay language (tx.rarity).
+const RARITY: Record<Rarity, { color: string }> = {
+  common: { color: "#94a3b8" },
+  rare: { color: "#8b5cf6" },
+  epic: { color: "#f59e0b" },
 };
 
 const KEYFRAMES = `
@@ -147,6 +149,7 @@ export function GachaReveal({
   /** Fill the given box instead of the screen (main link, preview). */
   embedded: boolean;
 }) {
+  const tx = useOverlayText();
   const r = RARITY[current.rarity] ?? RARITY.common;
 
   return (
@@ -192,14 +195,14 @@ export function GachaReveal({
             style={{ borderColor: r.color, animation: "gacha-card 0.5s ease-out both" }}
           >
             <span className="inline-block rounded-full px-3 py-0.5 text-sm font-bold text-[#120c16]" style={{ background: r.color }}>
-              {r.label}
+              {tx.rarity[current.rarity] ?? tx.rarity.common}
             </span>
             {current.imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={current.imageUrl} alt="" className="mx-auto mt-3 h-24 w-24 rounded-xl object-cover" />
             )}
             <p className="mt-3 text-lg font-semibold" style={{ color }}>
-              {current.fan} ได้
+              {tx.gachaGot(current.fan)}
             </p>
             <p className="text-3xl font-extrabold leading-tight" style={{ color: r.color }}>
               {current.prizeText}!

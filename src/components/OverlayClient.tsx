@@ -8,6 +8,7 @@ import { useLinkFeed } from "@/components/overlay/LinkFeed";
 import { pickTier, resolveAlert, celebrates, pickNormal, type AlertBase, type AlertTier } from "@/lib/alert-tiers";
 import { poolsForAmount, applyPick, type NormalMedia } from "@/lib/alert-sets";
 import type { TestAlert } from "@/lib/overlay-test";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 type Alert = {
   id: string;
@@ -72,6 +73,7 @@ export function OverlayClient({
   alertTheme: string;
   tiers?: AlertTier[];
 }) {
+  const tx = useOverlayText();
   const [current, setCurrent] = useState<Alert | null>(null);
   // Sound/visual/duration chosen for the current alert (library random + tier).
   const [media, setMedia] = useState<(AlertBase & { videoMuted: boolean }) | null>(null);
@@ -127,6 +129,8 @@ export function OverlayClient({
   // isn't handed on mid-sentence.
   function speak(a: Alert, done: () => void = () => {}) {
     if (!ttsEnabled) return done();
+    // Read aloud in Thai whatever the overlay language: the voice is Thai and
+    // most fans write in Thai (src/lib/overlay-text.ts covers the screen only).
     const parts = [a.name || "ผู้ไม่ประสงค์ออกนาม", "ทิป", String(a.amount), "บาท"];
     if (a.message) parts.push(a.message);
     const text = parts.join(" ").slice(0, 200);
@@ -235,9 +239,9 @@ export function OverlayClient({
         const big = n % 2 === 1;
         enqueue({
           id: `test-${n++}`,
-          name: "ผู้สนับสนุนตัวอย่าง",
+          name: tx.sampleSupporter,
           amount: big ? 1000 : 100,
-          message: "ทดสอบ Donation Alert",
+          message: tx.sampleMessage,
           // Preview both directions of the subathon badge too.
           timerDelta: big ? -300 : 120,
         });

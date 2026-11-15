@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { BarsStage } from "@/components/overlay/BarsStage";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 /** The bars OBS link: every bar that stays on screen, stacked (src/components/overlay/BarsStage.tsx). */
 export default async function BarsOverlayPage({
@@ -15,7 +17,7 @@ export default async function BarsOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true, goalColor: true, timerColor: true, comboColor: true, bossColor: true, topColor: true },
+    select: { overlayKey: true, overlayLang: true, alertColor: true, goalColor: true, timerColor: true, comboColor: true, bossColor: true, topColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -25,16 +27,18 @@ export default async function BarsOverlayPage({
 
   // Each bar follows its own colour, else the alert colour, else default pink.
   return (
-    <BarsStage
-      username={username}
-      apiKey={key}
-      colors={{
-        goal: user.goalColor ?? user.alertColor,
-        timer: user.timerColor ?? user.alertColor,
-        combo: user.comboColor ?? user.alertColor,
-        boss: user.bossColor ?? user.alertColor,
-        top: user.topColor ?? user.alertColor,
-      }}
-    />
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <BarsStage
+        username={username}
+        apiKey={key}
+        colors={{
+          goal: user.goalColor ?? user.alertColor,
+          timer: user.timerColor ?? user.alertColor,
+          combo: user.comboColor ?? user.alertColor,
+          boss: user.bossColor ?? user.alertColor,
+          top: user.topColor ?? user.alertColor,
+        }}
+      />
+    </OverlayLangProvider>
   );
 }

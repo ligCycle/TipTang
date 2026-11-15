@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { TopOverlayClient } from "@/components/overlay/TopOverlayClient";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 export default async function TopOverlayPage({
   params,
@@ -14,7 +16,7 @@ export default async function TopOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true, topColor: true },
+    select: { overlayKey: true, overlayLang: true, alertColor: true, topColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -23,5 +25,9 @@ export default async function TopOverlayPage({
   }
 
   // Its own colour, else the alert colour, else default pink.
-  return <TopOverlayClient username={username} apiKey={key} color={user.topColor ?? user.alertColor} />;
+  return (
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <TopOverlayClient username={username} apiKey={key} color={user.topColor ?? user.alertColor} />
+    </OverlayLangProvider>
+  );
 }

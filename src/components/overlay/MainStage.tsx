@@ -10,6 +10,7 @@ import { FitBox, StageProvider, useStage } from "@/components/overlay/Stage";
 import { ObsSetupHint } from "@/components/overlay/ObsSetupHint";
 import { LinkFeedProvider, useLinkFeedPoll } from "@/components/overlay/LinkFeed";
 import type { MainCard } from "@/lib/obs-stage";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 /** The main link's one poll: also the alerts' pace, as before. */
 const STAGE_POLL_MS = 3000;
@@ -92,6 +93,7 @@ export function MainStage({
 
 /** "TipTang ลิงก์หลัก · เชื่อมต่อแล้ว" while setting up; hidden whenever a popup plays. */
 function MainHint() {
+  const tx = useOverlayText();
   const stage = useStage();
-  return <ObsSetupHint label="ลิงก์หลัก" hidden={stage.busy} />;
+  return <ObsSetupHint label={tx.mainLink} hidden={stage.busy} />;
 }

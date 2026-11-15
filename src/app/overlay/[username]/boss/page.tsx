@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { BossOverlayClient } from "@/components/overlay/BossOverlayClient";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 export default async function BossOverlayPage({
   params,
@@ -14,7 +16,7 @@ export default async function BossOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true, bossColor: true },
+    select: { overlayKey: true, overlayLang: true, alertColor: true, bossColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -23,5 +25,9 @@ export default async function BossOverlayPage({
   }
 
   // The boss card follows its own colour, else the alert colour, else default pink.
-  return <BossOverlayClient username={username} apiKey={key} color={user.bossColor ?? user.alertColor} />;
+  return (
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <BossOverlayClient username={username} apiKey={key} color={user.bossColor ?? user.alertColor} />
+    </OverlayLangProvider>
+  );
 }

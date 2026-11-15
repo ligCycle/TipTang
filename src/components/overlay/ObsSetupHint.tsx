@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 /** Outside OBS (a browser tab, other live software) the hint shows this long after load. */
 const SHOW_OUTSIDE_OBS_MS = 10_000;
@@ -26,6 +27,7 @@ export function ObsSetupHint({
   /** "bottom" for the bars link, whose bars stack from the top. */
   place?: "center" | "bottom";
 }) {
+  const tx = useOverlayText();
   const [onAir, setOnAir] = useState(false);
   const [expired, setExpired] = useState(false);
 
@@ -64,8 +66,8 @@ export function ObsSetupHint({
     >
       <div className="rounded-2xl bg-[#120c16]/85 px-6 py-4 text-center text-white">
         <p className="text-2xl font-extrabold">TipTang {label}</p>
-        <p className="mt-1 text-lg font-semibold text-emerald-300">เชื่อมต่อแล้ว</p>
-        <p className="mt-1 text-sm text-white/70">ป้ายนี้หายเองตอนเริ่มไลฟ์หรืออัด</p>
+        <p className="mt-1 text-lg font-semibold text-emerald-300">{tx.connected}</p>
+        <p className="mt-1 text-sm text-white/70">{tx.hintHides}</p>
       </div>
     </div>
   );

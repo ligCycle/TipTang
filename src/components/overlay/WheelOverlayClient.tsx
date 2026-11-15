@@ -6,6 +6,7 @@ import { clampSlots, layoutSegments } from "@/lib/wheel";
 import type { OverlaySpin } from "@/lib/wheel-server";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
 import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 const POLL_MS = 3000;
 const SETTLE_MS = 400;
@@ -29,6 +30,7 @@ export function WheelOverlayClient({
   /** Main link: true from a claim until it has played (kept mounted meanwhile, I-1). */
   onBusy?: (busy: boolean) => void;
 }) {
+  const tx = useOverlayText();
   const onBusyRef = useRef(onBusy);
   useEffect(() => {
     onBusyRef.current = onBusy;
@@ -142,7 +144,7 @@ export function WheelOverlayClient({
       )}
       {showResult && (
         <div className="absolute inset-x-6 bottom-6 rounded-2xl border-2 border-brand-500 bg-[#120c16]/90 px-5 py-3 text-center text-white shadow-2xl">
-          <p className="text-lg font-semibold text-pink-200">{current.fan} หมุนได้</p>
+          <p className="text-lg font-semibold text-pink-200">{tx.wheelSpun(current.fan)}</p>
           <p className="text-3xl font-extrabold leading-tight text-[#ff8a3d]">{current.taskText}!</p>
         </div>
       )}

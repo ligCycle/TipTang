@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLinkFeed } from "@/components/overlay/LinkFeed";
 import { DEFAULT_COLOR, OVERLAY_CARD_BG } from "@/lib/colors";
 import type { ComboFeed } from "@/lib/combo";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 const POLL_MS = 2000;
 const CELEBRATE_MS = 3000;
@@ -132,6 +133,7 @@ export function ComboView({
   celebrate: Celebration | null;
   color: string | null;
 }) {
+  const tx = useOverlayText();
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   const card = {
     borderColor: base,
@@ -144,22 +146,22 @@ export function ComboView({
       <div className="mx-auto w-full max-w-[576px] rounded-2xl border-2 px-4 py-3 text-white" style={card}>
         {feed.phase === "running" && celebrate ? (
           <div key={celebrate.key} className="animate-[ttpop_0.4s_ease-out] text-center">
-            <p className="text-lg font-extrabold">คอมโบทิป</p>
+            <p className="text-lg font-extrabold">{tx.comboTitle}</p>
             <p className="text-4xl font-black" style={{ color: shade(base, 0.45) }}>
-              เลเวล {celebrate.level}!
+              {tx.levelUp(celebrate.level)}
             </p>
             {celebrate.text && (
               <p className="mt-1 text-base">
-                ปลดล็อก: <span className="font-bold">{celebrate.text}</span>
+                {tx.unlocked} <span className="font-bold">{celebrate.text}</span>
               </p>
             )}
           </div>
         ) : feed.phase === "running" ? (
           <>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-lg font-extrabold">คอมโบทิป</span>
+              <span className="text-lg font-extrabold">{tx.comboTitle}</span>
               <span className="rounded-full px-3 py-0.5 text-base font-extrabold" style={badge}>
-                เลเวล {feed.level}
+                {tx.level(feed.level)}
               </span>
             </div>
             <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/15">
@@ -173,38 +175,38 @@ export function ComboView({
             </div>
             <div className="mt-1.5 flex items-center justify-between gap-3 text-[15px]">
               <span className="min-w-0 truncate" style={{ color: shade(base, 0.6) }}>
-                อีก ฿{Math.max(0, feed.size - feed.progress).toLocaleString()} →{" "}
-                <span className="font-bold text-white">{feed.nextReward ?? `ขึ้นเลเวล ${feed.level + 1}`}</span>
+                {tx.more(Math.max(0, feed.size - feed.progress).toLocaleString())}{" "}
+                <span className="font-bold text-white">{feed.nextReward ?? tx.level(feed.level + 1)}</span>
               </span>
               <span className="shrink-0 font-semibold tabular-nums text-white/80">{clock(Date.parse(feed.endsAt) - now)}</span>
             </div>
             {feed.unlocked.length > 0 && (
               <p className="mt-1 truncate text-xs text-white/65">
-                ปลดล็อกแล้ว: {feed.unlocked.map((u) => u.text).join(" · ")}
+                {tx.unlockedList} {feed.unlocked.map((u) => u.text).join(" · ")}
               </p>
             )}
           </>
         ) : (
           <div className="text-center">
-            <p className="text-base font-extrabold">คอมโบทิปจบแล้ว</p>
+            <p className="text-base font-extrabold">{tx.comboOver}</p>
             <p className="text-3xl font-black" style={{ color: shade(base, 0.45) }}>
-              เลเวล {feed.level}
+              {tx.level(feed.level)}
             </p>
             <p className="text-sm" style={{ color: shade(base, 0.6) }}>
-              รวม ฿{feed.total.toLocaleString()} จาก {feed.fans} คน · ขอบคุณทุกคน
+              {tx.comboSummary(feed.total.toLocaleString(), feed.fans)}
             </p>
             {(feed.won.length > 0 || feed.almost) && (
               <ul className="mx-auto mt-2 max-w-sm text-left text-sm">
                 {feed.won.map((w) => (
                   <li key={w.level} className="flex gap-2 border-t border-white/10 py-0.5">
-                    <span className="w-16 shrink-0 text-xs text-white/60">เลเวล {w.level}</span>
+                    <span className="w-16 shrink-0 text-xs text-white/60">{tx.level(w.level)}</span>
                     <span className="truncate">{w.text}</span>
                   </li>
                 ))}
                 {feed.almost && (
                   <li className="flex gap-2 border-t border-white/10 py-0.5 text-white/50">
-                    <span className="w-16 shrink-0 text-xs">เลเวล {feed.almost.level}</span>
-                    <span className="truncate">{feed.almost.text} (เกือบได้!)</span>
+                    <span className="w-16 shrink-0 text-xs">{tx.level(feed.almost.level)}</span>
+                    <span className="truncate">{feed.almost.text} {tx.soClose}</span>
                   </li>
                 )}
               </ul>

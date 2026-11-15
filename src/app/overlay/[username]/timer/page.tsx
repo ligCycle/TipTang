@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { TimerOverlayClient } from "@/components/TimerOverlayClient";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 export default async function TimerOverlayPage({
   params,
@@ -14,7 +16,7 @@ export default async function TimerOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true, timerColor: true },
+    select: { overlayKey: true, overlayLang: true, alertColor: true, timerColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -26,6 +28,8 @@ export default async function TimerOverlayPage({
   const color = user.timerColor ?? user.alertColor;
 
   return (
-    <TimerOverlayClient username={username} apiKey={key} color={color} />
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <TimerOverlayClient username={username} apiKey={key} color={color} />
+    </OverlayLangProvider>
   );
 }

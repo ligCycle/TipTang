@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { TodoOverlayClient } from "@/components/overlay/TodoOverlayClient";
+import { OverlayLangProvider } from "@/components/overlay/OverlayLang";
+import { overlayLangOf } from "@/lib/overlay-text";
 
 export default async function TodoOverlayPage({
   params,
@@ -14,7 +16,7 @@ export default async function TodoOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true },
+    select: { overlayKey: true, overlayLang: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -22,5 +24,9 @@ export default async function TodoOverlayPage({
     return null;
   }
 
-  return <TodoOverlayClient username={username} apiKey={key} />;
+  return (
+    <OverlayLangProvider lang={overlayLangOf(user.overlayLang)}>
+      <TodoOverlayClient username={username} apiKey={key} />
+    </OverlayLangProvider>
+  );
 }

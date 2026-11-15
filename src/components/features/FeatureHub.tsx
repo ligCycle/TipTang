@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { FEATURES, type FeatureDef } from "@/lib/feature-registry";
+import { overlayLangOf, type OverlayLang } from "@/lib/overlay-text";
 import type { FeatureFlags } from "@/lib/feature-presets";
 import { FeatureCard } from "@/components/features/FeatureCard";
 import { ObsLinkCard } from "@/components/features/ObsLinkCard";
@@ -20,6 +21,8 @@ export type HubState = {
   featuresOnboardedAt: string | null;
   /** The wheel's first-enable checklist was ticked. */
   wheelRulesAccepted: boolean;
+  /** Words on every OBS link (src/lib/overlay-text.ts). */
+  overlayLang: OverlayLang;
 };
 
 /** Loads what the hub needs from /api/overlay/setup (which also makes the key). */
@@ -47,6 +50,7 @@ export async function loadHub(): Promise<HubState | null> {
     },
     featuresOnboardedAt: d.featuresOnboardedAt ?? null,
     wheelRulesAccepted: Boolean(d.wheelRulesAccepted),
+    overlayLang: overlayLangOf(d.overlayLang),
   };
 }
 
@@ -140,6 +144,8 @@ export function FeatureHub() {
         overlayKey={hub.overlayKey}
         flags={hub.flags}
         onKey={(key) => setHub((h) => (h ? { ...h, overlayKey: key } : h))}
+        overlayLang={hub.overlayLang}
+        onLang={(lang) => setHub((h) => (h ? { ...h, overlayLang: lang } : h))}
       />
       <SetSwitcher showManage />
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}

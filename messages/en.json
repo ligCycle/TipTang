@@ -1030,7 +1030,10 @@
     "copyOwnLink": "Copy the {name} link",
     "placeSeparatelyHintMain": "Copy a feature's own link into OBS as another source; it stops playing on the main link, so it never shows twice. Tip alerts always stay on the main link.",
     "f_top": "Top supporters",
-    "d_top": "A live ranking of your biggest supporters on stream, so fans compete for the top spot"
+    "d_top": "A live ranking of your biggest supporters on stream, so fans compete for the top spot",
+    "overlayLang": "On-screen language",
+    "overlayLangHint": "Applies to every link. No need to change your OBS links (refresh the source to see it).",
+    "overlayLangFailed": "Couldn't change the language. Try again."
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",

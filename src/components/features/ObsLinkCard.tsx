@@ -7,6 +7,7 @@ import { FEATURES } from "@/lib/feature-registry";
 import type { FeatureFlags } from "@/lib/feature-presets";
 import { StatusBadge, useObsTimes } from "@/components/features/ObsBar";
 import { linkStatus } from "@/lib/obs-status";
+import { OVERLAY_LANGS, type OverlayLang } from "@/lib/overlay-text";
 
 /**
  * "เชื่อม OBS" at the top of the hub — the one place the OBS links are
@@ -20,12 +21,17 @@ export function ObsLinkCard({
   overlayKey,
   flags,
   onKey,
+  overlayLang,
+  onLang,
 }: {
   overlayBase: string;
   overlayKey: string;
   flags: FeatureFlags;
   /** A new key was made: every link changes. */
   onKey: (key: string) => void;
+  /** Words on every OBS link; the links themselves stay the same. */
+  overlayLang: OverlayLang;
+  onLang: (lang: OverlayLang) => void;
 }) {
   const t = useTranslations("featureHub");
   const tDash = useTranslations("dashboard");
@@ -34,6 +40,26 @@ export function ObsLinkCard({
   const [copied, setCopied] = useState<string | null>(null);
   const [rotating, setRotating] = useState(false);
   const [rotated, setRotated] = useState<"ok" | "error" | null>(null);
+  const [langSaving, setLangSaving] = useState(false);
+  const [langFailed, setLangFailed] = useState(false);
+
+  // Every open OBS link picks the new language up on its next reload.
+  async function chooseLang(next: OverlayLang) {
+    if (next === overlayLang || langSaving) return;
+    const before = overlayLang;
+    onLang(next);
+    setLangSaving(true);
+    setLangFailed(false);
+    const fd = new FormData();
+    fd.append("kind", "overlayLang");
+    fd.append("lang", next);
+    const res = await fetch("/api/overlay/asset", { method: "POST", body: fd }).catch(() => null);
+    if (!res?.ok) {
+      onLang(before);
+      setLangFailed(true);
+    }
+    setLangSaving(false);
+  }
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 15_000);
     return () => clearInterval(id);
@@ -161,6 +187,27 @@ export function ObsLinkCard({
           <p className="text-xs text-brand-900/50">{t("obsSize")}</p>
           <p className="mt-1 text-xs font-medium text-amber-800 dark:text-amber-300">{t("oldLinksNote")}</p>
         </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="text-sm font-semibold text-brand-900/80">{t("overlayLang")}</span>
+        <div className="inline-flex overflow-hidden rounded-full border border-brand-300" role="radiogroup" aria-label={t("overlayLang")}>
+          {OVERLAY_LANGS.map((l) => (
+            <button
+              key={l}
+              type="button"
+              role="radio"
+              aria-checked={overlayLang === l}
+              disabled={langSaving}
+              onClick={() => void chooseLang(l)}
+              className={`whitespace-nowrap px-3.5 py-1 text-sm font-semibold ${overlayLang === l ? "bg-brand-600 text-white" : "text-brand-800 hover:bg-brand-100"}`}
+            >
+              {l === "th" ? "ไทย" : "English"}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-brand-900/55">{t("overlayLangHint")}</span>
+        {langFailed && <span className="text-xs font-medium text-red-600">{t("overlayLangFailed")}</span>}
       </div>
 
       <ul className="mt-3 space-y-2">

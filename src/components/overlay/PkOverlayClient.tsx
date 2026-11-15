@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PkFeed } from "@/lib/pk-server";
 import { barShare, remainingSec } from "@/lib/pk";
 import { useLinkFeed } from "@/components/overlay/LinkFeed";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 const LIVE_POLL_MS = 2000;
 const IDLE_POLL_MS = 5000;
@@ -91,6 +92,7 @@ export type PkViewMatch = Pick<PkFeed, "kind" | "phase" | "nameA" | "nameB" | "c
 
 /** The PK bar: names, totals, countdown, split bar, winner (the OBS link and the settings preview). */
 export function PkView({ match, left }: { match: PkViewMatch; left: number }) {
+  const tx = useOverlayText();
   const share = barShare(match.totalA, match.totalB);
   const winnerName = match.winner === "A" ? match.nameA : match.winner === "B" ? match.nameB : null;
 
@@ -108,7 +110,7 @@ export function PkView({ match, left }: { match: PkViewMatch; left: number }) {
             {match.phase === "live" ? (
               <p className="text-3xl font-extrabold tabular-nums">{clock(left)}</p>
             ) : match.phase === "grace" ? (
-              <p className="text-sm font-semibold text-white/80">หมดเวลา · รอนับทิปที่กำลังยืนยัน</p>
+              <p className="text-sm font-semibold text-white/80">{tx.pkTimeUp}</p>
             ) : (
               <p className="text-3xl font-extrabold">PK</p>
             )}
@@ -125,12 +127,12 @@ export function PkView({ match, left }: { match: PkViewMatch; left: number }) {
           <div className="h-full flex-1" style={{ background: match.colorB }} />
         </div>
         {match.kind === "duo" && match.phase !== "ended" && (
-          <p className="mt-2 text-center text-xs font-semibold text-white/70">นับจากทิปที่แต่ละฝั่งยืนยัน</p>
+          <p className="mt-2 text-center text-xs font-semibold text-white/70">{tx.pkCounted}</p>
         )}
         {match.phase === "ended" && (
           <p className="mt-3 text-center text-2xl font-extrabold" style={{ color: winnerName ? (match.winner === "A" ? match.colorA : match.colorB) : "#ffffff" }}>
-            {winnerName ? `${winnerName} ชนะ!` : "เสมอ!"}
-            {match.forfeit && <span className="block text-base font-semibold text-white/75">อีกฝ่ายยอมแพ้</span>}
+            {winnerName ? tx.pkWins(winnerName) : tx.pkDraw}
+            {match.forfeit && <span className="block text-base font-semibold text-white/75">{tx.pkForfeit}</span>}
           </p>
         )}
       </div>

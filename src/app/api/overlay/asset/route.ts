@@ -13,6 +13,7 @@ import { setMediaEnabled, setVoiceEnabled } from "@/lib/media-queue";
 import { setPkEnabled } from "@/lib/pk-server";
 import { setBossEnabled } from "@/lib/boss-server";
 import { topCountOf, topRangeOf } from "@/lib/top-board";
+import { overlayLangOf } from "@/lib/overlay-text";
 import {
   uploadImage,
   deleteFile,
@@ -338,6 +339,13 @@ export async function POST(req: Request) {
       data: { soundPickEnabled: enabled },
     });
     return NextResponse.json({ ok: true, enabled });
+  }
+
+  // The words on every OBS link: "th" | "en" (src/lib/overlay-text.ts).
+  if (kind === "overlayLang") {
+    const overlayLang = overlayLangOf(form?.get("lang"));
+    await prisma.user.update({ where: { id: session.user.id }, data: { overlayLang } });
+    return NextResponse.json({ ok: true, lang: overlayLang });
   }
 
   // Feature hub card "ท็อปผู้สนับสนุน" (src/lib/top-board.ts).

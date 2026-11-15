@@ -5,6 +5,7 @@ import { DEFAULT_COLOR, OVERLAY_CARD_BG } from "@/lib/colors";
 import type { BossChain, BossFeed, BossKillView } from "@/lib/boss";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
 import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 const POLL_MS = 2000;
 const BANNER_MS = 5000;
@@ -183,6 +184,7 @@ export function BossView({
   color: string | null;
   hit: { key: number; amount: number } | null;
 }) {
+  const tx = useOverlayText();
   const base = color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
   const card = {
     borderColor: base,
@@ -200,28 +202,28 @@ export function BossView({
                   <img src={banner.kill.imageUrl} alt="" className="mx-auto mb-1 h-20 w-20 rounded-xl object-cover opacity-80 grayscale" />
                 )}
                 <p className="text-3xl font-black" style={{ color: shade(base, 0.45) }}>
-                  ปิดบอส {banner.kill.bossName}!
+                  {tx.bossDefeated(banner.kill.bossName)}
                 </p>
                 <p className="mt-1 text-[15px]">
-                  ปิดโดย <span className="font-bold">{banner.kill.killer}</span>
+                  {tx.bossFinishedBy} <span className="font-bold">{banner.kill.killer}</span>
                   <span className="text-white/60"> · </span>
-                  ดาเมจสูงสุด <span className="font-bold">{banner.kill.topFan}</span> ฿{banner.kill.topAmount.toLocaleString()}
+                  {tx.bossTopDamage} <span className="font-bold">{banner.kill.topFan}</span> ฿{banner.kill.topAmount.toLocaleString()}
                 </p>
                 {banner.kill.reward && (
                   <p className="mt-1.5 text-base">
-                    ปลดล็อก: <span className="font-bold">{banner.kill.reward}</span>
+                    {tx.unlocked} <span className="font-bold">{banner.kill.reward}</span>
                   </p>
                 )}
               </>
             ) : (
               <>
                 <p className="text-4xl font-black" style={{ color: shade(base, 0.45) }}>
-                  ปิดบอส {banner.chain.count} ตัวรวด!
+                  {tx.bossChain(banner.chain.count)}
                 </p>
                 <p className="mt-1 text-[15px]">
-                  ปิดท้ายโดย <span className="font-bold">{banner.chain.lastKiller}</span>
+                  {tx.bossLastHit} <span className="font-bold">{banner.chain.lastKiller}</span>
                 </p>
-                <p className="mt-1 text-sm text-white/70">รางวัลทั้งหมดเข้าภารกิจค้างทำแล้ว</p>
+                <p className="mt-1 text-sm text-white/70">{tx.bossRewardsToTodo}</p>
               </>
             )}
           </div>
@@ -239,6 +241,7 @@ export function BossView({
 
 /** The boss card (the OBS link and the settings preview). */
 export function BossCard({ feed, base, hit }: { feed: Live; base: string; hit: { key: number; amount: number } | null }) {
+  const tx = useOverlayText();
   const { boss } = feed;
   const left = Math.max(0, boss.hp - boss.damage);
   const pct = Math.min(100, (left / Math.max(1, boss.hp)) * 100);
@@ -263,7 +266,7 @@ export function BossCard({ feed, base, hit }: { feed: Live; base: string; hit: {
         <div className="flex items-baseline justify-between gap-2">
           <span className="truncate text-xl font-extrabold">{boss.name}</span>
           <span className="shrink-0 text-xs font-semibold text-white/60">
-            บอส {boss.index}/{boss.total}
+            {tx.bossOf(boss.index, boss.total)}
           </span>
         </div>
         <div className="mt-2 h-5 overflow-hidden rounded-full bg-white/15">
@@ -274,7 +277,7 @@ export function BossCard({ feed, base, hit }: { feed: Live; base: string; hit: {
         </div>
         <p className="mt-1.5 text-[15px] tabular-nums" style={{ color: shade(base, 0.6) }}>
           HP {left.toLocaleString()} / {boss.hp.toLocaleString()}
-          <span className="text-white/60"> · ทิป 1 บาท = 1 ดาเมจ</span>
+          <span className="text-white/60"> · {tx.bossRule}</span>
         </p>
       </div>
     </div>

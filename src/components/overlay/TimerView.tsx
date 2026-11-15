@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { useOverlayText } from "@/components/overlay/OverlayLang";
+import type { OverlayText } from "@/lib/overlay-text";
 
 export type TimerState = {
   enabled: boolean;
@@ -15,10 +17,10 @@ export type TimerState = {
   };
 };
 
-// "1 นาที" / "30 วิ" / "1.5 นาที" for a rate's time step.
-function step(seconds: number): string {
-  if (seconds < 60) return `${seconds} วิ`;
-  return `${Math.round((seconds / 60) * 10) / 10} นาที`;
+// "1 นาที" / "30 วิ" / "1.5 นาที" (or "1 min" / "30 s") for a rate's time step.
+function step(seconds: number, tx: OverlayText): string {
+  if (seconds < 60) return tx.seconds(seconds);
+  return tx.minutes(Math.round((seconds / 60) * 10) / 10);
 }
 
 // Darken a #rrggbb color by mixing toward black (amount 0..1).
@@ -48,6 +50,7 @@ function fmt(total: number): string {
  * never the client's absolute clock.
  */
 export function TimerView({ timer, color }: { timer: TimerState | null; color: string | null }) {
+  const tx = useOverlayText();
   // When the current `timer` arrived (adjusted during render when a new poll
   // result comes in) and a 250 ms clock; the display is derived from both.
   const [received, setReceived] = useState<{ timer: TimerState | null; at: number }>(() => ({
@@ -79,10 +82,10 @@ export function TimerView({ timer, color }: { timer: TimerState | null; color: s
 
   const label =
     state === "paused"
-      ? "พักอยู่"
+      ? tx.timerPaused
       : state === "running" && display <= 0
-        ? "หมดเวลา!"
-        : "เหลือเวลา";
+        ? tx.timerUp
+        : tx.timerLeft;
 
   return (
     <div className="inline-block rounded-2xl bg-black/55 px-6 py-4 text-white shadow-2xl ring-1 ring-white/15 backdrop-blur">
@@ -101,15 +104,15 @@ export function TimerView({ timer, color }: { timer: TimerState | null; color: s
       {timer.rates && (
         <div className="mt-2 space-y-0.5 border-t border-white/15 pt-2 text-center text-sm font-semibold text-white/85 drop-shadow">
           <p>
-            ทิปทุก {timer.rates.add.baht} บาท{" "}
-            <span className="text-emerald-300">+{step(timer.rates.add.seconds)}</span>
+            {tx.timerAdd(timer.rates.add.baht)}{" "}
+            <span className="text-emerald-300">+{step(timer.rates.add.seconds, tx)}</span>
           </p>
           {timer.rates.reduce && (
             <p>
-              ทิปลดเวลาทุก {timer.rates.reduce.baht} บาท{" "}
-              <span className="text-rose-300">−{step(timer.rates.reduce.seconds)}</span>
+              {tx.timerReduce(timer.rates.reduce.baht)}{" "}
+              <span className="text-rose-300">−{step(timer.rates.reduce.seconds, tx)}</span>
               {timer.rates.reduce.minAmount > timer.rates.reduce.baht && (
-                <span className="text-white/60"> (ขั้นต่ำ {timer.rates.reduce.minAmount} บาท)</span>
+                <span className="text-white/60"> {tx.timerReduceMin(timer.rates.reduce.minAmount)}</span>
               )}
             </p>
           )}
@@ -117,7 +120,7 @@ export function TimerView({ timer, color }: { timer: TimerState | null; color: s
       )}
       {timer.maxSeconds > 0 && (
         <p className="mt-1 text-center text-xs font-semibold text-white/70 drop-shadow">
-          สูงสุด {fmt(timer.maxSeconds)}
+          {tx.timerMax(fmt(timer.maxSeconds))}
         </p>
       )}
     </div>
