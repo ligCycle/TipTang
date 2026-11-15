@@ -14,7 +14,7 @@ export default async function TopOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true },
+    select: { overlayKey: true, alertColor: true, topColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -22,5 +22,6 @@ export default async function TopOverlayPage({
     return null;
   }
 
-  return <TopOverlayClient username={username} apiKey={key} color={user.alertColor} />;
+  // Its own colour, else the alert colour, else default pink.
+  return <TopOverlayClient username={username} apiKey={key} color={user.topColor ?? user.alertColor} />;
 }

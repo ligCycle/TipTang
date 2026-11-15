@@ -15,7 +15,7 @@ export default async function BarsOverlayPage({
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { overlayKey: true, alertColor: true, goalColor: true, timerColor: true, comboColor: true, bossColor: true },
+    select: { overlayKey: true, alertColor: true, goalColor: true, timerColor: true, comboColor: true, bossColor: true, topColor: true },
   });
 
   // Invalid/missing key → render nothing (transparent page).
@@ -33,7 +33,7 @@ export default async function BarsOverlayPage({
         timer: user.timerColor ?? user.alertColor,
         combo: user.comboColor ?? user.alertColor,
         boss: user.bossColor ?? user.alertColor,
-        top: user.alertColor,
+        top: user.topColor ?? user.alertColor,
       }}
     />
   );

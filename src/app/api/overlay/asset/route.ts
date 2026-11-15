@@ -51,14 +51,16 @@ export async function POST(req: Request) {
   const remove = form?.get("remove") === "1";
   const file = form?.get("file");
 
-  // Alert card / goal-bar / timer color (hex) — not a file upload.
-  if (kind === "color" || kind === "goalColor" || kind === "timerColor") {
+  // Alert card / goal-bar / timer / top-supporters color (hex) — not a file upload.
+  if (kind === "color" || kind === "goalColor" || kind === "timerColor" || kind === "topColor") {
     const field =
       kind === "goalColor"
         ? "goalColor"
         : kind === "timerColor"
           ? "timerColor"
-          : "alertColor";
+          : kind === "topColor"
+            ? "topColor"
+            : "alertColor";
     if (remove) {
       await prisma.user.update({
         where: { id: session.user.id },

@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ColorField } from "@/components/ColorField";
 import { Switch } from "@/components/features/FeatureCard";
 import { FeatureSettingsLayout } from "@/components/features/FeaturePages";
 import { FeaturePreviewLayout, PREVIEW_WIDTH, PreviewStage } from "@/components/features/PreviewPanel";
 import { TopView } from "@/components/overlay/TopOverlayClient";
+import { DEFAULT_COLOR, PRESET_COLORS } from "@/lib/colors";
 import { RANGES, type Range } from "@/lib/range";
 import { TOP_COUNTS, topCountOf, topRangeOf, type TopCount } from "@/lib/top-board";
 
-type TopSettings = { enabled: boolean; range: Range; count: TopCount; color: string | null };
+/** `color` = the bar's own colour (null = the alert colour, `alertColor`). */
+type TopSettings = { enabled: boolean; range: Range; count: TopCount; color: string | null; alertColor: string | null };
 
 /** Sample names for the preview only (the OBS link shows real supporters). */
 const SAMPLE = ["มิ้นท์", "พี่โอ๊ต", "Skye", "น้ำหวาน", "Ken", "ฟ้าใส", "Boss", "ต้นกล้า", "Mali", "แพรว"].map((name, i) => ({
@@ -33,7 +36,7 @@ export function TopPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d) return setError(true);
-        setData({ enabled: Boolean(d.topEnabled), range: topRangeOf(d.topRange), count: topCountOf(d.topCount), color: d.color ?? null });
+        setData({ enabled: Boolean(d.topEnabled), range: topRangeOf(d.topRange), count: topCountOf(d.topCount), color: d.topColor ?? null, alertColor: d.color ?? null });
       })
       .catch(() => setError(true));
   }, []);
@@ -61,6 +64,13 @@ export function TopPage() {
     if (!(await post({ kind: "topConfig", range, count: String(count) }))) setData(before);
   }
 
+  async function saveColor(hex: string | null) {
+    if (!data) return;
+    const before = data;
+    setData({ ...data, color: hex });
+    if (!(await post(hex ? { kind: "topColor", color: hex } : { kind: "topColor", remove: "1" }))) setData(before);
+  }
+
   if (!data) return error ? <p className="text-sm font-medium text-red-600">{t("loadFailed")}</p> : null;
 
   const pill = (active: boolean) =>
@@ -80,7 +90,7 @@ export function TopPage() {
       <FeaturePreviewLayout
         preview={
           <PreviewStage width={PREVIEW_WIDTH} note={t("previewNote")}>
-            <TopView feed={{ range: data.range, items: SAMPLE.slice(0, data.count) }} color={data.color} />
+            <TopView feed={{ range: data.range, items: SAMPLE.slice(0, data.count) }} color={data.color ?? data.alertColor} />
           </PreviewStage>
         }
       >
@@ -107,6 +117,23 @@ export function TopPage() {
                 {t("rows", { n: c })}
               </button>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-brand-200 p-4">
+          <h2 className="font-bold text-brand-900">③ {t("color")}</h2>
+          <div className="mt-2 rounded-xl bg-brand-50 p-3">
+            <ColorField
+              value={data.color}
+              fallback={data.alertColor ?? DEFAULT_COLOR}
+              presets={PRESET_COLORS}
+              label={t("color")}
+              codeLabel={t("colorCode")}
+              resetLabel={t("colorReset")}
+              defaultLabel={t("colorDefault")}
+              onSave={(hex) => void saveColor(hex)}
+              onReset={() => void saveColor(null)}
+            />
           </div>
         </section>
       </FeaturePreviewLayout>

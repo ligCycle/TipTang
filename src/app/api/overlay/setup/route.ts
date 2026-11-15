@@ -57,6 +57,7 @@ export async function POST() {
       topEnabled: true,
       topRange: true,
       topCount: true,
+      topColor: true,
       featuresOnboardedAt: true,
     },
   });
@@ -125,6 +126,7 @@ export async function POST() {
     topEnabled: user.topEnabled,
     topRange: topRangeOf(user.topRange),
     topCount: topCountOf(user.topCount),
+    topColor: user.topColor,
     activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,

@@ -641,6 +641,8 @@ model User {
   topEnabled           Boolean                  @default(false)
   topRange             String                   @default("30d")
   topCount             Int                      @default(5)
+  // Null = the alert colour.
+  topColor             String?
   bossDefs             BossDef[]
   bossHits             BossHit[]
   bossKills            BossKill[]
