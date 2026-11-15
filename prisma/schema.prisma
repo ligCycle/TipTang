@@ -22,6 +22,12 @@ enum PaymentMethod {
   PAYPAL
 }
 
+enum ChannelVerifyStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 enum TipStatus {
   PENDING
   CONFIRMED
@@ -451,6 +457,14 @@ model User {
   goalDisplay               String    @default("all")
   // Social profile links: { instagram, youtube, tiktok, facebook, x, discord, website }
   socialLinks               Json?
+  // Channel-owner badge: the creator asks for one saved channel link, the
+  // founder checks it by hand (docs/superpowers/specs/2026-11-15-channel-verify-badge-design.md).
+  // The badge lasts only while that link is unchanged (src/lib/channel-verify.ts).
+  channelVerifyStatus       ChannelVerifyStatus?
+  channelVerifyKey          String?
+  channelVerifyUrl          String?
+  channelVerifyRequestedAt  DateTime?
+  channelVerifiedAt         DateTime?
   // Accent color (hex) for the public profile page; null = default brand pink.
   profileColor              String?
   // SENSITIVE (PDPA): PromptPay id (phone / national id). Never expose to public client.
