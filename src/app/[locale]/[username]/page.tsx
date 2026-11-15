@@ -10,6 +10,8 @@ import { SHOP_ENABLED } from "@/lib/features";
 import { formatBaht } from "@/lib/format";
 import { ogImages } from "@/lib/og";
 import { SOCIAL_PLATFORMS, normalizeSocialLinks } from "@/lib/socials";
+import { badgeFor } from "@/lib/channel-verify";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { SocialIcon } from "@/components/SocialIcon";
 import { Icon } from "@/components/Icon";
 import { CreatorTheme } from "@/components/CreatorTheme";
@@ -96,6 +98,9 @@ export default async function ProfilePage({
       promptpayId: true,
       paypalHandle: true,
       thankYouMessage: true,
+      channelVerifyStatus: true,
+      channelVerifyKey: true,
+      channelVerifyUrl: true,
       goalTitle: true,
       goalAmount: true,
       goalStartedAt: true,
@@ -251,6 +256,7 @@ export default async function ProfilePage({
   const topSupporters = topSupportersList;
 
   const socials = normalizeSocialLinks(creator.socialLinks);
+  const badge = badgeFor(creator, socials);
   // Goal "หลายชิ้น": fans pick an item in the form when 2+ items are open
   // (and the card is on); the sidebar block then steps aside. Otherwise the
   // block shows the single goal as always, or the main item.
@@ -351,6 +357,12 @@ export default async function ProfilePage({
           <div className="min-w-0 flex-1 pt-2">
             <h1 className="text-2xl font-extrabold text-brand-900 sm:text-3xl">
               {creator.displayName}
+              {badge && (
+                <>
+                  {" "}
+                  <VerifiedBadge label={badge.label} url={badge.url} />
+                </>
+              )}
             </h1>
             <p className="text-sm font-medium text-brand-700">
               @{creator.username}
