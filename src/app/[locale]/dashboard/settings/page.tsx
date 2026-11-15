@@ -4,6 +4,9 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/SettingsForm";
 import { normalizeSocialLinks } from "@/lib/socials";
+import { requestStillValid, verifiableLinks } from "@/lib/channel-verify";
+import { SITE_URL } from "@/lib/site";
+import { ChannelVerifyCard } from "@/components/ChannelVerifyCard";
 
 export default async function SettingsPage({
   params,
@@ -32,9 +35,18 @@ export default async function SettingsPage({
       minTipAmount: true,
       socialLinks: true,
       profileColor: true,
+      channelVerifyStatus: true,
+      channelVerifyKey: true,
+      channelVerifyUrl: true,
     },
   });
   if (!user) return null;
+
+  const socials = normalizeSocialLinks(user.socialLinks);
+  const links = verifiableLinks(socials);
+  // A request for a link that has since changed no longer counts.
+  const verifyOk = requestStillValid(user.channelVerifyKey, user.channelVerifyUrl, socials);
+  const verifyPlatform = links.find((l) => l.key === user.channelVerifyKey)?.label ?? null;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -50,9 +62,15 @@ export default async function SettingsPage({
           coverUrl: user.coverUrl ?? "",
           autoConfirmTips: user.autoConfirmTips,
           minTipAmount: user.minTipAmount,
-          socialLinks: normalizeSocialLinks(user.socialLinks),
+          socialLinks: socials,
           profileColor: user.profileColor ?? "",
         }}
+      />
+      <ChannelVerifyCard
+        links={links}
+        linkToPaste={`${SITE_URL.replace(/^https?:\/\//, "")}/${user.username}`}
+        status={verifyOk ? user.channelVerifyStatus : null}
+        platform={verifyOk ? verifyPlatform : null}
       />
     </div>
   );
