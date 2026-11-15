@@ -7,6 +7,7 @@ import { normalizePaypalHandle } from "@/lib/paypal";
 import { sendSecurityAlertEmail } from "@/lib/email";
 import { maskPayout } from "@/lib/mask";
 import { linkBase } from "@/lib/site";
+import { CLEARED_VERIFY, requestStillValid } from "@/lib/channel-verify";
 
 export async function PATCH(req: Request) {
   const session = await auth();
@@ -85,9 +86,22 @@ export async function PATCH(req: Request) {
   // values so the owner can be told when they change.
   const before = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { promptpayId: true, paypalHandle: true },
+    select: {
+      promptpayId: true,
+      paypalHandle: true,
+      channelVerifyStatus: true,
+      channelVerifyKey: true,
+      channelVerifyUrl: true,
+    },
   });
   const newPromptpay = promptpayId ? promptpayId : null;
+
+  // The channel badge covers the exact link that was checked: editing or
+  // removing it drops the request (src/lib/channel-verify.ts).
+  const dropVerify =
+    cleanSocials !== undefined &&
+    before?.channelVerifyStatus != null &&
+    !requestStillValid(before.channelVerifyKey, before.channelVerifyUrl, cleanSocials);
 
   const updated = await prisma.user.update({
     where: { id: session.user.id },
@@ -106,6 +120,7 @@ export async function PATCH(req: Request) {
       ...goalTitleUpdate,
       ...goalAmountUpdate,
       ...(cleanSocials === undefined ? {} : { socialLinks: cleanSocials }),
+      ...(dropVerify ? CLEARED_VERIFY : {}),
       ...(profileColor === undefined
         ? {}
         : { profileColor: profileColor ? profileColor : null }),
