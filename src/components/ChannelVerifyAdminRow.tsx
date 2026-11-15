@@ -28,9 +28,10 @@ export function ChannelVerifyAdminRow({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Revoke asks once more in the row itself (browser confirm() dialogs can be blocked).
+  const [confirming, setConfirming] = useState(false);
 
   async function act(action: "approve" | "reject" | "revoke") {
-    if (action === "revoke" && !confirm(t("adminRevokeConfirm", { name: row.displayName }))) return;
     setBusy(true);
     setFailed(false);
     try {
@@ -76,9 +77,20 @@ export function ChannelVerifyAdminRow({
             </button>
           </>
         ) : (
-          <button type="button" disabled={busy} onClick={() => act("revoke")} className="btn-secondary px-4 py-1.5 text-sm">
-            {t("adminRevoke")}
-          </button>
+          confirming ? (
+            <>
+              <button type="button" disabled={busy} onClick={() => act("revoke")} className="btn-primary px-4 py-1.5 text-sm">
+                {t("adminRevokeSure")}
+              </button>
+              <button type="button" disabled={busy} onClick={() => setConfirming(false)} className="btn-secondary px-4 py-1.5 text-sm">
+                {t("adminCancel")}
+              </button>
+            </>
+          ) : (
+            <button type="button" disabled={busy} onClick={() => setConfirming(true)} className="btn-secondary px-4 py-1.5 text-sm">
+              {t("adminRevoke")}
+            </button>
+          )
         )}
       </div>
       {failed && <p className="mt-2 text-xs font-medium text-red-600">{t("adminFailed")}</p>}

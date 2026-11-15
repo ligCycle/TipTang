@@ -1428,7 +1428,6 @@
     "adminVerifiedTitle": "Verified",
     "adminVerifiedAt": "Verified {date}",
     "adminRevoke": "Revoke",
-    "adminRevokeConfirm": "Revoke {name}'s badge? They will need to ask again.",
     "adminFailed": "That didn't work. Try again.",
     "cardTitle": "Channel owner badge",
     "cardIntro": "A pink star after your name on the donate page tells viewers this page belongs to the real channel owner.",
@@ -1449,6 +1448,8 @@
     "cardFailed": "That didn't work. Try again.",
     "badgeLabel": "Channel owner verified",
     "badgeText": "Verified owner of this {platform} channel",
-    "badgeOpen": "View channel"
+    "badgeOpen": "View channel",
+    "adminRevokeSure": "Yes, revoke",
+    "adminCancel": "Cancel"
   }
 }
