@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin";
 import { ReviewModRow } from "@/components/ReviewModRow";
 import { ReportAdminRow } from "@/components/ReportAdminRow";
 import { ActivationSection } from "@/components/ActivationSection";
+import { ChannelVerifySection } from "@/components/ChannelVerifySection";
 import { Icon } from "@/components/Icon";
 
 export default async function AdminPage({
@@ -61,6 +62,8 @@ export default async function AdminPage({
       <h1 className="text-2xl font-extrabold text-brand-900">{t("title")}</h1>
 
       <ActivationSection locale={locale} />
+
+      <ChannelVerifySection locale={locale} />
 
       {/* Reports from creators */}
       <section>
