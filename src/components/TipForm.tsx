@@ -16,18 +16,8 @@ import { GachaPicker, type GachaChoice } from "@/components/GachaPicker";
 import { PkPicker, type PkPick } from "@/components/PkPicker";
 import { extrasFloor } from "@/lib/wishlist";
 import { mediaExtrasDrop, voiceBaseType, VOICE_EXT } from "@/lib/media";
+import { quickAmountsFor } from "@/lib/quick-amounts";
 
-const QUICK_AMOUNTS = [20, 50, 100, 200, 500];
-
-/**
- * Quick-pick chips that respect the creator's minimum. If the standard set is
- * mostly wiped out by a high minimum, offer multiples of the minimum instead
- * so the row never ends up empty.
- */
-function quickAmountsFor(min: number): number[] {
-  const kept = QUICK_AMOUNTS.filter((a) => a >= min);
-  return kept.length >= 3 ? kept : [min, min * 2, min * 5, min * 10];
-}
 const MAX_BYTES = 5 * 1024 * 1024;
 /** The host refuses request bodies over ~4.5 MB: slip + voice together stay under this. */
 const COMBINED_MAX = 4.2 * 1024 * 1024;
@@ -564,17 +554,15 @@ export function TipForm({
               className="input"
               required
             />
-            {minAmount > 1 && (
-              <span
-                className={`mt-1 block text-xs ${
-                  belowMinimum
-                    ? "font-medium text-red-600"
-                    : "text-brand-900/55"
-                }`}
-              >
-                {t("minAmountHint", { min: minAmount })}
-              </span>
-            )}
+            <span
+              className={`mt-1 block text-xs ${
+                belowMinimum
+                  ? "font-medium text-red-600"
+                  : "text-brand-900/55"
+              }`}
+            >
+              {t("minAmountHint", { min: minAmount })}
+            </span>
           </label>
 
           {pkOn && <PkPicker username={username} value={pk} onChange={setPk} />}
