@@ -1028,7 +1028,9 @@
     "placeSeparately": "Place apart:",
     "placeSeparatelyHint": "Copy a bar's own link into OBS as another source; that bar leaves the bars link by itself, so it never shows twice.",
     "copyOwnLink": "Copy the {name} link",
-    "placeSeparatelyHintMain": "Copy a feature's own link into OBS as another source; it stops playing on the main link, so it never shows twice. Tip alerts always stay on the main link."
+    "placeSeparatelyHintMain": "Copy a feature's own link into OBS as another source; it stops playing on the main link, so it never shows twice. Tip alerts always stay on the main link.",
+    "f_top": "Top supporters",
+    "d_top": "A live ranking of your biggest supporters on stream, so fans compete for the top spot"
   },
   "dashNav": {
     "menuLabel": "Dashboard menu",
@@ -1451,5 +1453,19 @@
     "badgeOpen": "View channel",
     "adminRevokeSure": "Yes, revoke",
     "adminCancel": "Cancel"
+  },
+  "topPage": {
+    "howItWorks": "This bar sits on your OBS bars link and ranks who tipped the most in the period you pick. It updates itself when a new tip is confirmed.",
+    "publicOnly": "Only supporters who chose to show their name appear, same as the ranking on your donate page.",
+    "range": "Count tips from",
+    "r_today": "Today",
+    "r_7d": "7 days",
+    "r_30d": "30 days",
+    "r_all": "All time",
+    "count": "How many places",
+    "rows": "Top {n}",
+    "previewNote": "Sample names. On stream it shows your real supporters.",
+    "saveFailed": "Couldn't save. Try again.",
+    "loadFailed": "Couldn't load your settings. Refresh and try again."
   }
 }

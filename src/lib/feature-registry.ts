@@ -6,7 +6,7 @@ import type { FeatureFlags } from "@/lib/feature-presets";
  * settings page under /dashboard/features/<id>, and one overlay widget.
  * Message keys: featureHub.f_<id> (name) and featureHub.d_<id> (one line).
  */
-export type FeatureId = "alerts" | "goal" | "subathon" | "soundpick" | "wheel" | "combo" | "media" | "voice" | "gacha" | "pk" | "boss";
+export type FeatureId = "alerts" | "goal" | "subathon" | "soundpick" | "wheel" | "combo" | "media" | "voice" | "gacha" | "pk" | "boss" | "top";
 
 export type FeatureDef = {
   id: FeatureId;
@@ -17,13 +17,13 @@ export type FeatureDef = {
   /** Adds something to the fan donation page (orange tag on the card). */
   fanPage: boolean;
   /** The /api/overlay/asset kind that switches it. */
-  toggleKind: "alertsToggle" | "goalToggle" | "timerToggle" | "soundPickToggle" | "wheelToggle" | "comboToggle" | "mediaToggle" | "voiceToggle" | "gachaToggle" | "pkToggle" | "bossToggle";
+  toggleKind: "alertsToggle" | "goalToggle" | "timerToggle" | "soundPickToggle" | "wheelToggle" | "comboToggle" | "mediaToggle" | "voiceToggle" | "gachaToggle" | "pkToggle" | "bossToggle" | "topToggle";
   /**
    * Its own OBS browser-source link, after /overlay/<username>. Each feature
    * is a separate source so creators place and size it freely in OBS.
    * Null = no link of its own (e.g. sound pick plays through the alerts).
    */
-  obsPath: "" | "/goal" | "/timer" | "/wheel" | "/combo" | "/media" | "/gacha" | "/pk" | "/boss" | null;
+  obsPath: "" | "/goal" | "/timer" | "/wheel" | "/combo" | "/media" | "/gacha" | "/pk" | "/boss" | "/top" | null;
   /** Suggested browser-source size (width×height). */
   obsSize: string;
   /**
@@ -43,6 +43,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "pk", icon: "trophy", flag: "pkEnabled", href: "/dashboard/features/pk", fanPage: true, toggleKind: "pkToggle", obsPath: "/pk", obsSize: "800×220", stage: ["bars"] },
   { id: "wheel", icon: "wheel", flag: "wheelEnabled", href: "/dashboard/features/wheel", fanPage: true, toggleKind: "wheelToggle", obsPath: "/wheel", obsSize: "600×600", stage: ["main"] },
   { id: "boss", icon: "shield", flag: "bossEnabled", href: "/dashboard/features/boss", fanPage: false, toggleKind: "bossToggle", obsPath: "/boss", obsSize: "600×320", stage: ["bars", "main"] },
+  { id: "top", icon: "trophy", flag: "topEnabled", href: "/dashboard/features/top", fanPage: false, toggleKind: "topToggle", obsPath: "/top", obsSize: "600×360", stage: ["bars"] },
   { id: "combo", icon: "zap", flag: "comboEnabled", href: "/dashboard/features/combo", fanPage: false, toggleKind: "comboToggle", obsPath: "/combo", obsSize: "600×220", stage: ["bars"] },
   { id: "media", icon: "music", flag: "mediaEnabled", href: "/dashboard/features/media", fanPage: true, toggleKind: "mediaToggle", obsPath: "/media", obsSize: "640×480", stage: ["main"] },
   // Plays through the clip link (one queue, one OBS source).

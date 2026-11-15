@@ -22,6 +22,8 @@ export type FeatureFlags = {
   pkEnabled: boolean;
   /** Boss raid (not part of any preset). */
   bossEnabled: boolean;
+  /** Top supporters bar (not part of any preset). */
+  topEnabled: boolean;
 };
 
 export const PRESETS = {

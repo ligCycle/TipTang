@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { topCountOf, topRangeOf } from "@/lib/top-board";
 import crypto from "crypto";
 import { auth } from "@/lib/auth";
 import { getActiveSetId } from "@/lib/alert-sets-server";
@@ -53,6 +54,9 @@ export async function POST() {
       gachaEnabled: true,
       pkEnabled: true,
       bossEnabled: true,
+      topEnabled: true,
+      topRange: true,
+      topCount: true,
       featuresOnboardedAt: true,
     },
   });
@@ -118,6 +122,9 @@ export async function POST() {
     gachaEnabled: user.gachaEnabled,
     pkEnabled: user.pkEnabled,
     bossEnabled: user.bossEnabled,
+    topEnabled: user.topEnabled,
+    topRange: topRangeOf(user.topRange),
+    topCount: topCountOf(user.topCount),
     activeSetId,
     featuresOnboardedAt: user.featuresOnboardedAt?.toISOString() ?? null,
     soundUrl: user.alertSoundUrl,

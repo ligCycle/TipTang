@@ -12,6 +12,7 @@ import { getActiveSetId, touchSet } from "@/lib/alert-sets-server";
 import { setMediaEnabled, setVoiceEnabled } from "@/lib/media-queue";
 import { setPkEnabled } from "@/lib/pk-server";
 import { setBossEnabled } from "@/lib/boss-server";
+import { topCountOf, topRangeOf } from "@/lib/top-board";
 import {
   uploadImage,
   deleteFile,
@@ -335,6 +336,21 @@ export async function POST(req: Request) {
       data: { soundPickEnabled: enabled },
     });
     return NextResponse.json({ ok: true, enabled });
+  }
+
+  // Feature hub card "ท็อปผู้สนับสนุน" (src/lib/top-board.ts).
+  if (kind === "topToggle") {
+    const enabled = form?.get("enabled") === "1";
+    await prisma.user.update({ where: { id: session.user.id }, data: { topEnabled: enabled } });
+    return NextResponse.json({ ok: true, enabled });
+  }
+
+  // Its range and number of rows (unknown values fall back to the defaults).
+  if (kind === "topConfig") {
+    const topRange = topRangeOf(form?.get("range"));
+    const topCount = topCountOf(form?.get("count"));
+    await prisma.user.update({ where: { id: session.user.id }, data: { topRange, topCount } });
+    return NextResponse.json({ ok: true, range: topRange, count: topCount });
   }
 
   // Feature hub card "คอมโบทิป". Off stops a running combo at once (no summary).
