@@ -27,7 +27,10 @@ export function ChannelVerifyCard({
 }) {
   const t = useTranslations("channelVerify");
   const router = useRouter();
-  const [key, setKey] = useState<string>(links[0]?.key ?? "");
+  const [picked, setPicked] = useState<string>(links[0]?.key ?? "");
+  // The links can arrive after the first render (the creator saves a channel
+  // link above): fall back to the first one rather than keep an empty pick.
+  const key = links.some((l) => l.key === picked) ? picked : (links[0]?.key ?? "");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -102,7 +105,7 @@ export function ChannelVerifyCard({
           <div className="mt-4 space-y-3">
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-brand-900/80">{t("cardPick")}</span>
-              <select value={key} onChange={(e) => setKey(e.target.value)} className="input">
+              <select value={key} onChange={(e) => setPicked(e.target.value)} className="input">
                 {links.map((l) => (
                   <option key={l.key} value={l.key}>
                     {l.label}: {l.url}
