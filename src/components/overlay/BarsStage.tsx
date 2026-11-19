@@ -16,7 +16,9 @@ import { useOverlayText } from "@/components/overlay/OverlayLang";
  * The link's one poll: marks it "connected", says which bars to mount (every
  * bar except one whose own link is open) and carries each bar's feed.
  */
-const STAGE_POLL_MS = 4000;
+// 10 s, not faster: this poll is most of TipTang's Vercel CPU bill (2026-11-19
+// usage review). Bars show running totals, so a few seconds late is fine.
+const STAGE_POLL_MS = 10_000;
 const NO_BARS: Record<BarCard, boolean> = { goal: false, timer: false, combo: false, pk: false, boss: false, top: false };
 /** Every bar is drawn this wide, so the stack reads as one neat column. */
 const WIDTH = 576;
