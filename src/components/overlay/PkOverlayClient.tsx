@@ -3,11 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { PkFeed } from "@/lib/pk-server";
 import { barShare, remainingSec } from "@/lib/pk";
-import { useLinkFeed } from "@/components/overlay/LinkFeed";
+import { pacedLoop, useLinkFeed } from "@/components/overlay/LinkFeed";
 import { useOverlayText } from "@/components/overlay/OverlayLang";
-
-const LIVE_POLL_MS = 2000;
-const IDLE_POLL_MS = 5000;
+import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
 
 function clock(sec: number): string {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -38,7 +36,6 @@ export function PkOverlayClient({
 
   useEffect(() => {
     let active = true;
-    let timer: ReturnType<typeof setTimeout> | null = null;
     function apply(next: PkFeed | null) {
       if (next) {
         skew.current = new Date(next.serverNow).getTime() - Date.now();
@@ -47,17 +44,12 @@ export function PkOverlayClient({
       if (active) setMatch(next);
     }
     async function poll() {
-      let next: PkFeed | null = null;
       try {
         const res = await fetch(`/api/overlay/${username}/pk?key=${encodeURIComponent(apiKey)}${via ? `&via=${via}` : ""}`, { cache: "no-store" });
-        if (res.ok) {
-          next = ((await res.json()) as { match: PkFeed | null }).match;
-          apply(next);
-        }
+        if (res.ok) apply(((await res.json()) as { match: PkFeed | null }).match);
       } catch {
         // try again next tick
       }
-      if (active) timer = setTimeout(poll, next ? LIVE_POLL_MS : IDLE_POLL_MS);
     }
     const tick = setInterval(() => setServerNow(Date.now() + skew.current), 500);
     // Bars link: the match rides on the link's one poll (src/components/overlay/LinkFeed.tsx).
@@ -72,10 +64,10 @@ export function PkOverlayClient({
         clearInterval(tick);
       };
     }
-    void poll();
+    const stopPoll = pacedLoop(poll, OWN_LINK_POLL_MS, { now: true });
     return () => {
       active = false;
-      if (timer) clearTimeout(timer);
+      stopPoll();
       clearInterval(tick);
     };
   }, [username, apiKey, via, linkFeed]);

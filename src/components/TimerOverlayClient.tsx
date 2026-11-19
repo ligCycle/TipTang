@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { TimerView, type TimerState } from "@/components/overlay/TimerView";
-import { useLinkFeed } from "@/components/overlay/LinkFeed";
+import { pacedLoop, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
 
 type TimerFeed = Omit<TimerState, "maxSeconds"> & { maxSeconds?: number | null };
 
@@ -57,10 +58,10 @@ export function TimerOverlayClient({
       };
     }
     poll();
-    const pollIv = setInterval(poll, 4000);
+    const stopPoll = pacedLoop(poll, OWN_LINK_POLL_MS);
     return () => {
       active = false;
-      clearInterval(pollIv);
+      stopPoll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkFeed]);

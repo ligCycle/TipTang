@@ -5,10 +5,10 @@ import { DEFAULT_COLOR } from "@/lib/colors";
 import { Icon } from "@/components/Icon";
 import type { MediaFeed } from "@/lib/media-queue";
 import { useStage } from "@/components/overlay/Stage";
-import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { IDLE_POLL_MS, pacedLoop, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
 import { useOverlayText } from "@/components/overlay/OverlayLang";
 
-const POLL_MS = 3000;
 /** A clip that hasn't started playing by then can't play here: next one. */
 const WATCHDOG_MS = 20_000;
 /** A normal browser tab blocks sound autoplay; offer a click after this. */
@@ -121,7 +121,7 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
     void poll();
     // Main link: ask while its poll says something plays or waits, once more
     // when that stops (so a finished clip clears), and now and then anyway.
-    const id = setInterval(poll, linkFeed ? IDLE_POLL_MS : POLL_MS);
+    const stopPoll = pacedLoop(poll, linkFeed ? IDLE_POLL_MS : OWN_LINK_POLL_MS);
     let wasHot = false;
     const offHot = linkFeed?.on("hot", (h) => {
       const hot = Boolean((h as { media?: boolean } | null)?.media);
@@ -130,7 +130,7 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
     });
     return () => {
       active = false;
-      clearInterval(id);
+      stopPoll();
       offHot?.();
     };
   }, [url, via, linkFeed]);

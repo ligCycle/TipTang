@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useLinkFeed } from "@/components/overlay/LinkFeed";
+import { pacedLoop, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
 import { DEFAULT_COLOR, OVERLAY_CARD_BG } from "@/lib/colors";
 import type { ComboFeed } from "@/lib/combo";
 import { useOverlayText } from "@/components/overlay/OverlayLang";
 
-const POLL_MS = 2000;
 const CELEBRATE_MS = 3000;
 
 function shade(hex: string, amount: number): string {
@@ -105,10 +105,10 @@ export function ComboOverlayClient({
       };
     }
     poll();
-    const iv = setInterval(poll, POLL_MS);
+    const stopPoll = pacedLoop(poll, OWN_LINK_POLL_MS);
     return () => {
       active = false;
-      clearInterval(iv);
+      stopPoll();
       clearInterval(tick);
       timers.forEach(clearTimeout);
     };

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useOverlayText } from "@/components/overlay/OverlayLang";
-
-const POLL_MS = 4000;
+import { pacedLoop } from "@/components/overlay/LinkFeed";
+import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
 
 type Todo = { items: { id: string; taskText: string; fan: string }[]; more: number };
 
@@ -25,10 +25,10 @@ export function TodoOverlayClient({ username, apiKey }: { username: string; apiK
       }
     }
     poll();
-    const iv = setInterval(poll, POLL_MS);
+    const stopPoll = pacedLoop(poll, OWN_LINK_POLL_MS);
     return () => {
       active = false;
-      clearInterval(iv);
+      stopPoll();
     };
   }, [username, apiKey]);
 

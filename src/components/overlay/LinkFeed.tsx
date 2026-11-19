@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { pollDelayMs } from "@/lib/poll-pace";
+import { watchObsLive } from "@/components/overlay/obsStatus";
 
 /**
  * One poll per OBS link. Every request is billed on Vercel, so the main and
@@ -24,8 +26,6 @@ export function useLinkFeed(): LinkFeed | null {
 
 /** Main-link popup clients ask on their own this often; "hot" asks sooner. */
 export const IDLE_POLL_MS = 60_000;
-/** Off air in OBS (scene not shown) or a hidden tab: ask this often. */
-const SLOW_MS = 15_000;
 
 class Bus implements LinkFeed {
   private listeners = new Map<string, Set<(data: unknown) => void>>();
@@ -67,41 +67,77 @@ export function useLinkFeedPoll(url: string | null, everyMs: number): LinkFeed {
   useEffect(() => {
     if (!url) return;
     let active = true;
-    let onAir = true;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let inFlight = false;
     async function poll() {
-      if (timer) clearTimeout(timer);
-      timer = null;
-      if (inFlight) return;
-      inFlight = true;
       try {
         const res = await fetch(url + bus.query(), { cache: "no-store" });
         if (res.ok && active) bus.emit((await res.json()) as Record<string, unknown>);
       } catch {
         // try again next tick
-      } finally {
-        inFlight = false;
       }
-      if (active) timer = setTimeout(poll, onAir && !document.hidden ? everyMs : SLOW_MS);
     }
-    // Back on air or visible: ask now instead of waiting out the slow tick.
-    const wake = () => {
-      if (onAir && !document.hidden) void poll();
-    };
-    const onActive = (e: Event) => {
-      onAir = Boolean((e as CustomEvent<{ active?: boolean }>).detail?.active);
-      wake();
-    };
-    window.addEventListener("obsSourceActiveChanged", onActive);
-    document.addEventListener("visibilitychange", wake);
-    void poll();
+    const stop = pacedLoop(poll, everyMs, { now: true });
     return () => {
       active = false;
-      if (timer) clearTimeout(timer);
-      window.removeEventListener("obsSourceActiveChanged", onActive);
-      document.removeEventListener("visibilitychange", wake);
+      stop();
     };
   }, [url, everyMs, bus]);
   return bus;
+}
+
+/**
+ * Like setInterval(poll, everyMs), but paced by src/lib/poll-pace.ts: slower
+ * while OBS isn't streaming or recording, the source isn't on screen or the
+ * tab is hidden, and right away when that ends. One request at a time.
+ * `now` also asks once at the start. Returns a stop function.
+ */
+export function pacedLoop(poll: () => unknown, everyMs: number, opts: { now?: boolean } = {}): () => void {
+  let active = true;
+  let onAir = true; // the source is on screen (OBS tells us when it changes)
+  let streaming = true;
+  let inFlight = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const live = () => onAir && !document.hidden && streaming;
+  function schedule() {
+    if (timer) clearTimeout(timer);
+    timer = active ? setTimeout(run, pollDelayMs(everyMs, { shown: onAir && !document.hidden, streaming })) : null;
+  }
+  async function run() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    if (inFlight) return; // the request in flight schedules the next one
+    inFlight = true;
+    try {
+      await poll();
+    } catch {
+      // try again next tick
+    } finally {
+      inFlight = false;
+    }
+    schedule();
+  }
+  // Back on air, on screen or visible: ask now instead of waiting out the slow tick.
+  const wake = () => {
+    if (live()) void run();
+  };
+  const onActive = (e: Event) => {
+    onAir = Boolean((e as CustomEvent<{ active?: boolean }>).detail?.active);
+    wake();
+  };
+  window.addEventListener("obsSourceActiveChanged", onActive);
+  document.addEventListener("visibilitychange", wake);
+  const stopWatch = watchObsLive((v) => {
+    const was = streaming;
+    streaming = v;
+    if (v && !was) wake();
+  });
+  if (opts.now) void run();
+  else schedule();
+  return () => {
+    active = false;
+    if (timer) clearTimeout(timer);
+    timer = null;
+    stopWatch();
+    window.removeEventListener("obsSourceActiveChanged", onActive);
+    document.removeEventListener("visibilitychange", wake);
+  };
 }

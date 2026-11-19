@@ -5,10 +5,10 @@ import { WheelPreview, SPIN_MS } from "@/components/features/WheelPreview";
 import { clampSlots, layoutSegments } from "@/lib/wheel";
 import type { OverlaySpin } from "@/lib/wheel-server";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
-import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { IDLE_POLL_MS, pacedLoop, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
 import { useOverlayText } from "@/components/overlay/OverlayLang";
 
-const POLL_MS = 3000;
 const SETTLE_MS = 400;
 const RESULT_MS = 5000;
 
@@ -109,13 +109,13 @@ export function WheelOverlayClient({
     }
     poll();
     // Main link: ask when its poll says a spin waits, and now and then anyway.
-    const iv = setInterval(poll, linkFeed ? IDLE_POLL_MS : POLL_MS);
+    const stopPoll = pacedLoop(poll, linkFeed ? IDLE_POLL_MS : OWN_LINK_POLL_MS);
     const offHot = linkFeed?.on("hot", (h) => {
       if ((h as { wheel?: boolean } | null)?.wheel) void poll();
     });
     return () => {
       active = false;
-      clearInterval(iv);
+      stopPoll();
       offHot?.();
       timers.forEach(clearTimeout);
       if (holding) stageRef.current.release();

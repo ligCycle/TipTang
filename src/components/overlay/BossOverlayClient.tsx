@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { DEFAULT_COLOR, OVERLAY_CARD_BG } from "@/lib/colors";
 import type { BossChain, BossFeed, BossKillView } from "@/lib/boss";
 import { POPUP_DELAY_MS, useStage } from "@/components/overlay/Stage";
-import { IDLE_POLL_MS, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { IDLE_POLL_MS, pacedLoop, useLinkFeed } from "@/components/overlay/LinkFeed";
+import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
 import { useOverlayText } from "@/components/overlay/OverlayLang";
 
-const POLL_MS = 2000;
 const BANNER_MS = 5000;
 const HIT_MS = 900;
 
@@ -151,7 +151,7 @@ export function BossOverlayClient({
     // Main link: ask when its poll says a kill waits, and now and then anyway
     // (that also keeps the raid live, LIVE_MS).
     const main = via === "main" && linkFeed;
-    const iv = setInterval(poll, main ? IDLE_POLL_MS : POLL_MS);
+    const stopPoll = pacedLoop(poll, main ? IDLE_POLL_MS : OWN_LINK_POLL_MS);
     const offHot = main
       ? linkFeed.on("hot", (h) => {
           if ((h as { boss?: boolean } | null)?.boss) void poll();
@@ -159,7 +159,7 @@ export function BossOverlayClient({
       : null;
     return () => {
       active = false;
-      clearInterval(iv);
+      stopPoll();
       offHot?.();
       timers.forEach(clearTimeout);
       if (holding) stageRef.current.release();
