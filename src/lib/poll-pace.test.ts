@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { OFF_AIR_POLL_MS, OWN_LINK_POLL_MS, pollDelayMs } from "./poll-pace.ts";
+import { OFF_AIR_POLL_MS, OWN_LINK_POLL_MS, hotPollDue, pollDelayMs } from "./poll-pace.ts";
 
 const live = { shown: true, streaming: true };
 
@@ -16,6 +16,14 @@ test("OBS open but not streaming or recording: slow down", () => {
 
 test("scene not shown or tab hidden: slow down", () => {
   assert.equal(pollDelayMs(3000, { shown: false, streaming: true }), 15_000);
+});
+
+test("hot popup: asks when it turns hot, when it cools, and at most every 10 s while it stays hot", () => {
+  assert.equal(hotPollDue({ hot: true, wasHot: false, sinceLastMs: 500 }), true);
+  assert.equal(hotPollDue({ hot: false, wasHot: true, sinceLastMs: 500 }), true);
+  assert.equal(hotPollDue({ hot: true, wasHot: true, sinceLastMs: 3000 }), false);
+  assert.equal(hotPollDue({ hot: true, wasHot: true, sinceLastMs: 10_000 }), true);
+  assert.equal(hotPollDue({ hot: false, wasHot: false, sinceLastMs: 60_000 }), false);
 });
 
 test("a pace already slower than the off-air one is kept", () => {

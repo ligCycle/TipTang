@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icon";
 import type { MediaFeed } from "@/lib/media-queue";
 import { useStage } from "@/components/overlay/Stage";
 import { IDLE_POLL_MS, pacedLoop, useLinkFeed } from "@/components/overlay/LinkFeed";
-import { OWN_LINK_POLL_MS } from "@/lib/poll-pace";
+import { OWN_LINK_POLL_MS, hotPollDue } from "@/lib/poll-pace";
 import { useOverlayText } from "@/components/overlay/OverlayLang";
 
 /** A clip that hasn't started playing by then can't play here: next one. */
@@ -105,10 +105,14 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
   }, [needsClick]);
 
   const url = `/api/overlay/${username}/media?key=${encodeURIComponent(apiKey)}`;
+  // Ask now (a clip just ended, the stage just freed) instead of waiting for the next tick.
+  const pollNow = useRef<() => void>(() => {});
 
   useEffect(() => {
     let active = true;
+    let lastPoll = 0;
     async function poll() {
+      lastPoll = Date.now();
       try {
         // hold=1: the stage is busy, so nothing new may start (its clock would run).
         const q = via === "main" ? `&via=main${busyRef.current ? "&hold=1" : ""}` : "";
@@ -118,18 +122,20 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
         // Network blip: try again next tick.
       }
     }
+    pollNow.current = () => void poll();
     void poll();
-    // Main link: ask while its poll says something plays or waits, once more
-    // when that stops (so a finished clip clears), and now and then anyway.
+    // Main link: ask when its poll says something starts or stops waiting or
+    // playing, every 10 s while that lasts (src/lib/poll-pace.ts), and now and then anyway.
     const stopPoll = pacedLoop(poll, linkFeed ? IDLE_POLL_MS : OWN_LINK_POLL_MS);
     let wasHot = false;
     const offHot = linkFeed?.on("hot", (h) => {
       const hot = Boolean((h as { media?: boolean } | null)?.media);
-      if (hot || wasHot) void poll();
+      if (hotPollDue({ hot, wasHot, sinceLastMs: Date.now() - lastPoll })) void poll();
       wasHot = hot;
     });
     return () => {
       active = false;
+      pollNow.current = () => {};
       stopPoll();
       offHot?.();
     };
@@ -138,9 +144,12 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
   const current = feed?.current ?? null;
   // A popup took the stage: pause; it's free again: resume.
   useEffect(() => {
+    const wasBusy = busyRef.current;
     busyRef.current = stage.busy;
     if (stage.busy) control.current?.pause();
     else control.current?.resume();
+    // Free again: a clip held back while it was busy may start now.
+    if (wasBusy && !stage.busy) pollNow.current();
   }, [stage.busy]);
   const volume = feed?.volume ?? 70;
 
@@ -183,7 +192,12 @@ export function MediaOverlayClient({ username, apiKey, via = null }: { username:
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ id: clip.id, event }),
           keepalive,
-        }).catch(() => {}),
+        })
+          // Done with this one: ask for the next clip now, not on the next tick.
+          .then(() => {
+            if (event === "ended" || event === "error") pollNow.current();
+          })
+          .catch(() => {}),
       ));
     let started = false;
     let retried = false;

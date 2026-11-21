@@ -13,6 +13,17 @@ export const OFF_AIR_POLL_MS = 15_000;
 /** A feature on its own OBS link (not the main or bars link). */
 export const OWN_LINK_POLL_MS = 10_000;
 
+/**
+ * A main-link popup told "something waits or plays" (`hot`) by every link
+ * poll: ask when that starts and when it stops, and at most every
+ * OWN_LINK_POLL_MS while it lasts — a clip left in the queue must not make
+ * the popup ask on every 3 s tick of the whole stream.
+ */
+export function hotPollDue(s: { hot: boolean; wasHot: boolean; sinceLastMs: number }): boolean {
+  if (s.hot !== s.wasHot) return true;
+  return s.hot && s.sinceLastMs >= OWN_LINK_POLL_MS;
+}
+
 export function pollDelayMs(everyMs: number, s: { shown: boolean; streaming: boolean }): number {
   return s.shown && s.streaming ? everyMs : Math.max(everyMs, OFF_AIR_POLL_MS);
 }
